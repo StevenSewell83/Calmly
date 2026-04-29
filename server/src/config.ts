@@ -24,6 +24,12 @@ const ConfigSchema = z.object({
   COOKIE_SECRET: z.string().min(32).default("dev-cookie-secret-change-in-prod-32+"),
   MAGIC_LINK_TTL_MIN: z.coerce.number().int().positive().default(15),
   SESSION_TTL_DAYS: z.coerce.number().int().positive().default(30),
+
+  // F-09 email send adapter
+  EMAIL_SENDER: z.enum(["console", "resend"]).default("console"),
+  EMAIL_FROM: z.string().min(1).optional(),
+  RESEND_API_KEY: z.string().min(1).optional(),
+  DEV_MAIL_DIR: z.string().min(1).default("./.dev-mail"),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;

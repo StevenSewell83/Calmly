@@ -40,6 +40,9 @@ Thumbs.db
 *.db-shm
 *.db-wal
 
+# F-09 dev email drop (ConsoleEmailSender writes here)
+.dev-mail/
+
 # bd scaffolding (one-shot scripts + body files — content already in beads)
 .bd/
 

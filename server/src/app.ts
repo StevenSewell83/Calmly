@@ -3,7 +3,8 @@ import Fastify, { type FastifyInstance } from "fastify";
 import type pg from "pg";
 import { authRoutesPlugin } from "./auth/routes";
 import type { Config } from "./config";
-import { ConsoleEmailAdapter, type EmailAdapter } from "./email/adapter";
+import type { EmailAdapter } from "./email/adapter";
+import { selectEmailSender } from "./email/select";
 import { healthRoute } from "./routes/health";
 import { versionRoute } from "./routes/version";
 import { syncRoutes } from "./sync/routes";
@@ -59,7 +60,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(fastifyCookie, { secret: deps.config.COOKIE_SECRET });
   await app.register(healthRoute);
   await app.register(versionRoute);
-  const email = deps.email ?? new ConsoleEmailAdapter(app.log);
+  const email = deps.email ?? selectEmailSender(deps.config, app.log);
   await app.register(authRoutesPlugin({ email }));
   await app.register(syncRoutes);
 
