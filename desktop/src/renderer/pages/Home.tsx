@@ -27,37 +27,42 @@ export function Home() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-stone-50 text-stone-800 flex flex-col items-center justify-center px-6">
+    <section className="flex-1 flex flex-col items-center justify-center px-12 py-16">
       <h1 className="font-serif italic text-5xl tracking-tight text-stone-800">
         Peace, friend.
       </h1>
-      <p className="mt-4 text-sm text-stone-500 tracking-wide">
-        Calmly is waking up.
+      <p className="mt-4 text-sm text-stone-500 tracking-wide max-w-md text-center">
+        Calmly is awake. Now/Next/Today will land here when Epic 2 lights it
+        up.
       </p>
-      <span className="mt-12 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium tracking-wider">
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-        shell ready
-      </span>
-      <span
-        className={`mt-3 inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium tracking-wider ${
-          error
-            ? "bg-rose-50 text-rose-700"
-            : health
-              ? "bg-stone-100 text-stone-600"
-              : "bg-stone-50 text-stone-400"
-        }`}
-      >
-        {error ? (
-          <>db error · {error}</>
-        ) : health ? (
-          <>
-            db v{health.version} · {health.walMode} ·{" "}
-            {health.fts5 ? "fts5 ✓" : "fts5 ✗"}
-          </>
-        ) : (
-          <>db…</>
-        )}
-      </span>
-    </main>
+
+      <div className="mt-12 flex flex-col items-center gap-3">
+        <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium tracking-wider">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          shell ready
+        </span>
+
+        <span
+          className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium tracking-wider ${
+            error
+              ? "bg-rose-50 text-rose-700"
+              : health
+                ? "bg-stone-100 text-stone-600"
+                : "bg-stone-50 text-stone-400"
+          }`}
+        >
+          {error ? (
+            <>db error · {error}</>
+          ) : health ? (
+            <>
+              db v{health.version} · {health.walMode} ·{" "}
+              {health.fts5 ? "fts5 ✓" : "fts5 ✗"}
+            </>
+          ) : (
+            <>db…</>
+          )}
+        </span>
+      </div>
+    </section>
   );
 }
