@@ -4,3 +4,4 @@ export type CalmlyEnv = "development" | "production" | "test";
 
 export * from "./model";
 export * from "./sync";
+export * from "./log";
