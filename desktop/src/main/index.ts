@@ -1,4 +1,4 @@
-import { app, BrowserWindow, session, shell } from "electron";
+import { app, BrowserWindow, crashReporter, session, shell } from "electron";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import windowStateKeeper from "electron-window-state";
@@ -16,8 +16,14 @@ import {
 import { createApiClient } from "./net/client";
 import { registerAuthIpc } from "./ipc/auth";
 import { registerDbIpc } from "./ipc/db";
+import { registerLogIpc } from "./ipc/log";
 import { registerSecretsIpc } from "./ipc/secrets";
 import { registerSyncIpc } from "./ipc/sync";
+import { createDesktopLogger } from "./logging";
+import {
+  configureElectronLog,
+  electronLogTransport,
+} from "./logging/electron-log-transport";
 import { secretStoreSelfTest } from "./security/secretStore";
 import { createSyncClient } from "./sync/client";
 import { createSyncLoop, type SyncLoop } from "./sync/loop";
@@ -30,6 +36,36 @@ const API_BASE_URL =
   process.env["CALMLY_SYNC_URL"] ?? "http://localhost:3001";
 
 const DEEPLINK_RESULT_CHANNEL = "auth:deeplink-redeemed";
+
+// LOG_PII opens a dev escape hatch that bypasses scrub. Hard-disabled in
+// packaged builds regardless of the env value so a leaked .env can't drop
+// PII into a user's log file.
+const ALLOW_PII = !app.isPackaged && process.env["LOG_PII"] === "true";
+
+// crashReporter must start before any failures we want to catch. Configured
+// with uploadToServer:false so dumps stay local; an Epic 9 setting will flip
+// this on with explicit user consent.
+crashReporter.start({
+  productName: "Calmly",
+  uploadToServer: false,
+  // submitURL is required by Linux/macOS even when uploadToServer is false.
+  // Pointing at a clearly-disabled host is fine; nothing is ever sent.
+  submitURL: "https://crash-disabled.calmly.invalid/",
+  ignoreSystemCrashHandler: false,
+});
+
+// Initialize file logging at module scope so even pre-whenReady errors get
+// captured. createDesktopLogger wraps the transport with scrub.
+configureElectronLog();
+const logger = createDesktopLogger({
+  transport: electronLogTransport,
+  allowPii: ALLOW_PII,
+});
+logger.info("desktop boot", {
+  packaged: app.isPackaged,
+  platform: process.platform,
+  pid: process.pid,
+});
 
 let mainWindow: BrowserWindow | null = null;
 const pendingDeepLinks: string[] = [];
@@ -122,6 +158,7 @@ if (!gotInstanceLock) {
     );
     registerDbIpc();
     registerSecretsIpc();
+    registerLogIpc(logger);
 
     // Use Electron's session.fetch so Set-Cookie from the API automatically
     // populates the persistent cookie jar; subsequent requests (including the

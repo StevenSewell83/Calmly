@@ -92,6 +92,12 @@ export interface AuthBridge {
   onDeepLinkRedeemed(handler: (payload: RedeemResult) => void): () => void;
 }
 
+// Renderer can only fire structured events. Log levels and message strings
+// stay main-side so the renderer can't dump task content into the log file.
+export interface LogBridge {
+  event(name: string, props?: Record<string, unknown>): void;
+}
+
 export interface CalmlyApi {
   version: string;
   platform: string;
@@ -99,4 +105,5 @@ export interface CalmlyApi {
   secrets: SecretsBridge;
   sync: SyncBridge;
   auth: AuthBridge;
+  log: LogBridge;
 }
