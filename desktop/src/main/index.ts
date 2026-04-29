@@ -21,6 +21,7 @@ import { registerInboxIpc } from "./ipc/inbox";
 import { registerLogIpc } from "./ipc/log";
 import { registerSecretsIpc } from "./ipc/secrets";
 import { registerSyncIpc } from "./ipc/sync";
+import { registerTodayIpc } from "./ipc/today";
 import { createDesktopLogger } from "./logging";
 import {
   configureElectronLog,
@@ -207,6 +208,7 @@ if (!gotInstanceLock) {
     };
     registerAuthIpc(orchestrator);
     registerInboxIpc();
+    registerTodayIpc();
 
     const syncLoop: SyncLoop = createSyncLoop({
       getDb,

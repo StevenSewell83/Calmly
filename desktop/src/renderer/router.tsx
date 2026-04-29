@@ -1,6 +1,6 @@
 import { createHashRouter, Navigate, type RouteObject } from "react-router-dom";
 import { AppShell } from "./layout/AppShell";
-import { Home } from "./pages/Home";
+import { Home } from "./pages/Home/Home";
 import { Inbox } from "./pages/Inbox";
 import { Plan } from "./pages/Plan";
 import { Focus } from "./pages/Focus";

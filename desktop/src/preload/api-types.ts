@@ -101,13 +101,57 @@ export type InboxAddResult =
   | { ok: true; id: string; truncated: boolean }
   | { ok: false; error: "EmptyInput" | "NotSignedIn" | "InternalError" };
 
+export type UnresolvedInboxCountResult =
+  | { ok: true; count: number }
+  | { ok: false; error: "NotSignedIn" };
+
 export interface InboxBridge {
   // Persists raw text to the local inbox and queues the upsert for sync.
   // Source is hardcoded to 'desktop' main-side; the renderer cannot spoof it.
   add(rawText: string): Promise<InboxAddResult>;
+  // Number of inbox_items still awaiting triage. Drives Home's conditional
+  // InboxTriageCard (hide at 0, show count + CTA otherwise).
+  unresolvedCount(): Promise<UnresolvedInboxCountResult>;
   // Subscribe to global-hotkey focus pings from main. Returns an unsubscribe
   // so React effects can clean up across strict-mode double-mounts.
   onFocusRequest(handler: () => void): () => void;
+}
+
+// Today-window read shapes — mirror main/today/store.ts. Status is the
+// shared TaskStatus enum but kept as a string here so the renderer
+// doesn't need to depend on @calmly/shared at type-level.
+export interface TaskTodayItem {
+  id: string;
+  title: string;
+  status: "open" | "in_progress" | "done" | "dropped" | "snoozed";
+  due_at: number | null;
+  updated_at: number;
+}
+
+export interface EventTodayItem {
+  id: string;
+  title: string;
+  start_at: number;
+  end_at: number;
+}
+
+export type ListTodayTasksResult =
+  | { ok: true; tasks: TaskTodayItem[] }
+  | { ok: false; error: "NotSignedIn" };
+
+export type ListTodayEventsResult =
+  | { ok: true; events: EventTodayItem[] }
+  | { ok: false; error: "NotSignedIn" };
+
+export interface TasksBridge {
+  // Today's tasks: in_progress (regardless of due_at) plus open tasks
+  // whose due_at falls in the local-day window. Ordered Now-first.
+  listToday(): Promise<ListTodayTasksResult>;
+}
+
+export interface EventsBridge {
+  // Events overlapping today's local-day window, chronological.
+  listToday(): Promise<ListTodayEventsResult>;
 }
 
 export interface CalmlyApi {
@@ -118,5 +162,7 @@ export interface CalmlyApi {
   sync: SyncBridge;
   auth: AuthBridge;
   inbox: InboxBridge;
+  tasks: TasksBridge;
+  events: EventsBridge;
   log: LogBridge;
 }

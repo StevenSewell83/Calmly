@@ -1,11 +1,20 @@
 import { ipcRenderer } from "electron";
-import type { InboxAddResult, InboxBridge } from "./api-types";
+import type {
+  InboxAddResult,
+  InboxBridge,
+  UnresolvedInboxCountResult,
+} from "./api-types";
 
 const FOCUS_CHANNEL = "capture:focus";
 
 export const inboxBridge: InboxBridge = {
   add(rawText: string): Promise<InboxAddResult> {
     return ipcRenderer.invoke("inbox:add", rawText) as Promise<InboxAddResult>;
+  },
+  unresolvedCount(): Promise<UnresolvedInboxCountResult> {
+    return ipcRenderer.invoke("inbox:unresolvedCount") as Promise<
+      UnresolvedInboxCountResult
+    >;
   },
   onFocusRequest(handler: () => void): () => void {
     const wrapped = (): void => handler();
