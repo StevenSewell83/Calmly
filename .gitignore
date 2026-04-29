@@ -33,3 +33,6 @@ Thumbs.db
 # Local AI / cache
 .ollama/
 *.cache
+
+# bd scaffolding (one-shot scripts + body files — content already in beads)
+.bd/
