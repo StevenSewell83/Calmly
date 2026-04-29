@@ -34,6 +34,12 @@ Thumbs.db
 .ollama/
 *.cache
 
+# SQLite scratch files (real DB lives in app userData, not the repo)
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
 # bd scaffolding (one-shot scripts + body files — content already in beads)
 .bd/
 

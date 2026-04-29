@@ -1,0 +1,22 @@
+{
+  "name": "calmly",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Calmly — desktop-first ADHD planning app",
+  "packageManager": "pnpm@9.12.3",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "typecheck": "pnpm -r typecheck",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test"
+  },
+  "devDependencies": {
+    "typescript": "5.6.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["better-sqlite3", "electron", "esbuild"]
+  }
+}
