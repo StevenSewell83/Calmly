@@ -1,14 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  ApiHttpError,
-  ApiNetworkError,
-  createApiClient,
-} from "../client";
+import { ApiHttpError, ApiNetworkError, createApiClient } from "../client";
 
-function jsonResponse(
-  status: number,
-  body: unknown,
-): Response {
+function jsonResponse(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: { "content-type": "application/json" },
@@ -172,9 +165,9 @@ describe("createApiClient.request", () => {
       maxRetries: 2,
     });
 
-    await expect(
-      client.request("POST", "/auth/logout"),
-    ).rejects.toBeInstanceOf(ApiNetworkError);
+    await expect(client.request("POST", "/auth/logout")).rejects.toBeInstanceOf(
+      ApiNetworkError,
+    );
     expect(fetchImpl).toHaveBeenCalledTimes(3);
     expect(sleepImpl).toHaveBeenCalledTimes(2);
   });

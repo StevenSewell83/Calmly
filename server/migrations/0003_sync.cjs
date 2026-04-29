@@ -57,8 +57,7 @@ exports.up = (pgm) => {
     ...sync,
   });
   pgm.addConstraint("tasks", "tasks_status_check", {
-    check:
-      "status IN ('open','in_progress','done','dropped','snoozed')",
+    check: "status IN ('open','in_progress','done','dropped','snoozed')",
   });
   pgm.addConstraint("tasks", "tasks_source_check", {
     check: "source IN ('desktop','telegram-text','telegram-voice','ai-split')",

@@ -32,7 +32,11 @@ export interface LoopDeps {
 }
 
 interface OpsToPush {
-  ops: { table: QueuedOp["table_name"]; op: QueuedOp["op"]; payload: Record<string, unknown> }[];
+  ops: {
+    table: QueuedOp["table_name"];
+    op: QueuedOp["op"];
+    payload: Record<string, unknown>;
+  }[];
   ids: string[];
 }
 

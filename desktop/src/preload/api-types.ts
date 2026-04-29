@@ -67,11 +67,7 @@ export type RedeemResult =
   | { ok: true; user: AuthUser; expiresAt: string }
   | {
       ok: false;
-      error:
-        | "invalid_or_expired"
-        | "invalid_request"
-        | "network"
-        | "server";
+      error: "invalid_or_expired" | "invalid_request" | "network" | "server";
     };
 
 export type StatusResult =

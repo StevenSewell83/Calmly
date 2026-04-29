@@ -33,8 +33,8 @@ export function SearchOverlay({ open, onClose }: Props) {
           </span>
         </div>
         <div className="pt-4 px-1 text-sm text-stone-400 italic">
-          Search will arrive with Epic 6 — for now this overlay is a
-          placeholder so the keyboard surface is wired.
+          Search will arrive with Epic 6 — for now this overlay is a placeholder
+          so the keyboard surface is wired.
         </div>
       </div>
     </div>

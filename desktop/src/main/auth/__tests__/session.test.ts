@@ -73,11 +73,9 @@ describe("createAuthOrchestrator.requestLink", () => {
     });
     const r = await o.requestLink("  alex@example.com  ");
     expect(r).toEqual({ ok: true });
-    expect(requestFn).toHaveBeenCalledWith(
-      "POST",
-      "/auth/magic-link/request",
-      { email: "alex@example.com" },
-    );
+    expect(requestFn).toHaveBeenCalledWith("POST", "/auth/magic-link/request", {
+      email: "alex@example.com",
+    });
   });
 
   it("maps 429 to rate_limited", async () => {
@@ -154,11 +152,9 @@ describe("createAuthOrchestrator.redeem", () => {
       user: { id: "u-1", email: "alex@example.com" },
       expiresAt: "2026-05-30T00:00:00.000Z",
     });
-    expect(requestFn).toHaveBeenCalledWith(
-      "POST",
-      "/auth/magic-link/redeem",
-      { token: VALID_TOKEN },
-    );
+    expect(requestFn).toHaveBeenCalledWith("POST", "/auth/magic-link/redeem", {
+      token: VALID_TOKEN,
+    });
   });
 
   it("maps 410 to invalid_or_expired", async () => {

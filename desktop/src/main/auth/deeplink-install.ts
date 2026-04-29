@@ -20,10 +20,7 @@ export function installDeepLink(args: InstallDeepLinkArgs): DeepLinkInstall {
     event.preventDefault();
     args.onUrl(url);
   };
-  const secondInstanceHandler = (
-    _event: Electron.Event,
-    argv: string[],
-  ) => {
+  const secondInstanceHandler = (_event: Electron.Event, argv: string[]) => {
     const url = findDeepLinkInArgv(argv);
     if (url) args.onUrl(url);
   };

@@ -1,0 +1,20 @@
+node_modules
+dist
+build
+out
+.pnpm
+coverage
+pnpm-lock.yaml
+.bd
+.beads
+.ralph
+.dev-mail
+GUI_draft.ts
+**/*.snap
+
+# Long-form docs we keep stable for readability — touching them with prettier
+# reformats wide tables and reflows the PRD/CLAUDE.md sections.
+ADHD_App_PRD_AI_Revised_v2.md
+CLAUDE.md
+AGENTS.md
+docs/**/*.md

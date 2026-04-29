@@ -96,7 +96,7 @@ describe("buildEventRecord", () => {
   it("rejects values that look like content (spaces, punctuation)", () => {
     const r = buildEventRecord("test", {
       sentence: "hello world this has spaces",
-      json_blob: "{\"a\": 1}",
+      json_blob: '{"a": 1}',
     });
     expect(r.sentence).toBeUndefined();
     expect(r.json_blob).toBeUndefined();

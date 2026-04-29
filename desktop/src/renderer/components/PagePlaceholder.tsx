@@ -17,7 +17,11 @@ export function PagePlaceholder({ title, subtitle, todo }: Props) {
       ) : null}
       <span className="mt-12 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-stone-100 text-stone-500 text-[10px] font-bold tracking-[0.2em] uppercase border border-stone-200">
         TODO
-        {todo ? <span className="font-normal normal-case tracking-normal text-stone-400 lowercase">— {todo}</span> : null}
+        {todo ? (
+          <span className="font-normal normal-case tracking-normal text-stone-400 lowercase">
+            — {todo}
+          </span>
+        ) : null}
       </span>
     </section>
   );

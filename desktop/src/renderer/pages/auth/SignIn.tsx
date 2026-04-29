@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { MountainClimberIcon } from "../../components/MountainClimberIcon";
-import { useAuth } from "../../auth/AuthProvider";
+import { useAuth } from "../../auth/AuthContext";
 import type { RequestLinkResult } from "../../../preload/api-types";
 
 type Phase =
@@ -13,7 +13,10 @@ type Phase =
     };
 
 const ERROR_COPY: Record<
-  Exclude<Phase, { kind: "idle" } | { kind: "sending" } | { kind: "sent" }>["reason"],
+  Exclude<
+    Phase,
+    { kind: "idle" } | { kind: "sending" } | { kind: "sent" }
+  >["reason"],
   { title: string; body: string }
 > = {
   invalid_email: {
@@ -148,10 +151,7 @@ export function SignIn() {
             />
 
             {phase.kind === "error" ? (
-              <p
-                role="alert"
-                className="mt-3 text-xs text-rose-600"
-              >
+              <p role="alert" className="mt-3 text-xs text-rose-600">
                 <span className="font-semibold">
                   {ERROR_COPY[phase.reason].title}
                 </span>
@@ -170,13 +170,12 @@ export function SignIn() {
                   : "bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm",
               ].join(" ")}
             >
-              {phase.kind === "sending"
-                ? "Sending link…"
-                : "Send sign-in link"}
+              {phase.kind === "sending" ? "Sending link…" : "Send sign-in link"}
             </button>
 
             <p className="mt-6 text-[11px] text-stone-400 leading-relaxed text-center">
-              Sign-in links last 15 minutes. We'll never email you anything else.
+              Sign-in links last 15 minutes. We'll never email you anything
+              else.
             </p>
           </form>
         )}

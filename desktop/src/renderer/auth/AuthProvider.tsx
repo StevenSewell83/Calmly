@@ -1,38 +1,7 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useReducer,
-  type ReactNode,
-} from "react";
-import type {
-  RedeemResult,
-  RequestLinkResult,
-} from "../../preload/api-types";
-import {
-  authReducer,
-  initialAuthState,
-  type AuthState,
-} from "./state";
-
-interface AuthContextValue {
-  state: AuthState;
-  // Send a magic link. The result is returned to the caller so SignIn can
-  // render the right error / confirmation. We intentionally do NOT mutate
-  // state on requestLink — sign-in is completed by the deep-link push, not
-  // by this call.
-  requestLink: (email: string) => Promise<RequestLinkResult>;
-  signOut: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextValue | null>(null);
-
-export function useAuth(): AuthContextValue {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used inside <AuthProvider/>");
-  return ctx;
-}
+import { useCallback, useEffect, useReducer, type ReactNode } from "react";
+import type { RedeemResult } from "../../preload/api-types";
+import { AuthContext } from "./AuthContext";
+import { authReducer, initialAuthState } from "./state";
 
 interface AuthProviderProps {
   children: ReactNode;

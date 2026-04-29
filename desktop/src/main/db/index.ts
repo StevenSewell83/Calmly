@@ -34,7 +34,11 @@ export function initDb(): InitDbResult {
 
   const result = runMigrations(db);
   state = { db, path: dbPath, version: result.current };
-  return { path: dbPath, version: result.current, appliedNow: result.appliedNow };
+  return {
+    path: dbPath,
+    version: result.current,
+    appliedNow: result.appliedNow,
+  };
 }
 
 export function getDb(): Database.Database {

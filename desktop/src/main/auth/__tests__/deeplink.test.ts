@@ -8,17 +8,15 @@ describe("parseDeepLink", () => {
   });
 
   it("preserves URL-encoded token values", () => {
-    const r = parseDeepLink(
-      "calmly://auth/callback?token=ab%2Bcd%2F%3D%3D",
-    );
+    const r = parseDeepLink("calmly://auth/callback?token=ab%2Bcd%2F%3D%3D");
     // URL.searchParams.get decodes percent-encoding for us.
     expect(r).toEqual({ token: "ab+cd/==" });
   });
 
   it("treats the scheme case-insensitively", () => {
-    expect(
-      parseDeepLink("CALMLY://auth/callback?token=abc"),
-    ).toEqual({ token: "abc" });
+    expect(parseDeepLink("CALMLY://auth/callback?token=abc")).toEqual({
+      token: "abc",
+    });
   });
 
   it("rejects unknown protocols", () => {

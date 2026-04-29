@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useAuth } from "./AuthProvider";
+import { useAuth } from "./AuthContext";
 import { CalmLoader } from "../pages/auth/CalmLoader";
 import { SignIn } from "../pages/auth/SignIn";
 

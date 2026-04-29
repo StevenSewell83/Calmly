@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  authReducer,
-  initialAuthState,
-  type AuthState,
-} from "../auth/state";
+import { authReducer, initialAuthState, type AuthState } from "../auth/state";
 
 const ALEX = { id: "u-1", email: "alex@example.com" };
 

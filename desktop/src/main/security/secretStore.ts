@@ -113,7 +113,8 @@ export function secretStoreSelfTest(): SecretStoreSelfTestResult {
     if (!row) throw new Error("self-test row not found after insert");
 
     const plainBytes = Buffer.from(plaintext, "utf-8");
-    result.ciphertextDifferentFromPlaintext = !row.ciphertext.equals(plainBytes);
+    result.ciphertextDifferentFromPlaintext =
+      !row.ciphertext.equals(plainBytes);
 
     const decoded = decryptString(row.ciphertext);
     result.roundtripMatches = decoded === plaintext;

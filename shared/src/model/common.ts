@@ -32,7 +32,12 @@ export const aiSuggestionOwnerTypes = ["inbox_item", "task", "event"] as const;
 export const AiSuggestionOwnerTypeSchema = z.enum(aiSuggestionOwnerTypes);
 export type AiSuggestionOwnerType = z.infer<typeof AiSuggestionOwnerTypeSchema>;
 
-export const aiOutcomes = ["accepted", "rejected", "edited", "pending"] as const;
+export const aiOutcomes = [
+  "accepted",
+  "rejected",
+  "edited",
+  "pending",
+] as const;
 export const AiOutcomeSchema = z.enum(aiOutcomes);
 export type AiOutcome = z.infer<typeof AiOutcomeSchema>;
 
@@ -51,13 +56,11 @@ export const SqliteBoolSchema = z
   .transform((v) => v === 1);
 export const BoolToSqliteSchema = z.boolean().transform((v) => (v ? 1 : 0));
 
-export const JsonStringSchema = z
-  .string()
-  .refine((s) => {
-    try {
-      JSON.parse(s);
-      return true;
-    } catch {
-      return false;
-    }
-  }, "must be valid JSON");
+export const JsonStringSchema = z.string().refine((s) => {
+  try {
+    JSON.parse(s);
+    return true;
+  } catch {
+    return false;
+  }
+}, "must be valid JSON");

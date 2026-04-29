@@ -157,7 +157,13 @@ export function authRoutesPlugin(deps: AuthRoutesDeps) {
         userAgent: req.headers["user-agent"] ?? null,
       });
 
-      setSessionCookie(reply, cookieName, session.rawToken, session.expiresAt, isProd);
+      setSessionCookie(
+        reply,
+        cookieName,
+        session.rawToken,
+        session.expiresAt,
+        isProd,
+      );
       return {
         user: { id: row.user_id, email: row.email },
         session: { expiresAt: session.expiresAt.toISOString() },
@@ -228,9 +234,8 @@ export function authRoutesPlugin(deps: AuthRoutesDeps) {
     );
 
     // Resolve helper exposed for tests + future client-facing /auth/check.
-    app.decorate(
-      "resolveSession",
-      async (rawToken: string) => resolveSessionByToken(app.pool, rawToken),
+    app.decorate("resolveSession", async (rawToken: string) =>
+      resolveSessionByToken(app.pool, rawToken),
     );
   };
 }

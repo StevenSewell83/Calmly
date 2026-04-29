@@ -27,13 +27,43 @@ export function MountainClimberIcon({ className }: Props) {
       />
       <g transform="translate(10, 5)">
         <circle cx="48" cy="80" r="5" fill="currentColor" />
-        <path d="M48 85V105" stroke="currentColor" strokeWidth="6" strokeLinecap="round" />
-        <path d="M62 65V105" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+        <path
+          d="M48 85V105"
+          stroke="currentColor"
+          strokeWidth="6"
+          strokeLinecap="round"
+        />
+        <path
+          d="M62 65V105"
+          stroke="currentColor"
+          strokeWidth="4"
+          strokeLinecap="round"
+        />
         <path d="M62 65L82 74L62 83V65Z" fill="currentColor" />
-        <path d="M48 90L62 85" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
-        <path d="M48 90L38 95" stroke="currentColor" strokeWidth="5" strokeLinecap="round" />
-        <path d="M48 105L58 112" stroke="currentColor" strokeWidth="6" strokeLinecap="round" />
-        <path d="M48 105L40 118" stroke="currentColor" strokeWidth="6" strokeLinecap="round" />
+        <path
+          d="M48 90L62 85"
+          stroke="currentColor"
+          strokeWidth="5"
+          strokeLinecap="round"
+        />
+        <path
+          d="M48 90L38 95"
+          stroke="currentColor"
+          strokeWidth="5"
+          strokeLinecap="round"
+        />
+        <path
+          d="M48 105L58 112"
+          stroke="currentColor"
+          strokeWidth="6"
+          strokeLinecap="round"
+        />
+        <path
+          d="M48 105L40 118"
+          stroke="currentColor"
+          strokeWidth="6"
+          strokeLinecap="round"
+        />
       </g>
     </svg>
   );

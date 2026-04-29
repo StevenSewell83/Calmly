@@ -32,8 +32,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const isDev = !app.isPackaged;
 
-const API_BASE_URL =
-  process.env["CALMLY_SYNC_URL"] ?? "http://localhost:3001";
+const API_BASE_URL = process.env["CALMLY_SYNC_URL"] ?? "http://localhost:3001";
 
 const DEEPLINK_RESULT_CHANNEL = "auth:deeplink-redeemed";
 

@@ -23,9 +23,7 @@ describe("scrub", () => {
   });
 
   it("redacts a GitHub PAT", () => {
-    const out = scrub(
-      "ghp_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKL",
-    );
+    const out = scrub("ghp_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKL");
     expect(out).toBe("[REDACTED:api_key_github]");
   });
 
@@ -63,9 +61,7 @@ describe("scrub", () => {
   });
 
   it("redacts multiple secrets in one string", () => {
-    const out = scrub(
-      "AKIAABCDEFGHIJKLMNOP and email a@b.com",
-    );
+    const out = scrub("AKIAABCDEFGHIJKLMNOP and email a@b.com");
     expect(out).toContain("[REDACTED:api_key_aws]");
     expect(out).toContain("[REDACTED:email]");
   });

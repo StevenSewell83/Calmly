@@ -18,10 +18,7 @@ export interface EnqueueArgs {
   payload: Record<string, unknown>;
 }
 
-export function enqueueOp(
-  db: Database.Database,
-  args: EnqueueArgs,
-): QueuedOp {
+export function enqueueOp(db: Database.Database, args: EnqueueArgs): QueuedOp {
   const id = randomUUID();
   const json = JSON.stringify(args.payload);
   db.prepare(
@@ -39,10 +36,7 @@ export function enqueueOp(
   };
 }
 
-export function pendingOps(
-  db: Database.Database,
-  limit = 100,
-): QueuedOp[] {
+export function pendingOps(db: Database.Database, limit = 100): QueuedOp[] {
   return db
     .prepare(
       `SELECT id, table_name, op, payload_json, created_at, attempts, last_error

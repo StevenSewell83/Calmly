@@ -33,8 +33,7 @@ function makeFakeDb(initialRows: FakeRow[], initialState: FakeState) {
         },
         get(_arg?: unknown) {
           if (s.startsWith("select last_pulled_version")) return state;
-          if (s.startsWith("select count(*)"))
-            return { c: rows.length };
+          if (s.startsWith("select count(*)")) return { c: rows.length };
           return undefined;
         },
         run(...args: unknown[]) {
@@ -116,18 +115,22 @@ function makeRow(overrides: Partial<FakeRow> = {}): FakeRow {
 
 function makeClient(overrides: Partial<SyncClient> = {}): SyncClient {
   return {
-    pull: vi.fn(async (): Promise<PullResponse> => ({ records: {}, version: 0 })),
-    push: vi.fn(async (): Promise<PushResponse> => ({ results: [], version: 0 })),
+    pull: vi.fn(
+      async (): Promise<PullResponse> => ({ records: {}, version: 0 }),
+    ),
+    push: vi.fn(
+      async (): Promise<PushResponse> => ({ results: [], version: 0 }),
+    ),
     ...overrides,
   } as SyncClient;
 }
 
 describe("runSyncOnce — push phase", () => {
   it("removes accepted ops from the queue", async () => {
-    const db = makeFakeDb(
-      [makeRow()],
-      { last_pulled_version: 0, last_pushed_at: null },
-    );
+    const db = makeFakeDb([makeRow()], {
+      last_pulled_version: 0,
+      last_pushed_at: null,
+    });
     const client = makeClient({
       push: vi.fn(async () => ({
         results: [
@@ -155,10 +158,10 @@ describe("runSyncOnce — push phase", () => {
   });
 
   it("removes 'stale' and 'gone' ops too (replay-safe)", async () => {
-    const db = makeFakeDb(
-      [makeRow({ id: "a" }), makeRow({ id: "b" })],
-      { last_pulled_version: 0, last_pushed_at: null },
-    );
+    const db = makeFakeDb([makeRow({ id: "a" }), makeRow({ id: "b" })], {
+      last_pulled_version: 0,
+      last_pushed_at: null,
+    });
     const client = makeClient({
       push: vi.fn(async () => ({
         results: [
@@ -191,10 +194,10 @@ describe("runSyncOnce — push phase", () => {
   });
 
   it("marks 'invalid' results as attempted but keeps them in the queue", async () => {
-    const db = makeFakeDb(
-      [makeRow()],
-      { last_pulled_version: 0, last_pushed_at: null },
-    );
+    const db = makeFakeDb([makeRow()], {
+      last_pulled_version: 0,
+      last_pushed_at: null,
+    });
     const client = makeClient({
       push: vi.fn(async () => ({
         results: [
@@ -220,10 +223,10 @@ describe("runSyncOnce — push phase", () => {
   });
 
   it("on push error, marks attempted and surfaces error", async () => {
-    const db = makeFakeDb(
-      [makeRow()],
-      { last_pulled_version: 0, last_pushed_at: null },
-    );
+    const db = makeFakeDb([makeRow()], {
+      last_pulled_version: 0,
+      last_pushed_at: null,
+    });
     const client = makeClient({
       push: vi.fn(async () => {
         throw new Error("network");
@@ -241,10 +244,7 @@ describe("runSyncOnce — push phase", () => {
 
 describe("runSyncOnce — pull phase", () => {
   it("advances the cursor when the server returns a higher version", async () => {
-    const db = makeFakeDb(
-      [],
-      { last_pulled_version: 5, last_pushed_at: null },
-    );
+    const db = makeFakeDb([], { last_pulled_version: 5, last_pushed_at: null });
     const client = makeClient({
       pull: vi.fn(async () => ({
         records: { tasks: [{ id: "x" }, { id: "y" }] },
@@ -261,10 +261,10 @@ describe("runSyncOnce — pull phase", () => {
   });
 
   it("does not move the cursor backwards", async () => {
-    const db = makeFakeDb(
-      [],
-      { last_pulled_version: 50, last_pushed_at: null },
-    );
+    const db = makeFakeDb([], {
+      last_pulled_version: 50,
+      last_pushed_at: null,
+    });
     const client = makeClient({
       pull: vi.fn(async () => ({ records: {}, version: 50 })),
     });

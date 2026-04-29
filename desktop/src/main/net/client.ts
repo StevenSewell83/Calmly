@@ -82,8 +82,7 @@ export function createApiClient(args: CreateApiClientArgs): ApiClient {
 
       let attempt = 0;
       // Loop runs up to (1 + maxRetries) times; each retry sleeps backoff(attempt-1).
-      // eslint-disable-next-line no-constant-condition
-      while (true) {
+      for (;;) {
         let res: Response;
         try {
           res = await fetchFn(url, init);

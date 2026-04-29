@@ -42,8 +42,7 @@ export function createDesktopLogger(args: DesktopLoggerArgs): Logger {
   }
 
   const at =
-    (level: LogLevel) =>
-    (msg: string, fields?: Record<string, unknown>) => {
+    (level: LogLevel) => (msg: string, fields?: Record<string, unknown>) => {
       args.transport(level, sanitize(msg), sanitizeFields(fields));
     };
 

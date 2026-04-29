@@ -1,9 +1,5 @@
 import { z } from "zod";
-import {
-  JsonStringSchema,
-  ReminderImportanceSchema,
-  uuid,
-} from "./common";
+import { JsonStringSchema, ReminderImportanceSchema, uuid } from "./common";
 
 export const ReminderRuleSchema = z.object({
   id: uuid,

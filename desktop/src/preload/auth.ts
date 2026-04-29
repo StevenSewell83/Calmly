@@ -13,9 +13,10 @@ export const authBridge: AuthBridge = {
     return ipcRenderer.invoke("auth:status") as Promise<StatusResult>;
   },
   requestLink(email: string): Promise<RequestLinkResult> {
-    return ipcRenderer.invoke("auth:requestLink", email) as Promise<
-      RequestLinkResult
-    >;
+    return ipcRenderer.invoke(
+      "auth:requestLink",
+      email,
+    ) as Promise<RequestLinkResult>;
   },
   redeem(token: string): Promise<RedeemResult> {
     return ipcRenderer.invoke("auth:redeem", token) as Promise<RedeemResult>;

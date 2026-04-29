@@ -31,8 +31,7 @@ export interface CreateClientArgs {
 
 export function createSyncClient(args: CreateClientArgs): SyncClient {
   const fetchFn = args.fetchImpl ?? fetch;
-  const url = (path: string) =>
-    `${args.baseUrl.replace(/\/$/, "")}${path}`;
+  const url = (path: string) => `${args.baseUrl.replace(/\/$/, "")}${path}`;
 
   const headers = async (): Promise<Record<string, string>> => {
     const h: Record<string, string> = {

@@ -60,12 +60,19 @@ async function applyUpsert(
       table: spec.name,
       id,
       version: null,
-      reason: decision.reason === "stale" ? "older_than_stored" : "missing_target",
+      reason:
+        decision.reason === "stale" ? "older_than_stored" : "missing_target",
     };
   }
 
   const version = await nextVersion(ctx);
-  const cols = ["user_id", ...spec.columns, "updated_at", "deleted_at", "version"];
+  const cols = [
+    "user_id",
+    ...spec.columns,
+    "updated_at",
+    "deleted_at",
+    "version",
+  ];
   const placeholders = cols.map((_, i) => `$${i + 1}`);
   const jsonSet = new Set(spec.jsonColumns ?? []);
 
@@ -155,7 +162,14 @@ async function applyDelete(
     [updated_at, updated_at, version, ctx.userId, id],
   );
 
-  return { index, status: "accepted", table: spec.name, id, version, reason: null };
+  return {
+    index,
+    status: "accepted",
+    table: spec.name,
+    id,
+    version,
+    reason: null,
+  };
 }
 
 export async function applyOp(

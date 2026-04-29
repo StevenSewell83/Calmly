@@ -32,8 +32,7 @@ export function Home() {
         Peace, friend.
       </h1>
       <p className="mt-4 text-sm text-stone-500 tracking-wide max-w-md text-center">
-        Calmly is awake. Now/Next/Today will land here when Epic 2 lights it
-        up.
+        Calmly is awake. Now/Next/Today will land here when Epic 2 lights it up.
       </p>
 
       <div className="mt-12 flex flex-col items-center gap-3">

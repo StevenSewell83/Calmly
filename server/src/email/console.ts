@@ -25,7 +25,10 @@ export class ConsoleEmailSender implements EmailAdapter {
     await mkdir(dir, { recursive: true });
 
     const ts = new Date().toISOString().replace(/[:.]/g, "-");
-    const tag = createHash("sha256").update(email.link).digest("hex").slice(0, 8);
+    const tag = createHash("sha256")
+      .update(email.link)
+      .digest("hex")
+      .slice(0, 8);
     const filename = `${ts}-${tag}.html`;
     const filepath = join(dir, filename);
     await writeFile(filepath, rendered.html, "utf-8");

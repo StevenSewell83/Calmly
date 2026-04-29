@@ -29,10 +29,7 @@ export type AuthAction =
 
 export const initialAuthState: AuthState = { status: "unknown" };
 
-export function authReducer(
-  state: AuthState,
-  action: AuthAction,
-): AuthState {
+export function authReducer(state: AuthState, action: AuthAction): AuthState {
   switch (action.type) {
     case "status_resolved":
       // Boot path. Only allowed to move OUT of 'unknown'; ignored if a deep

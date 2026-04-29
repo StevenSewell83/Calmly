@@ -17,11 +17,7 @@ export type RedeemResult =
   | { ok: true; user: AuthUser; expiresAt: string }
   | {
       ok: false;
-      error:
-        | "invalid_or_expired"
-        | "invalid_request"
-        | "network"
-        | "server";
+      error: "invalid_or_expired" | "invalid_request" | "network" | "server";
     };
 
 export type StatusResult =
@@ -111,7 +107,8 @@ export function createAuthOrchestrator(
         };
       } catch (e) {
         if (e instanceof ApiHttpError) {
-          if (e.status === 410) return { ok: false, error: "invalid_or_expired" };
+          if (e.status === 410)
+            return { ok: false, error: "invalid_or_expired" };
           if (e.status === 400) return { ok: false, error: "invalid_request" };
           return { ok: false, error: "server" };
         }

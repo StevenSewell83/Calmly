@@ -38,7 +38,10 @@ export function configureElectronLog(): void {
   // single source of truth.)
 }
 
-const LEVEL_MAP: Record<LogLevel, "silly" | "debug" | "info" | "warn" | "error"> = {
+const LEVEL_MAP: Record<
+  LogLevel,
+  "silly" | "debug" | "info" | "warn" | "error"
+> = {
   trace: "silly",
   debug: "debug",
   info: "info",
