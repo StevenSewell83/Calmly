@@ -1,0 +1,34 @@
+PROJECT_NAME="calmly"
+PROJECT_TYPE="typescript"
+
+# Default Claude Code invocation. Worker-specific overrides live in
+# scripts/ralph/start-opus.sh and scripts/ralph/start-sonnet.sh, which export
+# CLAUDE_CODE_CMD before invoking ralph so model selection sticks per worker.
+CLAUDE_CODE_CMD="claude"
+
+# Throttle. Two workers run in parallel; combined budget = 2x this number.
+MAX_CALLS_PER_HOUR=40
+
+# Per-iteration ceiling. Most beads tasks fit comfortably in 30 min; if a task
+# is hitting this, it should be split via bd create + bd dep add.
+CLAUDE_TIMEOUT_MINUTES=30
+
+CLAUDE_OUTPUT_FORMAT="json"
+
+# Tools the autonomous loop is permitted to use. Bash is scoped narrowly so the
+# loop cannot run arbitrary shell commands. Add scopes here as new tooling
+# (pnpm, electron-builder, vitest, playwright) lands.
+ALLOWED_TOOLS="Write,Read,Edit,Glob,Grep,Bash(git *),Bash(bd *),Bash(pnpm *),Bash(npm *),Bash(node *),Bash(pwd),Bash(ls *),Bash(cat *),Bash(mkdir *),Bash(cp *),Bash(mv *),Bash(rm -f *),Bash(test *)"
+
+# Session continuity keeps Claude's context across iterations. Reset every 24h
+# so we don't carry stale assumptions forever.
+SESSION_CONTINUITY=true
+SESSION_EXPIRY_HOURS=24
+
+# Circuit breaker: stop the loop if it stalls. Tuned conservatively because
+# this is unattended.
+CB_NO_PROGRESS_THRESHOLD=3
+CB_SAME_ERROR_THRESHOLD=4
+CB_OUTPUT_DECLINE_THRESHOLD=70
+CB_COOLDOWN_MINUTES=30
+CB_AUTO_RESET=false

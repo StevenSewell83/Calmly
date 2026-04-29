@@ -36,3 +36,12 @@ Thumbs.db
 
 # bd scaffolding (one-shot scripts + body files — content already in beads)
 .bd/
+
+# ralph autonomous loop runtime (configs are committed; logs/state are not)
+.ralph/logs/
+.ralph/.ralph_session
+.ralph/.ralph_session_history
+.ralph/live.log
+.ralph/status.json
+.ralph/merge-loop.log
+.ralph/docs/generated/

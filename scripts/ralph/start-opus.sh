@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Run one opus worker iteration loop in the foreground.
+# Intended to be invoked by start-all.sh inside a tmux pane, or directly for
+# debugging.
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+PARENT_DIR="$(dirname "$REPO_ROOT")"
+REPO_NAME="$(basename "$REPO_ROOT")"
+WT="$PARENT_DIR/$REPO_NAME-ralph-opus"
+
+if [ ! -d "$WT" ]; then
+  echo "ERROR: opus worktree not found at $WT. Run scripts/ralph/setup.sh first." >&2
+  exit 1
+fi
+
+# Override the model. Ralph reads CLAUDE_CODE_CMD from .ralphrc; we re-export
+# it here so this worker uses opus regardless of the file's default.
+export CLAUDE_CODE_CMD="claude --model claude-opus-4-7"
+
+cd "$WT"
+echo "[opus] worktree: $WT"
+echo "[opus] model:    claude-opus-4-7"
+echo "[opus] starting ralph loop (Ctrl+C to stop)"
+exec ralph --calls 30 --timeout 30 --backup --live
