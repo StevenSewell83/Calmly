@@ -35,3 +35,16 @@ Different tasks benefit from specialized skills. Invoke the relevant skill **bef
 Many tasks have an explicit `## Skills` section in their body — that's the authoritative guidance for that task. Default to the table above when no section is present.
 
 Design principles (PRD §4) — feed these into `frontend-design` so the visual system matches the product's anti-shame, low-cognitive-load posture: **calm, anti-shame, keyboard-first, recovery-centered, progressive disclosure, AI assistive (not dominant)**.
+
+## UI design reference: `GUI_draft.ts`
+
+`GUI_draft.ts` (in repo root) is the canonical visual + interaction reference for the desktop UI. Treat it as the source of truth for the look-and-feel of any new screen or component. It establishes:
+
+- **Palette**: stone (warm grays) for surfaces/text + emerald accents for active/positive states; minimal chrome
+- **Shapes**: soft rounded corners (e.g., `rounded-[1.8rem]`, `rounded-[2.5rem]`); organic, not boxy
+- **Typography**: serif italic for hero headers (e.g., "Peace, Alex."); sans-serif for body; tight tracking
+- **Iconography**: `lucide-react` plus the custom `MountainClimberIcon` SVG
+- **Layout primitives**: kanban-style columns (Inbox / Today / This Week), drag-and-drop affordances, sidebar nav with icon scale-on-active, Brain Dump entry point
+- **Motion**: subtle fade-in / slide-in on view changes, rotating quote anchors
+
+When implementing UI tasks: open `GUI_draft.ts`, identify the matching component (Home, Kanban, sidebar, Triage view), and reuse the same Tailwind class patterns / shape language unless there's a clear reason to deviate. The `frontend-design` skill should be invoked **after** loading the draft so it works *with* the established language, not against it.
