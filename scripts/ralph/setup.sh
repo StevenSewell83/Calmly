@@ -31,6 +31,7 @@ create_worktree() {
   echo "[$role] syncing .ralph/ templates"
   mkdir -p "$wt_path/.ralph/prompts"
   cp -f "$REPO_ROOT/.ralph/AGENT.md" "$wt_path/.ralph/AGENT.md"
+  cp -f "$REPO_ROOT/.ralph/fix_plan.md" "$wt_path/.ralph/fix_plan.md"
   cp -f "$REPO_ROOT/.ralph/PROMPT.md" "$wt_path/.ralph/PROMPT.md.fallback"
   cp -f "$REPO_ROOT/.ralph/prompts/$role.md" "$wt_path/.ralph/PROMPT.md"
   cp -f "$REPO_ROOT/.ralph/prompts/$role.md" "$wt_path/.ralph/prompts/$role.md"

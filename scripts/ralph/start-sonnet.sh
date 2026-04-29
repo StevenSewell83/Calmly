@@ -12,7 +12,7 @@ if [ ! -d "$WT" ]; then
   exit 1
 fi
 
-export CLAUDE_CODE_CMD="claude --model claude-sonnet-4-6"
+export CLAUDE_CODE_CMD="$REPO_ROOT/scripts/ralph/wrappers/claude-sonnet.sh"
 
 cd "$WT"
 echo "[sonnet] worktree: $WT"

@@ -14,9 +14,11 @@ if [ ! -d "$WT" ]; then
   exit 1
 fi
 
-# Override the model. Ralph reads CLAUDE_CODE_CMD from .ralphrc; we re-export
-# it here so this worker uses opus regardless of the file's default.
-export CLAUDE_CODE_CMD="claude --model claude-opus-4-7"
+# Override the model. Ralph treats CLAUDE_CODE_CMD as a single executable
+# (no arg-splitting), so we point it at a wrapper script that exec's
+# `claude --model claude-opus-4-7`. The wrapper lives in the main repo, not
+# the worktree, because all worktrees share the same model-tiering logic.
+export CLAUDE_CODE_CMD="$REPO_ROOT/scripts/ralph/wrappers/claude-opus.sh"
 
 cd "$WT"
 echo "[opus] worktree: $WT"
