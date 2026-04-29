@@ -122,3 +122,58 @@ jobs:
       # let lifecycle scripts run on this job only.
       - run: pnpm install --frozen-lockfile
       - run: pnpm -r test
+
+  e2e:
+    name: E2E (Electron, Linux)
+    needs: setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: actions/cache@v4
+        with:
+          path: ~/.local/share/pnpm/store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+      # E2E needs the native better-sqlite3 build (lifecycle scripts on) and
+      # the Playwright browser binaries cache. We launch Electron itself, not
+      # Chromium, so a full `playwright install` is unnecessary, but a few
+      # system libs (libnss3 et al.) are required to render the window under
+      # Xvfb on the GitHub-hosted runner.
+      - run: pnpm install --frozen-lockfile
+      - name: Install Electron runtime libs
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libnss3 \
+            libatk1.0-0 \
+            libatk-bridge2.0-0 \
+            libcups2 \
+            libdrm2 \
+            libxkbcommon0 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxfixes3 \
+            libxrandr2 \
+            libgbm1 \
+            libpango-1.0-0 \
+            libcairo2 \
+            libasound2t64 \
+            xvfb
+      - name: Build desktop (electron-vite)
+        run: pnpm --filter @calmly/desktop build
+      - name: Run Playwright E2E (Xvfb)
+        run: xvfb-run -a pnpm --filter @calmly/desktop test:e2e
+      - name: Upload Playwright trace on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-trace
+          path: |
+            desktop/e2e-results/**
+            desktop/playwright-report/**
+          if-no-files-found: ignore
+          retention-days: 7
