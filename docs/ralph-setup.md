@@ -136,6 +136,21 @@ cd ../Calmly-ralph-opus       # or -sonnet
 git rebase origin/main        # resolve conflicts, git add, git rebase --continue
 ```
 
+## Reviewing autonomous work (PR mode)
+
+The merge loop publishes each worker's branch to `origin/ralph/opus` and `origin/ralph/sonnet` after rebasing onto main. It does **not** auto-merge to main.
+
+To absorb work:
+
+```bash
+gh pr create --base main --head ralph/opus --title "Foundations from opus worker" --fill
+# or just diff and merge locally:
+git fetch origin
+git log --oneline main..origin/ralph/opus
+git diff main..origin/ralph/opus
+git merge --ff-only origin/ralph/opus      # if you trust the diff
+```
+
 **Worker stuck in a loop on the same task.** Check `.ralph/status.json`. The circuit breaker should catch this; if it doesn't, `scripts/ralph/stop-all.sh`, then close or reassign the offending bead.
 
 **Need to pause one worker but not the other.** `tmux send-keys -t calmly-ralph:workers.0 C-c` (pane 0 = opus, pane 1 = sonnet, pane 2 = merge).

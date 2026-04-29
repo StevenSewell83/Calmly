@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Periodically rebase ralph/opus and ralph/sonnet onto main, then fast-forward
-# main from each. Runs every MERGE_INTERVAL_SECONDS (default 600s = 10min).
+# Periodically rebase ralph/opus and ralph/sonnet onto origin/main, then
+# push the worker branches to origin so the user can review via PR/diff.
+# Runs every MERGE_INTERVAL_SECONDS (default 600s = 10min).
 #
-# This is the "auto-merge" half of the parallel-worker design: each worker
-# commits to its own branch, and this loop folds those commits back into main
-# so workers don't drift apart.
+# PR mode (current): worker branches publish to origin. User merges manually
+# via `gh pr create` or direct review. No auto-fast-forward to main.
 #
-# Conflicts: if a rebase conflicts, the script aborts the rebase, logs the
-# conflict, and keeps going. The user resolves manually.
+# `git rebase --autostash` handles the runtime files ralph writes between
+# loops (.call_count, PROMPT.md edits, etc.) so the rebase doesn't abort.
 set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
@@ -19,7 +19,7 @@ log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG"
 }
 
-merge_branch() {
+publish_branch() {
   local branch="$1"
   local wt_path
   case "$branch" in
@@ -33,31 +33,29 @@ merge_branch() {
     return 0
   fi
 
-  # 1. Pull latest main (and any other workers' commits that already merged)
-  git -C "$wt_path" fetch origin main --quiet || log "[$branch] fetch failed"
+  git -C "$wt_path" fetch origin main --quiet || { log "[$branch] fetch failed"; return 0; }
 
-  # 2. Rebase the worker branch onto main. Abort cleanly on conflict.
-  if git -C "$wt_path" rebase origin/main; then
-    log "[$branch] rebased onto main"
+  if git -C "$wt_path" rebase --autostash origin/main; then
+    log "[$branch] rebased onto origin/main"
   else
     git -C "$wt_path" rebase --abort 2>/dev/null || true
     log "[$branch] CONFLICT during rebase — left as-is, needs manual resolution"
     return 0
   fi
 
-  # 3. Fast-forward main to include the worker's commits
-  if git -C "$REPO_ROOT" merge --ff-only "$branch" 2>/dev/null; then
-    log "[$branch] fast-forwarded main"
-    git -C "$REPO_ROOT" push origin main 2>/dev/null && log "[$branch] pushed main" || log "[$branch] push deferred"
+  # Force-with-lease: history rewrite is intentional (we rebased), but refuse
+  # to overwrite if someone else pushed to the branch since we last fetched.
+  if git -C "$wt_path" push --force-with-lease origin "$branch" 2>>"$LOG"; then
+    log "[$branch] pushed to origin/$branch (review via gh pr create or diff)"
   else
-    log "[$branch] main not fast-forwardable — skipping merge this cycle"
+    log "[$branch] push failed — see log above"
   fi
 }
 
-log "merge-loop starting (interval=${INTERVAL}s)"
+log "merge-loop starting (interval=${INTERVAL}s, mode=PR)"
 while true; do
-  merge_branch ralph/opus
-  merge_branch ralph/sonnet
+  publish_branch ralph/opus
+  publish_branch ralph/sonnet
   bd sync >/dev/null 2>&1 && log "bd sync ok" || log "bd sync failed"
   sleep "$INTERVAL"
 done
