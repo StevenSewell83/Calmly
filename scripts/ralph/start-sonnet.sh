@@ -18,4 +18,5 @@ cd "$WT"
 echo "[sonnet] worktree: $WT"
 echo "[sonnet] model:    claude-sonnet-4-6"
 echo "[sonnet] starting ralph loop (Ctrl+C to stop)"
-exec ralph --calls 60 --timeout 30 --backup --live
+# --no-continue: see start-opus.sh for rationale (shared ~/.claude/).
+exec ralph --no-continue --calls 60 --timeout 30 --backup --live

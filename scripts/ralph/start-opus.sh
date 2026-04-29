@@ -24,4 +24,7 @@ cd "$WT"
 echo "[opus] worktree: $WT"
 echo "[opus] model:    claude-opus-4-7"
 echo "[opus] starting ralph loop (Ctrl+C to stop)"
-exec ralph --calls 30 --timeout 30 --backup --live
+# --no-continue: both workers share ~/.claude/, so ralph's session-resume
+# logic can grab the *other* worker's session ID. Disable continuity to
+# force a fresh claude session each iteration.
+exec ralph --no-continue --calls 30 --timeout 30 --backup --live
