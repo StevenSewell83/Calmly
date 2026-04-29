@@ -4,6 +4,8 @@ import { dirname, join } from "node:path";
 import windowStateKeeper from "electron-window-state";
 import { closeDb, initDb } from "./db";
 import { registerDbIpc } from "./ipc/db";
+import { registerSecretsIpc } from "./ipc/secrets";
+import { secretStoreSelfTest } from "./security/secretStore";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -58,6 +60,18 @@ app.whenReady().then(() => {
     `[calmly:db] open path=${dbInfo.path} version=${dbInfo.version} appliedNow=[${dbInfo.appliedNow.join(",")}]`,
   );
   registerDbIpc();
+  registerSecretsIpc();
+
+  if (isDev) {
+    const r = secretStoreSelfTest();
+    console.log(
+      `[calmly:secrets] selftest ok=${r.ok} available=${r.available} ` +
+        `cipherDifferent=${r.ciphertextDifferentFromPlaintext} ` +
+        `roundtrip=${r.roundtripMatches}` +
+        (r.error ? ` error=${r.error}` : ""),
+    );
+  }
+
   createMainWindow();
 
   app.on("activate", () => {
