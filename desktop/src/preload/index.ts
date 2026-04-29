@@ -1,11 +1,12 @@
 import { contextBridge } from "electron";
+import { dbBridge } from "./db";
+import type { CalmlyApi } from "./api-types";
 
-const calmlyApi = {
+const calmlyApi: CalmlyApi = {
   version: "0.0.0",
   platform: process.platform,
-} as const;
-
-export type CalmlyApi = typeof calmlyApi;
+  db: dbBridge,
+};
 
 if (process.contextIsolated) {
   contextBridge.exposeInMainWorld("calmly", calmlyApi);

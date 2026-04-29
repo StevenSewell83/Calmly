@@ -1,4 +1,4 @@
-import type { CalmlyApi } from "./index";
+import type { CalmlyApi } from "./api-types";
 
 declare global {
   interface Window {

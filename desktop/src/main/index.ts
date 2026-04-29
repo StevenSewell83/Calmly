@@ -2,6 +2,8 @@ import { app, BrowserWindow, shell } from "electron";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import windowStateKeeper from "electron-window-state";
+import { closeDb, initDb } from "./db";
+import { registerDbIpc } from "./ipc/db";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -51,6 +53,11 @@ function createMainWindow(): BrowserWindow {
 }
 
 app.whenReady().then(() => {
+  const dbInfo = initDb();
+  console.log(
+    `[calmly:db] open path=${dbInfo.path} version=${dbInfo.version} appliedNow=[${dbInfo.appliedNow.join(",")}]`,
+  );
+  registerDbIpc();
   createMainWindow();
 
   app.on("activate", () => {
@@ -60,6 +67,10 @@ app.whenReady().then(() => {
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
+});
+
+app.on("before-quit", () => {
+  closeDb();
 });
 
 app.on("web-contents-created", (_event, contents) => {
