@@ -9,12 +9,21 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
+    },
+    "./model": {
+      "types": "./src/model/index.ts",
+      "default": "./src/model/index.ts"
     }
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "3.23.8"
   },
   "devDependencies": {
-    "typescript": "5.6.3"
+    "typescript": "5.6.3",
+    "vitest": "2.1.4"
   }
 }
