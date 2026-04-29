@@ -1,4 +1,4 @@
-import log from "electron-log/main";
+import log from "electron-log/main.js";
 import type { LogLevel } from "@calmly/shared";
 import type { DesktopTransport } from "./index";
 
