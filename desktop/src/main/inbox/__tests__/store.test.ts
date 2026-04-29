@@ -1,10 +1,16 @@
 import type Database from "better-sqlite3";
 import { describe, expect, it } from "vitest";
-import { addInboxItem, MAX_RAW_TEXT_CHARS } from "../store";
+import {
+  addInboxItem,
+  listInbox,
+  MAX_RAW_TEXT_CHARS,
+  skipInboxItem,
+  snoozeInboxItem,
+} from "../store";
 
 // We can't load the real better-sqlite3 native binding from system Node
 // (it's compiled for Electron's ABI, not the host's), so this fake mirrors
-// just the surface addInboxItem touches: prepare(...).run() and
+// just the surface the store touches: prepare(...).run|all|get() and
 // transaction(fn)(). Captures every prepared SQL + its bound args so the
 // assertions can be specific.
 
@@ -13,15 +19,23 @@ interface PreparedCall {
   args: unknown[];
 }
 
+interface FakeRow {
+  [key: string]: unknown;
+}
+
 interface FakeDb {
   db: Database.Database;
   prepared: PreparedCall[];
   failNextRun: (err?: Error) => void;
+  pushAllResult: (rows: FakeRow[]) => void;
+  pushGetResult: (row: FakeRow | undefined) => void;
 }
 
 function makeFakeDb(): FakeDb {
   const prepared: PreparedCall[] = [];
   let nextRunFails: Error | null = null;
+  const allResults: FakeRow[][] = [];
+  const getResults: (FakeRow | undefined)[] = [];
   const db = {
     prepare(sql: string) {
       return {
@@ -33,6 +47,14 @@ function makeFakeDb(): FakeDb {
           }
           prepared.push({ sql: normalize(sql), args });
           return { changes: 1, lastInsertRowid: 0 };
+        },
+        all(...args: unknown[]): FakeRow[] {
+          prepared.push({ sql: normalize(sql), args });
+          return allResults.shift() ?? [];
+        },
+        get(...args: unknown[]): FakeRow | undefined {
+          prepared.push({ sql: normalize(sql), args });
+          return getResults.shift();
         },
       };
     },
@@ -51,6 +73,12 @@ function makeFakeDb(): FakeDb {
     prepared,
     failNextRun: (err = new Error("simulated FK failure")) => {
       nextRunFails = err;
+    },
+    pushAllResult: (rows) => {
+      allResults.push(rows);
+    },
+    pushGetResult: (row) => {
+      getResults.push(row);
     },
   };
 }
@@ -174,5 +202,177 @@ describe("addInboxItem · persistence", () => {
       source: "desktop",
     });
     expect(result).toEqual({ ok: false, error: "InternalError" });
+  });
+
+  it("includes snoozed_until:null in the synced upsert payload", () => {
+    const fake = makeFakeDb();
+    const result = addInboxItem({
+      db: fake.db,
+      userId: TEST_USER,
+      rawText: "buy milk",
+      source: "desktop",
+    });
+    expect(result.ok).toBe(true);
+    const opCall = fake.prepared.find((p) =>
+      p.sql.includes("insert into op_queue"),
+    );
+    const payload = JSON.parse(opCall!.args[3] as string) as Record<
+      string,
+      unknown
+    >;
+    expect(payload.snoozed_until).toBeNull();
+  });
+});
+
+describe("listInbox", () => {
+  it("filters by user, deleted_at, resolved_at, and snooze visibility", () => {
+    const fake = makeFakeDb();
+    fake.pushAllResult([]);
+    listInbox(fake.db, TEST_USER, 1_730_000_000_000);
+
+    const sql = fake.prepared[0]!.sql;
+    expect(sql).toContain("from inbox_items");
+    expect(sql).toContain("user_id = ?");
+    expect(sql).toContain("deleted_at is null");
+    expect(sql).toContain("resolved_at is null");
+    expect(sql).toContain("snoozed_until is null or snoozed_until <= ?");
+    expect(sql).toContain("order by created_at desc");
+    expect(fake.prepared[0]!.args).toEqual([TEST_USER, 1_730_000_000_000]);
+  });
+
+  it("returns rows verbatim", () => {
+    const fake = makeFakeDb();
+    fake.pushAllResult([
+      {
+        id: "i1",
+        raw_text: "buy milk",
+        source: "desktop",
+        created_at: 1,
+        resolved_at: null,
+        snoozed_until: null,
+      },
+    ]);
+    const out = listInbox(fake.db, TEST_USER, 0);
+    expect(out).toHaveLength(1);
+    expect(out[0]!.raw_text).toBe("buy milk");
+  });
+});
+
+describe("snoozeInboxItem", () => {
+  const ITEM = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+
+  it("rejects past untilMs as InvalidUntil", () => {
+    const fake = makeFakeDb();
+    const r = snoozeInboxItem(
+      fake.db,
+      TEST_USER,
+      ITEM,
+      1_000,
+      2_000,
+    );
+    expect(r).toEqual({ ok: false, error: "InvalidUntil" });
+    expect(fake.prepared).toHaveLength(0);
+  });
+
+  it("returns NotFound when the item doesn't exist for this user", () => {
+    const fake = makeFakeDb();
+    fake.pushGetResult(undefined);
+    const r = snoozeInboxItem(
+      fake.db,
+      TEST_USER,
+      ITEM,
+      2_000,
+      1_000,
+    );
+    expect(r).toEqual({ ok: false, error: "NotFound" });
+  });
+
+  it("issues UPDATE + full-snapshot upsert with bumped version", () => {
+    const fake = makeFakeDb();
+    fake.pushGetResult({
+      raw_text: "feed cat",
+      source: "desktop",
+      created_at: 100,
+      resolved_at: null,
+      version: 3,
+    });
+    const r = snoozeInboxItem(
+      fake.db,
+      TEST_USER,
+      ITEM,
+      9_000,
+      1_000,
+    );
+    expect(r).toEqual({ ok: true });
+
+    const update = fake.prepared.find((p) =>
+      p.sql.startsWith("update inbox_items"),
+    );
+    expect(update?.args).toEqual([9_000, 4, ITEM, TEST_USER]);
+
+    const opCall = fake.prepared.find((p) =>
+      p.sql.includes("insert into op_queue"),
+    );
+    const payload = JSON.parse(opCall!.args[3] as string) as Record<
+      string,
+      unknown
+    >;
+    expect(payload).toMatchObject({
+      id: ITEM,
+      raw_text: "feed cat",
+      source: "desktop",
+      created_at: 100,
+      resolved_at: null,
+      snoozed_until: 9_000,
+      updated_at: 1_000,
+      deleted_at: null,
+      version: 4,
+    });
+  });
+});
+
+describe("skipInboxItem", () => {
+  const ITEM = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
+
+  it("returns NotFound when the row is missing or already resolved", () => {
+    const fake = makeFakeDb();
+    fake.pushGetResult(undefined);
+    const r = skipInboxItem(fake.db, TEST_USER, ITEM, 5_000);
+    expect(r).toEqual({ ok: false, error: "NotFound" });
+  });
+
+  it("sets resolved_at = now and enqueues a full-snapshot upsert", () => {
+    const fake = makeFakeDb();
+    fake.pushGetResult({
+      raw_text: "garbage thought",
+      source: "telegram-text",
+      created_at: 50,
+      snoozed_until: 200,
+      version: 1,
+    });
+    const r = skipInboxItem(fake.db, TEST_USER, ITEM, 5_000);
+    expect(r).toEqual({ ok: true });
+
+    const update = fake.prepared.find((p) =>
+      p.sql.startsWith("update inbox_items"),
+    );
+    expect(update?.args).toEqual([5_000, 2, ITEM, TEST_USER]);
+
+    const opCall = fake.prepared.find((p) =>
+      p.sql.includes("insert into op_queue"),
+    );
+    const payload = JSON.parse(opCall!.args[3] as string) as Record<
+      string,
+      unknown
+    >;
+    expect(payload).toMatchObject({
+      id: ITEM,
+      raw_text: "garbage thought",
+      source: "telegram-text",
+      created_at: 50,
+      resolved_at: 5_000,
+      snoozed_until: 200,
+      version: 2,
+    });
   });
 });

@@ -64,6 +64,7 @@ describe("InboxItemSchema", () => {
         source: "telegram-voice",
         created_at: now,
         resolved_at: null,
+        snoozed_until: null,
       }).source,
     ).toBe("telegram-voice");
   });
@@ -77,8 +78,23 @@ describe("InboxItemSchema", () => {
         source: "fax",
         created_at: now,
         resolved_at: null,
+        snoozed_until: null,
       }),
     ).toThrow();
+  });
+
+  it("accepts a future snoozed_until", () => {
+    expect(
+      InboxItemSchema.parse({
+        id: otherId,
+        user_id: userId,
+        raw_text: "buy gift",
+        source: "desktop",
+        created_at: now,
+        resolved_at: null,
+        snoozed_until: now + 3_600_000,
+      }).snoozed_until,
+    ).toBe(now + 3_600_000);
   });
 });
 

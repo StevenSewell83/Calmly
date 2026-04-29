@@ -105,10 +105,50 @@ export type UnresolvedInboxCountResult =
   | { ok: true; count: number }
   | { ok: false; error: "NotSignedIn" };
 
+// Source enum kept inline to avoid pulling @calmly/shared into the
+// renderer's type graph just for this one literal union.
+export type InboxItemSource =
+  | "desktop"
+  | "telegram-text"
+  | "telegram-voice"
+  | "ai-split";
+
+export interface InboxItem {
+  id: string;
+  raw_text: string;
+  source: InboxItemSource;
+  created_at: number;
+  resolved_at: number | null;
+  snoozed_until: number | null;
+}
+
+export type InboxListResult =
+  | { ok: true; items: InboxItem[] }
+  | { ok: false; error: "NotSignedIn" };
+
+export type InboxSnoozeResult =
+  | { ok: true }
+  | {
+      ok: false;
+      error: "NotSignedIn" | "NotFound" | "InternalError" | "InvalidUntil";
+    };
+
+export type InboxSkipResult =
+  | { ok: true }
+  | { ok: false; error: "NotSignedIn" | "NotFound" | "InternalError" };
+
 export interface InboxBridge {
   // Persists raw text to the local inbox and queues the upsert for sync.
   // Source is hardcoded to 'desktop' main-side; the renderer cannot spoof it.
   add(rawText: string): Promise<InboxAddResult>;
+  // All currently-visible inbox items (unresolved AND not actively
+  // snoozed). Ordered newest-first; sort modes happen in the renderer.
+  list(): Promise<InboxListResult>;
+  // Mark an item as snoozed until a future timestamp. NotFound when the
+  // item doesn't belong to the signed-in user (or is already deleted).
+  snooze(id: string, untilMs: number): Promise<InboxSnoozeResult>;
+  // Mark an item as resolved with no triage outcome (discarded).
+  skip(id: string): Promise<InboxSkipResult>;
   // Number of inbox_items still awaiting triage. Drives Home's conditional
   // InboxTriageCard (hide at 0, show count + CTA otherwise).
   unresolvedCount(): Promise<UnresolvedInboxCountResult>;

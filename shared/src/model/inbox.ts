@@ -8,5 +8,9 @@ export const InboxItemSchema = z.object({
   source: InboxSourceSchema,
   created_at: unixMs,
   resolved_at: unixMs.nullable(),
+  // CL-03: when set in the future, the item is hidden from the inbox
+  // list / unresolved count until the timestamp passes. Independent of
+  // resolved_at — a snoozed item is still unresolved.
+  snoozed_until: unixMs.nullable(),
 });
 export type InboxItem = z.infer<typeof InboxItemSchema>;

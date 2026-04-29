@@ -168,19 +168,21 @@ describe("countUnresolvedInbox", () => {
   it("returns 0 when the count row is missing", () => {
     const fake = makeFakeDb();
     fake.pushGetResult(undefined);
-    expect(countUnresolvedInbox(fake.db, USER)).toBe(0);
+    expect(countUnresolvedInbox(fake.db, USER, 0)).toBe(0);
   });
 
-  it("returns the count and filters by user, deleted_at, resolved_at", () => {
+  it("returns the count and filters by user, deleted_at, resolved_at, snooze visibility", () => {
     const fake = makeFakeDb();
     fake.pushGetResult({ c: 7 });
-    expect(countUnresolvedInbox(fake.db, USER)).toBe(7);
+    const now = 1_730_000_000_000;
+    expect(countUnresolvedInbox(fake.db, USER, now)).toBe(7);
 
     const sql = fake.prepared[0]!.sql;
     expect(sql).toContain("from inbox_items");
     expect(sql).toContain("user_id = ?");
     expect(sql).toContain("deleted_at is null");
     expect(sql).toContain("resolved_at is null");
-    expect(fake.prepared[0]!.args[0]).toBe(USER);
+    expect(sql).toContain("snoozed_until is null or snoozed_until <= ?");
+    expect(fake.prepared[0]!.args).toEqual([USER, now]);
   });
 });

@@ -13,7 +13,14 @@ export interface TableSpec {
 export const TABLES: Record<SyncTable, TableSpec> = {
   inbox_items: {
     name: "inbox_items",
-    columns: ["id", "raw_text", "source", "created_at", "resolved_at"],
+    columns: [
+      "id",
+      "raw_text",
+      "source",
+      "created_at",
+      "resolved_at",
+      "snoozed_until",
+    ],
   },
   tasks: {
     name: "tasks",

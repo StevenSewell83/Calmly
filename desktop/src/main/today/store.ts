@@ -97,11 +97,14 @@ export function listTodayEvents(
   return rows;
 }
 
-// Count of inbox items still awaiting triage. Drives the conditional
-// InboxTriageCard on Home (hide when zero, show count + CTA otherwise).
+// Count of inbox items still awaiting triage AND currently visible
+// (not actively snoozed). Drives the conditional InboxTriageCard on
+// Home — keeping the same predicate as listInbox so the badge count
+// matches the row count the user sees on /inbox.
 export function countUnresolvedInbox(
   db: Database.Database,
   userId: string,
+  now: number,
 ): number {
   const r = db
     .prepare(
@@ -109,8 +112,9 @@ export function countUnresolvedInbox(
          FROM inbox_items
         WHERE user_id = ?
           AND deleted_at IS NULL
-          AND resolved_at IS NULL`,
+          AND resolved_at IS NULL
+          AND (snoozed_until IS NULL OR snoozed_until <= ?)`,
     )
-    .get(userId) as { c: number } | undefined;
+    .get(userId, now) as { c: number } | undefined;
   return r?.c ?? 0;
 }

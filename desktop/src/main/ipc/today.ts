@@ -57,7 +57,7 @@ export function registerTodayIpc(): void {
     if (!user) return { ok: false, error: "NotSignedIn" };
     return {
       ok: true,
-      count: countUnresolvedInbox(getDb(), user.id),
+      count: countUnresolvedInbox(getDb(), user.id, Date.now()),
     };
   });
 }

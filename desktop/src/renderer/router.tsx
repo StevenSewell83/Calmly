@@ -1,7 +1,8 @@
 import { createHashRouter, Navigate, type RouteObject } from "react-router-dom";
 import { AppShell } from "./layout/AppShell";
 import { Home } from "./pages/Home/Home";
-import { Inbox } from "./pages/Inbox";
+import { Inbox } from "./pages/Inbox/InboxList";
+import { Triage } from "./pages/Inbox/Triage";
 import { Plan } from "./pages/Plan";
 import { Focus } from "./pages/Focus";
 import { Review } from "./pages/Review";
@@ -22,6 +23,7 @@ const routes: RouteObject[] = [
     children: [
       { index: true, element: <Home /> },
       { path: "inbox", element: <Inbox /> },
+      { path: "inbox/triage", element: <Triage /> },
       { path: "plan", element: <Plan /> },
       { path: "focus", element: <Focus /> },
       { path: "review", element: <Review /> },
