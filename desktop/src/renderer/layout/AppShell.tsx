@@ -8,6 +8,7 @@ import {
   Settings as SettingsIcon,
   Sparkles,
 } from "lucide-react";
+import { CaptureBar } from "../components/CaptureBar";
 import { MountainClimberIcon } from "../components/MountainClimberIcon";
 import { SearchOverlay } from "../components/SearchOverlay";
 import { useShortcuts } from "../hooks/useShortcuts";
@@ -130,7 +131,10 @@ export function AppShell() {
       </aside>
 
       <main className="flex-1 min-w-0 flex flex-col">
-        <Outlet />
+        <CaptureBar />
+        <div className="flex-1 min-h-0 overflow-y-auto flex flex-col">
+          <Outlet />
+        </div>
       </main>
 
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />

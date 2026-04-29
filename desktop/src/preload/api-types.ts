@@ -94,6 +94,22 @@ export interface LogBridge {
   event(name: string, props?: Record<string, unknown>): void;
 }
 
+// Mirrors the AddInboxItemResult union from main/inbox/store plus the
+// NotSignedIn case the IPC layer adds. The renderer narrows on `ok` first,
+// then on `error` for messaging.
+export type InboxAddResult =
+  | { ok: true; id: string; truncated: boolean }
+  | { ok: false; error: "EmptyInput" | "NotSignedIn" | "InternalError" };
+
+export interface InboxBridge {
+  // Persists raw text to the local inbox and queues the upsert for sync.
+  // Source is hardcoded to 'desktop' main-side; the renderer cannot spoof it.
+  add(rawText: string): Promise<InboxAddResult>;
+  // Subscribe to global-hotkey focus pings from main. Returns an unsubscribe
+  // so React effects can clean up across strict-mode double-mounts.
+  onFocusRequest(handler: () => void): () => void;
+}
+
 export interface CalmlyApi {
   version: string;
   platform: string;
@@ -101,5 +117,6 @@ export interface CalmlyApi {
   secrets: SecretsBridge;
   sync: SyncBridge;
   auth: AuthBridge;
+  inbox: InboxBridge;
   log: LogBridge;
 }

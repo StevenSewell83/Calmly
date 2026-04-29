@@ -1,6 +1,7 @@
 import { contextBridge } from "electron";
 import { authBridge } from "./auth";
 import { dbBridge } from "./db";
+import { inboxBridge } from "./inbox";
 import { logBridge } from "./log";
 import { secretsBridge } from "./secrets";
 import { syncBridge } from "./sync";
@@ -13,6 +14,7 @@ const calmlyApi: CalmlyApi = {
   secrets: secretsBridge,
   sync: syncBridge,
   auth: authBridge,
+  inbox: inboxBridge,
   log: logBridge,
 };
 

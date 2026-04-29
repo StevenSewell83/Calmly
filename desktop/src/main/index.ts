@@ -13,9 +13,11 @@ import {
   type AuthOrchestrator,
   type RedeemResult,
 } from "./auth/session";
+import { setCurrentUser } from "./auth/currentUser";
 import { createApiClient } from "./net/client";
 import { registerAuthIpc } from "./ipc/auth";
 import { registerDbIpc } from "./ipc/db";
+import { registerInboxIpc } from "./ipc/inbox";
 import { registerLogIpc } from "./ipc/log";
 import { registerSecretsIpc } from "./ipc/secrets";
 import { registerSyncIpc } from "./ipc/sync";
@@ -25,6 +27,7 @@ import {
   electronLogTransport,
 } from "./logging/electron-log-transport";
 import { secretStoreSelfTest } from "./security/secretStore";
+import { registerCaptureHotkey, unregisterAllShortcuts } from "./shortcuts";
 import { createSyncClient } from "./sync/client";
 import { createSyncLoop, type SyncLoop } from "./sync/loop";
 
@@ -135,6 +138,8 @@ if (!gotInstanceLock) {
     if (!orchestrator) return;
     const parsed = parseDeepLink(url);
     if (!parsed) return;
+    // orchestrator is the wrapped instance — its redeem already updates
+    // the currentUser cache, so we just push the result to the renderer.
     void orchestrator.redeem(parsed.token).then((result: RedeemResult) => {
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send(DEEPLINK_RESULT_CHANNEL, result);
@@ -173,11 +178,35 @@ if (!gotInstanceLock) {
           init,
         )) as typeof fetch,
     });
-    orchestrator = createAuthOrchestrator({
+    const baseOrchestrator = createAuthOrchestrator({
       client: apiClient,
       log: (msg, fields) => console.log(`[calmly:auth] ${msg}`, fields ?? {}),
     });
+    // Wrap the orchestrator so every auth state change keeps the local
+    // currentUser cache + users-table mirror in sync. The IPC handler reads
+    // through this wrapper; the deep-link redeem path (above) talks to the
+    // wrapper too so the cache is always populated before any inbox/task
+    // write IPC could fire.
+    orchestrator = {
+      requestLink: (email) => baseOrchestrator.requestLink(email),
+      redeem: async (token) => {
+        const r = await baseOrchestrator.redeem(token);
+        if (r.ok) setCurrentUser(getDb(), r.user);
+        return r;
+      },
+      status: async () => {
+        const r = await baseOrchestrator.status();
+        setCurrentUser(getDb(), r.signedIn ? r.user : null);
+        return r;
+      },
+      signOut: async () => {
+        const r = await baseOrchestrator.signOut();
+        setCurrentUser(getDb(), null);
+        return r;
+      },
+    };
     registerAuthIpc(orchestrator);
+    registerInboxIpc();
 
     const syncLoop: SyncLoop = createSyncLoop({
       getDb,
@@ -220,6 +249,19 @@ if (!gotInstanceLock) {
       tryFlushDeepLinks();
     });
 
+    // Register the quick-capture global hotkey. Failure (another app owns
+    // the combo) is logged but non-fatal — the in-app capture bar still
+    // works. Skip registration in test mode so parallel Electron instances
+    // in the e2e suite don't fight over the OS-level handler.
+    if (process.env["NODE_ENV"] !== "test") {
+      const hotkey = registerCaptureHotkey(() => mainWindow);
+      if (!hotkey.registered) {
+        logger.warn("capture hotkey registration failed", {
+          accelerator: "CmdOrCtrl+Shift+I",
+        });
+      }
+    }
+
     app.on("activate", () => {
       if (BrowserWindow.getAllWindows().length === 0) {
         mainWindow = createMainWindow();
@@ -241,6 +283,7 @@ app.on("window-all-closed", () => {
 });
 
 app.on("before-quit", () => {
+  unregisterAllShortcuts();
   closeDb();
 });
 
