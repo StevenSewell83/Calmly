@@ -6,6 +6,7 @@ import type { Config } from "./config";
 import { ConsoleEmailAdapter, type EmailAdapter } from "./email/adapter";
 import { healthRoute } from "./routes/health";
 import { versionRoute } from "./routes/version";
+import { syncRoutes } from "./sync/routes";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -60,6 +61,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(versionRoute);
   const email = deps.email ?? new ConsoleEmailAdapter(app.log);
   await app.register(authRoutesPlugin({ email }));
+  await app.register(syncRoutes);
 
   return app;
 }
