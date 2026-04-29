@@ -13,6 +13,11 @@ out/
 release/
 app/dist/
 
+# Playwright
+playwright-report/
+e2e-results/
+test-results/
+
 # Env / secrets
 .env
 .env.*

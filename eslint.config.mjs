@@ -20,6 +20,9 @@ export default tseslint.config(
       "**/out/**",
       "**/.pnpm/**",
       "**/coverage/**",
+      "**/playwright-report/**",
+      "**/e2e-results/**",
+      "**/test-results/**",
       "GUI_draft.ts",
       ".bd/**",
       ".beads/**",
@@ -83,6 +86,8 @@ export default tseslint.config(
     files: [
       "desktop/src/main/**/*.{ts,tsx}",
       "desktop/src/preload/**/*.{ts,tsx}",
+      "desktop/e2e/**/*.{ts,tsx}",
+      "desktop/playwright.config.ts",
       "server/**/*.{ts,tsx}",
       "shared/**/*.{ts,tsx}",
       "*.{js,ts}",
@@ -97,7 +102,12 @@ export default tseslint.config(
 
   // Tests — looser rules so we can use vi.fn() casts freely.
   {
-    files: ["**/__tests__/**/*.{ts,tsx}", "**/*.test.{ts,tsx}"],
+    files: [
+      "**/__tests__/**/*.{ts,tsx}",
+      "**/*.test.{ts,tsx}",
+      "**/*.spec.{ts,tsx}",
+      "desktop/e2e/**/*.{ts,tsx}",
+    ],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-non-null-assertion": "off",

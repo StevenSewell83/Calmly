@@ -1,3 +1,6 @@
+// electron-log v5 does not declare an "exports" field, so Node's ESM resolver
+// requires the explicit ".js" extension on the subpath import. Without it, the
+// packaged main bundle fails to load with ERR_MODULE_NOT_FOUND at boot.
 import log from "electron-log/main.js";
 import type { LogLevel } from "@calmly/shared";
 import type { DesktopTransport } from "./index";

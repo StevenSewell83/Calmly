@@ -17,7 +17,17 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin({ exclude: ["@calmly/shared"] })],
     build: {
       outDir: "out/preload",
-      lib: { entry: resolve(__dirname, "src/preload/index.ts") },
+      // sandbox: true preloads must be CommonJS — Electron's sandboxed preload
+      // runtime cannot parse ESM `import` syntax. Force a .cjs output and
+      // reference it explicitly from the main process.
+      lib: {
+        entry: resolve(__dirname, "src/preload/index.ts"),
+        formats: ["cjs"],
+        fileName: () => "index.cjs",
+      },
+      rollupOptions: {
+        output: { entryFileNames: "index.cjs" },
+      },
     },
   },
   renderer: {

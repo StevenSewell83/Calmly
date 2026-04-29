@@ -11,6 +11,8 @@
     "rebuild-native": "electron-rebuild -f -w better-sqlite3",
     "postinstall": "electron-rebuild -f -w better-sqlite3 || echo \"electron-rebuild skipped (run pnpm --filter @calmly/desktop rebuild-native after deps install)\"",
     "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:build": "electron-vite build && playwright test",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json"
   },
   "dependencies": {
@@ -25,6 +27,7 @@
   },
   "devDependencies": {
     "@electron/rebuild": "3.7.1",
+    "@playwright/test": "1.48.2",
     "@types/better-sqlite3": "7.6.11",
     "@types/node": "20.16.10",
     "@types/react": "18.3.12",
