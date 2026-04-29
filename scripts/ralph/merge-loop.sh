@@ -35,6 +35,17 @@ publish_branch() {
 
   git -C "$wt_path" fetch origin main --quiet || { log "[$branch] fetch failed"; return 0; }
 
+  # Untracked files inherited from setup.sh (notably .ralph/fix_plan.md, which
+  # was added to main *after* the worktrees branched off) block rebase's
+  # checkout step. Remove them — main's tracked versions will land via rebase,
+  # and ralph regenerates any state it needs.
+  for f in .ralph/fix_plan.md; do
+    if [ -f "$wt_path/$f" ] && ! git -C "$wt_path" ls-files --error-unmatch "$f" >/dev/null 2>&1; then
+      rm -f "$wt_path/$f"
+      log "[$branch] removed untracked $f (will be re-added by rebase)"
+    fi
+  done
+
   if git -C "$wt_path" rebase --autostash origin/main; then
     log "[$branch] rebased onto origin/main"
   else
