@@ -1,6 +1,9 @@
+import fastifyCookie from "@fastify/cookie";
 import Fastify, { type FastifyInstance } from "fastify";
 import type pg from "pg";
+import { authRoutesPlugin } from "./auth/routes";
 import type { Config } from "./config";
+import { ConsoleEmailAdapter, type EmailAdapter } from "./email/adapter";
 import { healthRoute } from "./routes/health";
 import { versionRoute } from "./routes/version";
 
@@ -14,6 +17,7 @@ declare module "fastify" {
 export interface AppDeps {
   config: Config;
   pool: pg.Pool;
+  email?: EmailAdapter;
 }
 
 export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
@@ -51,8 +55,11 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   app.decorate("pool", deps.pool);
   app.decorate("appConfig", deps.config);
 
+  await app.register(fastifyCookie, { secret: deps.config.COOKIE_SECRET });
   await app.register(healthRoute);
   await app.register(versionRoute);
+  const email = deps.email ?? new ConsoleEmailAdapter(app.log);
+  await app.register(authRoutesPlugin({ email }));
 
   return app;
 }

@@ -16,6 +16,14 @@ const ConfigSchema = z.object({
   LOG_LEVEL: z
     .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
     .default("info"),
+  APP_URL: z.string().url().default("http://localhost:3001"),
+  COOKIE_NAME: z.string().min(1).default("calmly_session"),
+  // Used by @fastify/cookie for signed cookies. Not currently signing the
+  // session cookie itself (we sha256 the value at lookup), but the secret is
+  // required for future signed flows (CSRF tokens, magic-link state).
+  COOKIE_SECRET: z.string().min(32).default("dev-cookie-secret-change-in-prod-32+"),
+  MAGIC_LINK_TTL_MIN: z.coerce.number().int().positive().default(15),
+  SESSION_TTL_DAYS: z.coerce.number().int().positive().default(30),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;

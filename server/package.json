@@ -8,10 +8,12 @@
     "start": "node --import=tsx/esm src/index.ts",
     "migrate": "node-pg-migrate -m migrations -j cjs",
     "migrate:create": "node-pg-migrate create -m migrations -j cjs",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@calmly/shared": "workspace:*",
+    "@fastify/cookie": "11.0.1",
     "dotenv": "16.4.5",
     "fastify": "5.1.0",
     "pg": "8.13.1",
@@ -23,6 +25,7 @@
     "@types/pg": "8.11.10",
     "node-pg-migrate": "7.7.1",
     "tsx": "4.19.2",
-    "typescript": "5.6.3"
+    "typescript": "5.6.3",
+    "vitest": "2.1.4"
   }
 }
