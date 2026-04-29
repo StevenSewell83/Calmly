@@ -52,18 +52,11 @@ claude --help | grep -A1 -- --model
 
 If `--model` isn't a flag in your `claude` CLI, update `scripts/ralph/start-opus.sh` and `start-sonnet.sh` to use whatever your version exposes (e.g., `ANTHROPIC_MODEL=...`).
 
-### 3. Install tmux (for `start-all.sh`)
+### 3. Choose a runner: backgrounded or tmux
 
-On Windows / Git Bash:
+**Recommended on Windows / Git Bash: `start-bg.sh`** — uses `nohup`, writes pid files under `.ralph/pids/`, logs to `.ralph/logs/{opus,sonnet,merge}.log`. No extra dependencies.
 
-```bash
-# Inside Git Bash, via the included pacman if present:
-pacman -S tmux
-
-# Or use WSL and run everything from there.
-```
-
-If you'd rather not use tmux, run the three scripts in three separate terminals: `start-opus.sh`, `start-sonnet.sh`, `merge-loop.sh`.
+**Alternative: `start-all.sh`** — opens a tmux session with three panes. Requires tmux, which Git Bash doesn't ship by default. Install via WSL or msys2 pacman if you want this path.
 
 ### 4. Make sure your repo has a remote `main` branch
 
@@ -96,18 +89,28 @@ export ANTHROPIC_API_KEY="sk-ant-..."
 
 ### 7. Launch
 
+**Backgrounded (recommended):**
+
 ```bash
-scripts/ralph/start-all.sh        # tmux session 'calmly-ralph' with 3 panes
-tmux attach -t calmly-ralph       # watch live
+scripts/ralph/start-bg.sh         # spawns opus + sonnet + merge detached
+tail -f .ralph/logs/opus.log      # watch opus
+tail -f .ralph/logs/sonnet.log    # watch sonnet
+tail -f .ralph/logs/merge.log     # watch merge loop
 ```
 
-Detach with `Ctrl+B then D`. The session keeps running.
+**Tmux (if you have it):**
+
+```bash
+scripts/ralph/start-all.sh        # tmux session 'calmly-ralph' with 3 panes
+tmux attach -t calmly-ralph       # detach with Ctrl+B then D
+```
 
 ## Operating it
 
 ```bash
-scripts/ralph/status.sh           # snapshot: tmux panes, per-worker status.json, recent commits, bd ready
-scripts/ralph/stop-all.sh         # kill the tmux session (workers stop cleanly via ralph's signal handling)
+scripts/ralph/status.sh           # snapshot: pid file state, per-worker status.json, recent commits, bd ready
+scripts/ralph/stop-bg.sh          # stop backgrounded workers (SIGTERM, then SIGKILL after 3s)
+scripts/ralph/stop-all.sh         # stop tmux session
 tail -f ../Calmly-ralph-opus/.ralph/logs/ralph.log
 tail -f ../Calmly-ralph-sonnet/.ralph/logs/ralph.log
 tail -f .ralph/merge-loop.log

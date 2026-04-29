@@ -45,3 +45,4 @@ Thumbs.db
 .ralph/status.json
 .ralph/merge-loop.log
 .ralph/docs/generated/
+.ralph/pids/
