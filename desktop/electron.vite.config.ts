@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()],
+    plugins: [externalizeDepsPlugin({ exclude: ["@calmly/shared"] })],
     build: {
       outDir: "out/main",
       lib: { entry: resolve(__dirname, "src/main/index.ts") },
@@ -14,7 +14,7 @@ export default defineConfig({
     },
   },
   preload: {
-    plugins: [externalizeDepsPlugin()],
+    plugins: [externalizeDepsPlugin({ exclude: ["@calmly/shared"] })],
     build: {
       outDir: "out/preload",
       lib: { entry: resolve(__dirname, "src/preload/index.ts") },

@@ -2,10 +2,13 @@ import { app, BrowserWindow, shell } from "electron";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import windowStateKeeper from "electron-window-state";
-import { closeDb, initDb } from "./db";
+import { closeDb, getDb, initDb } from "./db";
 import { registerDbIpc } from "./ipc/db";
 import { registerSecretsIpc } from "./ipc/secrets";
+import { registerSyncIpc } from "./ipc/sync";
 import { secretStoreSelfTest } from "./security/secretStore";
+import { createSyncClient } from "./sync/client";
+import { createSyncLoop, type SyncLoop } from "./sync/loop";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -61,6 +64,29 @@ app.whenReady().then(() => {
   );
   registerDbIpc();
   registerSecretsIpc();
+
+  const syncBaseUrl = process.env["CALMLY_SYNC_URL"] ?? "http://localhost:3001";
+  const syncLoop: SyncLoop = createSyncLoop({
+    getDb,
+    client: createSyncClient({
+      baseUrl: syncBaseUrl,
+      getCookieHeader: async () => {
+        try {
+          const { session } = await import("electron");
+          const cookies = await session.defaultSession.cookies.get({
+            url: syncBaseUrl,
+          });
+          if (cookies.length === 0) return null;
+          return cookies.map((c) => `${c.name}=${c.value}`).join("; ");
+        } catch {
+          return null;
+        }
+      },
+    }),
+    log: (msg, fields) => console.log(`[calmly:sync] ${msg}`, fields ?? {}),
+  });
+  registerSyncIpc(syncLoop);
+  syncLoop.start();
 
   if (isDev) {
     const r = secretStoreSelfTest();

@@ -31,9 +31,30 @@ export interface SecretsBridge {
   // main process and only return derived results to the renderer.
 }
 
+export interface SyncStatus {
+  queueSize: number;
+  lastPulledVersion: number;
+  lastPushedAt: number | null;
+}
+
+export interface SyncResult {
+  ok: boolean;
+  pushed: number;
+  pulled: number;
+  pendingAfter: number;
+  lastPulledVersion: number;
+  error?: string;
+}
+
+export interface SyncBridge {
+  status(): Promise<SyncStatus>;
+  syncNow(): Promise<SyncResult>;
+}
+
 export interface CalmlyApi {
   version: string;
   platform: string;
   db: DbBridge;
   secrets: SecretsBridge;
+  sync: SyncBridge;
 }

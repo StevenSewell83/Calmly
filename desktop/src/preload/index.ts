@@ -1,6 +1,7 @@
 import { contextBridge } from "electron";
 import { dbBridge } from "./db";
 import { secretsBridge } from "./secrets";
+import { syncBridge } from "./sync";
 import type { CalmlyApi } from "./api-types";
 
 const calmlyApi: CalmlyApi = {
@@ -8,6 +9,7 @@ const calmlyApi: CalmlyApi = {
   platform: process.platform,
   db: dbBridge,
   secrets: secretsBridge,
+  sync: syncBridge,
 };
 
 if (process.contextIsolated) {

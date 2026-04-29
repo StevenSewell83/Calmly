@@ -75,6 +75,9 @@ importers:
       vite:
         specifier: 5.4.10
         version: 5.4.10(@types/node@20.16.10)
+      vitest:
+        specifier: 2.1.4
+        version: 2.1.4(@types/node@20.16.10)
 
   server:
     dependencies:
