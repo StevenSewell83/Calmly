@@ -5,6 +5,9 @@ interface Props {
   onClose: () => void;
 }
 
+// Intentional pre-MVP stub: the ⌘K binding is live so the keyboard surface is
+// wired, but the search body is a placeholder until Epic 6 ships. Accepted per
+// audit-2026-04-30 review — the overlay is visually obvious as a stub.
 export function SearchOverlay({ open, onClose }: Props) {
   if (!open) return null;
   return (

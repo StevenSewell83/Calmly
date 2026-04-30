@@ -32,7 +32,7 @@ export function NextCard({ next, now }: Props) {
     );
   }
 
-  const at = next.kind === "task" ? next.task.due_at! : next.event.start_at;
+  const at = next.kind === "task" ? (next.task.due_at ?? 0) : next.event.start_at;
   const title = next.kind === "task" ? next.task.title : next.event.title;
   const Icon = next.kind === "task" ? Clock : CalendarDays;
   const kindLabel = next.kind === "task" ? "Task" : "Event";

@@ -10,6 +10,12 @@ import {
 } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import type { PlanTaskItem } from "../../../preload/api-types";
+
+type PlacedTask = PlanTaskItem & { scheduled_start: number; scheduled_end: number };
+
+function isPlaced(t: PlanTaskItem): t is PlacedTask {
+  return t.scheduled_start !== null && t.scheduled_end !== null;
+}
 import { Backlog } from "./Backlog";
 import { DayGrid } from "./DayGrid";
 import { DayPicker, FailureNotice, LoadingShell } from "./PlanShells";
@@ -59,7 +65,11 @@ function dayHeading(day: number, today: number): string {
 }
 
 export function Plan() {
-  const [day, setDay] = useState<number>(() => Date.now());
+  const [day, setDay] = useState<number>(() => {
+    const d = new Date();
+    d.setHours(12, 0, 0, 0);
+    return d.getTime();
+  });
   const [today] = useState<number>(() => {
     const d = new Date();
     d.setHours(12, 0, 0, 0);
@@ -135,19 +145,13 @@ export function Plan() {
 
   const blocks = useMemo(() => {
     if (state.kind !== "ready") return [];
-    const placed = state.plan.scheduled.filter(
-      (t) => t.scheduled_start !== null && t.scheduled_end !== null,
-    );
+    const placed = state.plan.scheduled.filter(isPlaced);
     const overlaps = detectOverlaps(
-      placed.map((t) => ({
-        id: t.id,
-        startMs: t.scheduled_start as number,
-        endMs: t.scheduled_end as number,
-      })),
+      placed.map((t) => ({ id: t.id, startMs: t.scheduled_start, endMs: t.scheduled_end })),
     );
     return placed.map((task) => {
-      const rawStart = msToGridMinutes(task.scheduled_start as number, day);
-      const rawEnd = msToGridMinutes(task.scheduled_end as number, day);
+      const rawStart = msToGridMinutes(task.scheduled_start, day);
+      const rawEnd = msToGridMinutes(task.scheduled_end, day);
       const startMinutes = Math.max(0, Math.min(GRID_HOURS * 60 - 15, rawStart));
       const endMinutes = Math.max(startMinutes + 15, Math.min(GRID_HOURS * 60, rawEnd));
       return { task, startMinutes, endMinutes, overlapped: overlaps.has(task.id) };

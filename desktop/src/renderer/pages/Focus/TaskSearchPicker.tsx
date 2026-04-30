@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Search, X } from "lucide-react";
 import type { OpenTaskItem } from "../../../preload/api-types";
+import { useEscapeKey } from "../../hooks/useEscapeKey";
 
 interface Props {
   onPick(taskId: string): void;
@@ -23,11 +24,7 @@ export function TaskSearchPicker({ onPick, onClose }: Props) {
     })();
   }, [query]);
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
+  useEscapeKey(onClose);
 
   return (
     <>

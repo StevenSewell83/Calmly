@@ -12,6 +12,7 @@ import { CaptureBar } from "../components/CaptureBar";
 import { MountainClimberIcon } from "../components/MountainClimberIcon";
 import { SearchOverlay } from "../components/SearchOverlay";
 import { useShortcuts } from "../hooks/useShortcuts";
+import { META_SYMBOL } from "../utils/platform";
 
 interface NavSpec {
   to: string;
@@ -68,7 +69,7 @@ function SidebarItem({ spec, active }: SidebarItemProps) {
             : "border-stone-200 text-stone-400 bg-white/40",
         ].join(" ")}
       >
-        ⌘{spec.hint}
+        {META_SYMBOL}{spec.hint}
       </span>
     </NavLink>
   );
@@ -124,7 +125,7 @@ export function AppShell() {
               Search
             </span>
             <span className="text-[10px] font-bold tracking-widest uppercase rounded-md px-2 py-0.5 border border-stone-200 text-stone-400 bg-white/40">
-              ⌘K
+              {META_SYMBOL}K
             </span>
           </button>
         </div>

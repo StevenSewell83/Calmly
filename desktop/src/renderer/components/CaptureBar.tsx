@@ -6,12 +6,10 @@ import {
   type FormEvent,
 } from "react";
 import { Plus } from "lucide-react";
+import { MAX_RAW_TEXT_CHARS } from "../utils/constants";
 
 // Hide the inline confirmation after this many ms.
 const CONFIRMATION_TIMEOUT_MS = 1800;
-// Mirror the main-process MAX_RAW_TEXT_CHARS so the inline counter is
-// accurate before a round-trip. Source of truth lives in main/inbox/store.ts.
-const MAX_RAW_TEXT_CHARS = 4000;
 
 type Status =
   | { kind: "idle" }

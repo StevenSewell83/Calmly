@@ -1,5 +1,5 @@
-import { useEffect } from "react";
 import { X } from "lucide-react";
+import { useEscapeKey } from "../../hooks/useEscapeKey";
 
 interface Props {
   open: boolean;
@@ -14,14 +14,7 @@ interface Props {
 // Esc closes; backdrop click closes; visible focus management is
 // kept light because this gets replaced wholesale soon.
 export function StubModal({ open, title, body, beadId, onClose }: Props) {
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  useEscapeKey(onClose, open);
 
   if (!open) return null;
   return (

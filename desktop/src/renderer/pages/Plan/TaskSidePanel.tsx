@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { X, Trash2 } from "lucide-react";
 import type { PlanTaskItem } from "../../../preload/api-types";
 import { RescheduleControls } from "./RescheduleControls";
+import { useEscapeKey } from "../../hooks/useEscapeKey";
 
 interface Props {
   task: PlanTaskItem | null;
@@ -69,13 +70,7 @@ export function TaskSidePanel({ task, day, onClose, onSaved }: Props) {
     setTimeout(() => titleRef.current?.focus(), 50);
   }, [task?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Esc closes.
-  useEffect(() => {
-    if (!task) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [task, onClose]);
+  useEscapeKey(onClose, task !== null);
 
   if (!task) return null;
 

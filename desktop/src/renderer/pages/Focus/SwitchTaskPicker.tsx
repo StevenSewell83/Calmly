@@ -1,5 +1,5 @@
-import { useEffect } from "react";
 import { X } from "lucide-react";
+import { useEscapeKey } from "../../hooks/useEscapeKey";
 import type { PlanTaskItem } from "../../../preload/api-types";
 import { formatClock } from "../../utils/time";
 
@@ -11,11 +11,7 @@ interface Props {
 }
 
 export function SwitchTaskPicker({ tasks, currentTaskId, onPick, onClose }: Props) {
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
+  useEscapeKey(onClose);
 
   const available = tasks.filter((t) => t.id !== currentTaskId);
 
