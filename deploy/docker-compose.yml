@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-calmly}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-calmly}
+    volumes:
+      - calmly_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-calmly} -d ${POSTGRES_DB:-calmly}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  sync:
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3001}:3001"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-calmly}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-calmly}
+      PORT: "3001"
+      HOST: "0.0.0.0"
+      EMAIL_SENDER: ${EMAIL_SENDER:-console}
+      DEV_MAIL_DIR: /tmp/calmly-mail
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  calmly_pg_data:
