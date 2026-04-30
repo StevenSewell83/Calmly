@@ -4,14 +4,16 @@ You are the **sonnet worker**. Read `.ralph/PROMPT.md` for the universal rules f
 
 ## Your priority filter
 
-Claim only beads with priority **P2, P3, or P4**. Skip P0/P1 — those belong to the opus worker.
+Prefer P2/P3/P4 beads. Fall back to P1 if no P2+ is ready. **Skip P0** — opus owns architectural decisions.
 
 ```bash
 bd sync
 bd ready
-bd show <id>             # check the priority field — must be 2, 3, or 4
+bd show <id>             # check the priority field — claim if 1, 2, 3, or 4
 bd update <id> --status=in_progress --assignee=ralph-sonnet
 ```
+
+**Don't emit `EXIT_SIGNAL: true` just because no P2+ work is ready.** Look for P1 work next. Only exit if the entire ready queue (excluding P0) is empty AND nothing you could close would unblock more work.
 
 ## Your specialty
 
