@@ -210,6 +210,8 @@ export default tseslint.config(
       // Renderer Today views read TaskStatus off typed payloads.
       "desktop/src/renderer/pages/Home/TodayList.tsx",
       "desktop/src/renderer/pages/Home/useTodaySummary.ts",
+      // Review page renders a status chip off TaskStatus.
+      "desktop/src/renderer/pages/Review/UnfinishedRow.tsx",
       // Triage switch narrows over the typed InboxItem["source"] union.
       "desktop/src/renderer/pages/Inbox/Triage.tsx",
       // React Router config — `path: "telegram"` is a route segment, not
