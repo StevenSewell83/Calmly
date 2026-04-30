@@ -2,18 +2,8 @@ import { test, expect } from "@playwright/test";
 import { startServerFixture, type ServerFixture } from "../fixtures/server";
 import { isDockerAvailable } from "../fixtures/docker";
 import { launchElectronApp, signInAsTestUser } from "./_helpers";
-import type { RedeemResult } from "../../src/preload/api-types";
 
-// Same DOM-shim trick as _helpers.ts — node tsconfig has no DOM lib so the
-// renderer-side `window.calmly.*` surface needs a hand-rolled declaration
-// for the evaluate callbacks below.
-declare const window: {
-  calmly: {
-    auth: {
-      redeem: (token: string) => Promise<RedeemResult>;
-    };
-  };
-};
+// window.calmly is typed globally via desktop/e2e/window-globals.d.ts.
 
 // F-14c: end-to-end magic-link auth through the real server fixture.
 //

@@ -7,16 +7,8 @@ import {
   signInAsTestUser,
   type LaunchedElectron,
 } from "./_helpers";
-import type { SyncResult } from "../../src/preload/api-types";
 
-// Hand-rolled global for evaluate callbacks — node tsconfig has no DOM lib.
-declare const window: {
-  calmly: {
-    sync: {
-      syncNow: () => Promise<SyncResult>;
-    };
-  };
-};
+// window.calmly is typed globally via desktop/e2e/window-globals.d.ts.
 
 // Shape of a fastify Cookie returned by Electron's session.cookies.get(). We
 // only need name/value; declared narrowly to keep the test clean.

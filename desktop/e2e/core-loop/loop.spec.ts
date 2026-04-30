@@ -1,10 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { isDockerAvailable, seedUser, type SeededApp } from "../fixtures/seedUser";
-import type {
-  PlanListResult,
-  PlanScheduleResult,
-  ReviewSummaryResult,
-} from "../../src/preload/api-types";
+
+// window.calmly is typed globally via desktop/e2e/window-globals.d.ts.
 
 // CL-15a happy-path: walk the deterministic core loop end-to-end with
 // no AI / Telegram / calendar / reminders involved. Each step uses a
@@ -28,22 +25,6 @@ import type {
 //     across the OS event bus. The CaptureBar input is always
 //     visible in AppShell and accepts the same IPC, so we drive it
 //     directly.
-
-declare const window: {
-  calmly: {
-    plan: {
-      listForDay: (day?: number) => Promise<PlanListResult>;
-      schedule: (args: {
-        taskId: string;
-        startAt: number;
-        endAt: number;
-      }) => Promise<PlanScheduleResult>;
-    };
-    review: {
-      summary: () => Promise<ReviewSummaryResult>;
-    };
-  };
-};
 
 const TASK_DONE = "buy birthday card";
 const TASK_LEFT = "schedule dentist";

@@ -5,17 +5,8 @@ import { join } from "node:path";
 import { startServerFixture, type ServerFixture } from "../fixtures/server";
 import { isDockerAvailable } from "../fixtures/docker";
 import { launchElectronApp, signInAsTestUser } from "./_helpers";
-import type { StatusResult } from "../../src/preload/api-types";
 
-// Hand-rolled global declaration for evaluate callbacks (see _helpers.ts for
-// the rationale — node tsconfig has no DOM lib).
-declare const window: {
-  calmly: {
-    auth: {
-      status: () => Promise<StatusResult>;
-    };
-  };
-};
+// window.calmly is typed globally via desktop/e2e/window-globals.d.ts.
 
 // F-14d: prove the encrypted session cookie survives a full Electron
 // restart. The threat being guarded: an accidental clear of the cookie jar

@@ -2,18 +2,8 @@ import { test, expect } from "@playwright/test";
 import { startServerFixture, type ServerFixture } from "../fixtures/server";
 import { isDockerAvailable } from "../fixtures/docker";
 import { launchElectronApp, signInAsTestUser } from "./_helpers";
-import type { InboxAddResult, SyncResult } from "../../src/preload/api-types";
 
-declare const window: {
-  calmly: {
-    inbox: {
-      add: (rawText: string) => Promise<InboxAddResult>;
-    };
-    sync: {
-      syncNow: () => Promise<SyncResult>;
-    };
-  };
-};
+// window.calmly is typed globally via desktop/e2e/window-globals.d.ts.
 
 // CL-02 quick-capture e2e. Signs in, types into the CaptureBar, asserts
 // the inline confirmation, then forces a sync.syncNow and asserts pushed

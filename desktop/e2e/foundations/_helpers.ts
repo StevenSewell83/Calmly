@@ -10,18 +10,8 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { pollForMagicLink } from "../fixtures/devMail";
 import type { ServerFixture } from "../fixtures/server";
-import type { StatusResult } from "../../src/preload/api-types";
 
-// Inside Playwright's evaluate callbacks we run in the browser, where the
-// global is `window`. The e2e tsconfig is the node project (no DOM lib) so
-// the calmly preload surface needs a hand-rolled cast. Keep this minimal:
-// only the auth methods these helpers actually call.
-interface RendererCalmly {
-  auth: {
-    status: () => Promise<StatusResult>;
-  };
-}
-declare const window: { calmly: RendererCalmly };
+// window.calmly is typed globally via desktop/e2e/window-globals.d.ts.
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 // e2e/foundations/_helpers.ts → desktop/

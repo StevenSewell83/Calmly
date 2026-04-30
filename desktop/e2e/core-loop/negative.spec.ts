@@ -1,13 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { isDockerAvailable, seedUser, type SeededApp } from "../fixtures/seedUser";
-import type {
-  InboxAddResult,
-  InboxListResult,
-  PlanListResult,
-  ReviewBulkResult,
-  ReviewSummaryResult,
-  TriageResolveTaskResult,
-} from "../../src/preload/api-types";
+
+// window.calmly is typed globally via desktop/e2e/window-globals.d.ts.
 
 // CL-15b · negative-path mini-specs that pin down what the loop does
 // when the user *doesn't* follow the happy path. Sibling to loop.spec.ts;
@@ -24,29 +18,6 @@ import type {
 // existing IPC that performs the same DB mutation (status='dropped'),
 // so the third test exercises it directly. A follow-up bead widens
 // to the Replan modal once the merge loop brings it across.
-
-declare const window: {
-  calmly: {
-    inbox: {
-      add: (rawText: string) => Promise<InboxAddResult>;
-      list: () => Promise<InboxListResult>;
-    };
-    triage: {
-      resolveAsTask: (args: {
-        inboxId: string;
-        title: string;
-        dueAt: number | null;
-      }) => Promise<TriageResolveTaskResult>;
-    };
-    plan: {
-      listForDay: (day?: number) => Promise<PlanListResult>;
-    };
-    review: {
-      drop: (args: { taskIds: string[] }) => Promise<ReviewBulkResult>;
-      summary: () => Promise<ReviewSummaryResult>;
-    };
-  };
-};
 
 const SKIP_TITLE = "skip-this-thought";
 const DROP_TITLE = "drop-this-task";
