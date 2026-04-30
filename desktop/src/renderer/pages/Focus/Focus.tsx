@@ -1,11 +1,19 @@
+import { useEffect, useState } from "react";
 import { Target } from "lucide-react";
 import type { PlanTaskItem } from "../../../preload/api-types";
 import { formatClock } from "../../utils/time";
 import { ActiveSession } from "./ActiveSession";
+import { AdHocStart } from "./AdHocStart";
 import { useFocusSession } from "./useFocusSession";
 
 export function Focus() {
-  const { state, startFocus, endFocus, markDone, switchTask } = useFocusSession();
+  const { state, startFocus, endFocus, markDone, switchTask, refresh } = useFocusSession();
+  const [adHocOpen, setAdHocOpen] = useState(false);
+
+  // Open ad-hoc input when hotkey fires from main process.
+  useEffect(() => {
+    return window.calmly.focus.onAdHocRequest(() => setAdHocOpen(true));
+  }, []);
 
   if (state.loading) {
     return (
@@ -33,7 +41,7 @@ export function Focus() {
       aria-label="Focus chooser"
       className="flex-1 px-12 pt-10 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-500"
     >
-      <header className="mb-10">
+      <header className="mb-8">
         <h1 className="font-serif italic text-5xl tracking-tight text-stone-800">
           Focus.
         </h1>
@@ -42,17 +50,45 @@ export function Focus() {
         </p>
       </header>
 
-      {state.todayTasks.length === 0 ? (
-        <div className="rounded-[1.8rem] border border-dashed border-stone-200 bg-white/30 px-6 py-10 text-center max-w-md">
-          <p className="text-sm text-stone-400">Nothing scheduled today — add tasks to your plan first.</p>
+      <div className="flex flex-col gap-8 max-w-lg">
+        {state.todayTasks.length > 0 && (
+          <ul aria-label="Today's tasks" className="space-y-2">
+            {state.todayTasks.map((t) => (
+              <TaskChooserRow key={t.id} task={t} onStart={() => void startFocus(t.id)} />
+            ))}
+          </ul>
+        )}
+
+        {state.todayTasks.length === 0 && !adHocOpen && (
+          <div className="rounded-[1.8rem] border border-dashed border-stone-200 bg-white/30 px-6 py-8 text-center">
+            <p className="text-sm text-stone-400 mb-3">Nothing scheduled today.</p>
+            <button
+              onClick={() => setAdHocOpen(true)}
+              className="text-xs px-4 py-2 rounded-2xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
+            >
+              Start ad-hoc focus
+            </button>
+          </div>
+        )}
+
+        {/* Ad-hoc start section */}
+        <div className="flex flex-col items-start gap-2">
+          {!adHocOpen && state.todayTasks.length > 0 && (
+            <button
+              onClick={() => setAdHocOpen(true)}
+              className="text-xs text-stone-400 hover:text-stone-600 underline underline-offset-2 transition-colors"
+            >
+              + Start something not on my plan
+            </button>
+          )}
+          {adHocOpen && (
+            <AdHocStart
+              open={adHocOpen}
+              onStarted={async () => { setAdHocOpen(false); await refresh(); }}
+            />
+          )}
         </div>
-      ) : (
-        <ul aria-label="Today's tasks" className="space-y-2 max-w-lg">
-          {state.todayTasks.map((t) => (
-            <TaskChooserRow key={t.id} task={t} onStart={() => void startFocus(t.id)} />
-          ))}
-        </ul>
-      )}
+      </div>
     </section>
   );
 }

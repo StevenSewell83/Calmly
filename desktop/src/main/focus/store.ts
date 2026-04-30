@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type Database from "better-sqlite3";
-import type { FocusSource } from "@calmly/shared";
+import type { FocusSource, TaskStatus } from "@calmly/shared";
 import {
   SCHEDULABLE_STATUSES,
   type TaskRow,
@@ -222,6 +222,69 @@ export function switchFocus(
     return found
       ? { ok: true, sessionId }
       : { ok: false, error: "NotFound" };
+  } catch {
+    return { ok: false, error: "InternalError" };
+  }
+}
+
+export interface OpenTaskItem {
+  id: string;
+  title: string;
+  status: TaskStatus;
+  due_at: number | null;
+  scheduled_start: number | null;
+}
+
+export function searchOpenTasks(
+  db: Database.Database,
+  userId: string,
+  query: string,
+): OpenTaskItem[] {
+  const pattern = `%${query}%`;
+  return db
+    .prepare(
+      `SELECT id, title, status, due_at, scheduled_start
+         FROM tasks
+        WHERE user_id = ? AND deleted_at IS NULL AND status IN ('open', 'in_progress')
+          AND (? = '' OR title LIKE ?)
+        ORDER BY COALESCE(updated_at, created_at) DESC
+        LIMIT 20`,
+    )
+    .all(userId, query, pattern) as OpenTaskItem[];
+}
+
+export type StartAdHocResult =
+  | { ok: true; sessionId: string; taskId: string }
+  | { ok: false; error: "InvalidArgs" | "InternalError" };
+
+export function startAdHocFocus(
+  db: Database.Database,
+  userId: string,
+  title: string,
+  now: number,
+): StartAdHocResult {
+  const trimmed = title.trim();
+  if (trimmed.length === 0) return { ok: false, error: "InvalidArgs" };
+  try {
+    const taskId = randomUUID();
+    const sessionId = randomUUID();
+    const tx = db.transaction(() => {
+      db.prepare(
+        `INSERT INTO tasks (id, user_id, title, notes, type, status, due_at, parent_task_id, source, created_at, updated_at, version, deleted_at)
+         VALUES (?, ?, ?, NULL, 'task', 'open', ?, NULL, 'desktop', ?, ?, 0, NULL)`,
+      ).run(taskId, userId, trimmed, now, now, now);
+      enqueueTaskUpsert(db, taskId, {
+        title: trimmed, notes: null, status: "open", due_at: now,
+        scheduled_start: null, scheduled_end: null, parent_task_id: null,
+        source: "desktop", created_at: now, type: "task", version: 0,
+      }, {}, now, 0);
+      endOpenSessions(db, userId, now);
+      db.prepare(
+        `INSERT INTO focus_sessions (id, user_id, task_id, started_at, ended_at, source) VALUES (?, ?, ?, ?, NULL, 'ad-hoc')`,
+      ).run(sessionId, userId, taskId, now);
+    });
+    tx();
+    return { ok: true, sessionId, taskId };
   } catch {
     return { ok: false, error: "InternalError" };
   }

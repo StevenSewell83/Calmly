@@ -61,5 +61,5 @@ export function useFocusSession() {
     await refresh();
   };
 
-  return { state, startFocus, endFocus, markDone, switchTask };
+  return { state, startFocus, endFocus, markDone, switchTask, refresh };
 }

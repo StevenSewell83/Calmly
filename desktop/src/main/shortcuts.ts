@@ -6,8 +6,10 @@ import { app, BrowserWindow, globalShortcut } from "electron";
 // when the app is focused; that's a known dev-mode quirk and packaged
 // builds don't expose devtools at all. Settings UI to remap is Epic 9.
 export const CAPTURE_HOTKEY_DEFAULT = "CmdOrCtrl+Shift+I";
+export const ADHOC_FOCUS_HOTKEY_DEFAULT = "CmdOrCtrl+Shift+F";
 
 const FOCUS_CHANNEL = "capture:focus";
+const ADHOC_FOCUS_CHANNEL = "focus:adhoc-open";
 
 export interface CaptureHotkeyHandle {
   registered: boolean;
@@ -45,8 +47,29 @@ export function unregisterAllShortcuts(): void {
   globalShortcut.unregisterAll();
 }
 
+export function registerAdHocFocusHotkey(
+  getMainWindow: () => BrowserWindow | null,
+  accelerator: string = ADHOC_FOCUS_HOTKEY_DEFAULT,
+): CaptureHotkeyHandle {
+  const ok = globalShortcut.register(accelerator, () => {
+    const win = getMainWindow();
+    if (!win || win.isDestroyed()) return;
+    if (win.isMinimized()) win.restore();
+    win.show();
+    win.focus();
+    win.webContents.send(ADHOC_FOCUS_CHANNEL);
+  });
+  return {
+    registered: ok,
+    unregister() {
+      if (ok) globalShortcut.unregister(accelerator);
+    },
+  };
+}
+
 // Re-export for tests that want to skip registering against the real OS.
 export const __captureFocusChannelForTests = FOCUS_CHANNEL;
+export const __adHocFocusChannelForTests = ADHOC_FOCUS_CHANNEL;
 
 // Marker — referenced by main process to ensure app.isReady() before
 // touching globalShortcut (Electron requirement).

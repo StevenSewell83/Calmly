@@ -32,7 +32,7 @@ import {
   electronLogTransport,
 } from "./logging/electron-log-transport";
 import { secretStoreSelfTest } from "./security/secretStore";
-import { registerCaptureHotkey, unregisterAllShortcuts } from "./shortcuts";
+import { registerCaptureHotkey, registerAdHocFocusHotkey, unregisterAllShortcuts } from "./shortcuts";
 import { createSyncClient } from "./sync/client";
 import { createSyncLoop, type SyncLoop } from "./sync/loop";
 
@@ -269,6 +269,12 @@ if (!gotInstanceLock) {
       if (!hotkey.registered) {
         logger.warn("capture hotkey registration failed", {
           accelerator: "CmdOrCtrl+Shift+I",
+        });
+      }
+      const focusHotkey = registerAdHocFocusHotkey(() => mainWindow);
+      if (!focusHotkey.registered) {
+        logger.warn("ad-hoc focus hotkey registration failed", {
+          accelerator: "CmdOrCtrl+Shift+F",
         });
       }
     }

@@ -395,6 +395,22 @@ export interface FocusStartArgs {
   source: FocusSourceWire;
 }
 
+export interface OpenTaskItem {
+  id: string;
+  title: string;
+  status: string;
+  due_at: number | null;
+  scheduled_start: number | null;
+}
+
+export type FocusSearchResult =
+  | { ok: true; tasks: OpenTaskItem[] }
+  | { ok: false; error: string };
+
+export type FocusStartAdHocResult =
+  | { ok: true; sessionId: string; taskId: string }
+  | { ok: false; error: string };
+
 export interface FocusBridge {
   // Returns the user's open session or null. Renderer polls this on
   // route mount + after every action.
@@ -410,6 +426,9 @@ export interface FocusBridge {
   // End-and-start in one transaction; renderer never sees the brief
   // 'no session' window.
   switch(args: FocusStartArgs): Promise<FocusSwitchResult>;
+  searchOpenTasks(query: string): Promise<FocusSearchResult>;
+  startAdHoc(title: string): Promise<FocusStartAdHocResult>;
+  onAdHocRequest(handler: () => void): () => void;
 }
 
 export interface QuickPlanBridge {

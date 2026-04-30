@@ -4,11 +4,15 @@ import {
   markDoneFromFocus,
   startFocus,
   switchFocus,
+  searchOpenTasks,
+  startAdHocFocus,
   type EndFocusResult,
   type FocusSessionRow,
   type MarkDoneResult,
   type StartFocusResult,
   type SwitchFocusResult,
+  type StartAdHocResult,
+  type OpenTaskItem,
 } from "../focus/store";
 import { authedHandler, isObject, isStringId } from "./handler";
 
@@ -30,6 +34,14 @@ export type FocusMarkDoneResult =
 
 export type FocusSwitchResult =
   | SwitchFocusResult
+  | { ok: false; error: "NotSignedIn" };
+
+export type FocusSearchResult =
+  | { ok: true; tasks: OpenTaskItem[] }
+  | { ok: false; error: "NotSignedIn" };
+
+export type FocusStartAdHocResult =
+  | StartAdHocResult
   | { ok: false; error: "NotSignedIn" };
 
 function isFocusSource(v: unknown): v is "scheduled" | "ad-hoc" {
@@ -62,5 +74,17 @@ export function registerFocusIpc(): void {
       return { ok: false, error: "InvalidArgs" };
     }
     return switchFocus(ctx.db, ctx.userId, raw.taskId, raw.source, ctx.now);
+  });
+
+  authedHandler<FocusSearchResult>("focus:searchOpenTasks", (ctx, raw) => {
+    const query = typeof raw === "string" ? raw : "";
+    return { ok: true, tasks: searchOpenTasks(ctx.db, ctx.userId, query) };
+  });
+
+  authedHandler<FocusStartAdHocResult>("focus:startAdHoc", (ctx, raw) => {
+    if (typeof raw !== "string" || raw.trim().length === 0) {
+      return { ok: false, error: "InvalidArgs" };
+    }
+    return startAdHocFocus(ctx.db, ctx.userId, raw, ctx.now);
   });
 }
