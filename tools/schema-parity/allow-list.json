@@ -256,20 +256,6 @@
       "presentIn": ["desktop", "server"],
       "absentIn": ["shared"],
       "reason": "F-11 sync tombstone."
-    },
-    {
-      "table": "users",
-      "column": "magic_link_token_hash",
-      "presentIn": ["shared", "desktop"],
-      "absentIn": ["server"],
-      "reason": "TODO(calmly-3py.4): pre-existing drift at PREVENT-3 landing — shared/UserSchema declares magic-link columns the server users table doesn't have. Audit bead will drop these from shared; remove this entry then."
-    },
-    {
-      "table": "users",
-      "column": "magic_link_expires_at",
-      "presentIn": ["shared", "desktop"],
-      "absentIn": ["server"],
-      "reason": "TODO(calmly-3py.4): pre-existing drift at PREVENT-3 landing — see above. Remove with the calmly-3py.4 fix."
     }
   ]
 }

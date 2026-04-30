@@ -67,6 +67,19 @@ describe("parseSqliteSql", () => {
     expect(tables.t!.tombstone!.nullable).toBe(true);
   });
 
+  it("removes columns dropped by ALTER TABLE DROP COLUMN", () => {
+    const sql = `
+      CREATE TABLE u (
+        id TEXT PRIMARY KEY,
+        keep TEXT,
+        gone TEXT
+      ) STRICT;
+      ALTER TABLE u DROP COLUMN gone;
+    `;
+    const tables = parseSqliteSql(sql);
+    expect(Object.keys(tables.u!).sort()).toEqual(["id", "keep"]);
+  });
+
   it("ignores virtual tables (FTS5)", () => {
     const sql = `CREATE VIRTUAL TABLE IF NOT EXISTS _fts USING fts5(content);`;
     const tables = parseSqliteSql(sql);

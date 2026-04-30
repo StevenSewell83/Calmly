@@ -22,8 +22,6 @@ describe("UserSchema", () => {
       UserSchema.parse({
         id: userId,
         email: "alex@example.com",
-        magic_link_token_hash: null,
-        magic_link_expires_at: null,
         created_at: now,
       }),
     ).toMatchObject({ email: "alex@example.com" });
@@ -34,8 +32,6 @@ describe("UserSchema", () => {
       UserSchema.parse({
         id: userId,
         email: "not-an-email",
-        magic_link_token_hash: null,
-        magic_link_expires_at: null,
         created_at: now,
       }),
     ).toThrow();
@@ -46,8 +42,6 @@ describe("UserSchema", () => {
       UserSchema.parse({
         id: "abc",
         email: "alex@example.com",
-        magic_link_token_hash: null,
-        magic_link_expires_at: null,
         created_at: now,
       }),
     ).toThrow();

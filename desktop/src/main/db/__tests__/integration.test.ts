@@ -114,8 +114,7 @@ describe.skipIf(!nodeSqlite)("F-05b · DB round-trip integration", () => {
   it("round-trips a User through INSERT + SELECT + Zod parse", () => {
     const db = freshDb();
     db.prepare(
-      `INSERT INTO users (id, email, magic_link_token_hash, magic_link_expires_at, created_at)
-       VALUES (?, ?, NULL, NULL, ?)`,
+      `INSERT INTO users (id, email, created_at) VALUES (?, ?, ?)`,
     ).run(USER_ID, "alex@example.com", NOW);
 
     const row = db
