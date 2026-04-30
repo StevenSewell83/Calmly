@@ -214,8 +214,8 @@ export default tseslint.config(
       "desktop/src/renderer/pages/Review/UnfinishedRow.tsx",
       // Focus next-step helper filters typed PlanTaskItem.status.
       "desktop/src/renderer/pages/Focus/focusUtils.ts",
-      // Triage switch narrows over the typed InboxItem["source"] union.
-      "desktop/src/renderer/pages/Inbox/Triage.tsx",
+      // Triage helpers narrow over the typed InboxItem["source"] union.
+      "desktop/src/renderer/pages/Inbox/triage/helpers.ts",
       // React Router config — `path: "telegram"` is a route segment, not
       // a Source enum value (the regex match is coincidental).
       "desktop/src/renderer/router.tsx",
@@ -227,13 +227,6 @@ export default tseslint.config(
 
   // PREVENT-2: per-file max-lines overrides. Each entry cites the bead that
   // tracks the underlying split/refactor so this list shrinks over time.
-  {
-    files: ["desktop/src/renderer/pages/Inbox/Triage.tsx"],
-    rules: {
-      // TODO(calmly-3py.7): remove once Triage.tsx is split — see PREVENT-2.
-      "max-lines": ["off"],
-    },
-  },
   {
     files: ["desktop/src/preload/api-types.ts"],
     rules: {
