@@ -40,7 +40,7 @@ CREATE TABLE op_queue (
   attempts INTEGER NOT NULL DEFAULT 0,
   last_error TEXT
 ) STRICT;
-CREATE INDEX op_queue_created_idx ON op_queue(created_at);
+CREATE INDEX IF NOT EXISTS op_queue_created_idx ON op_queue(created_at);
 
 CREATE TABLE sync_state (
   id INTEGER PRIMARY KEY CHECK (id = 1),

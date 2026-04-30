@@ -24,7 +24,7 @@ CREATE TABLE inbox_items (
   created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
   resolved_at INTEGER
 ) STRICT;
-CREATE INDEX inbox_items_user_idx ON inbox_items(user_id, resolved_at);
+CREATE INDEX IF NOT EXISTS inbox_items_user_idx ON inbox_items(user_id, resolved_at);
 
 CREATE TABLE tasks (
   id TEXT PRIMARY KEY,
@@ -39,9 +39,9 @@ CREATE TABLE tasks (
   created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
   updated_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
 ) STRICT;
-CREATE INDEX tasks_user_status_idx ON tasks(user_id, status);
-CREATE INDEX tasks_due_at_idx ON tasks(user_id, due_at) WHERE due_at IS NOT NULL;
-CREATE INDEX tasks_parent_idx ON tasks(parent_task_id) WHERE parent_task_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS tasks_user_status_idx ON tasks(user_id, status);
+CREATE INDEX IF NOT EXISTS tasks_due_at_idx ON tasks(user_id, due_at) WHERE due_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS tasks_parent_idx ON tasks(parent_task_id) WHERE parent_task_id IS NOT NULL;
 
 CREATE TABLE events (
   id TEXT PRIMARY KEY,
@@ -52,7 +52,7 @@ CREATE TABLE events (
   source TEXT NOT NULL CHECK (source IN ('manual', 'calendar-import')),
   created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
 ) STRICT;
-CREATE INDEX events_user_start_idx ON events(user_id, start_at);
+CREATE INDEX IF NOT EXISTS events_user_start_idx ON events(user_id, start_at);
 
 CREATE TABLE reminder_rules (
   id TEXT PRIMARY KEY,
@@ -63,7 +63,7 @@ CREATE TABLE reminder_rules (
   escalation_json TEXT NOT NULL CHECK (json_valid(escalation_json)),
   active INTEGER NOT NULL CHECK (active IN (0, 1)) DEFAULT 1
 ) STRICT;
-CREATE INDEX reminder_rules_task_idx ON reminder_rules(task_id);
+CREATE INDEX IF NOT EXISTS reminder_rules_task_idx ON reminder_rules(task_id);
 
 CREATE TABLE recurrence_rules (
   id TEXT PRIMARY KEY,
@@ -72,7 +72,7 @@ CREATE TABLE recurrence_rules (
   owner_id TEXT NOT NULL,
   rrule_text TEXT NOT NULL
 ) STRICT;
-CREATE INDEX recurrence_rules_owner_idx ON recurrence_rules(owner_type, owner_id);
+CREATE INDEX IF NOT EXISTS recurrence_rules_owner_idx ON recurrence_rules(owner_type, owner_id);
 
 CREATE TABLE calendar_event_imports (
   id TEXT PRIMARY KEY,
@@ -85,7 +85,7 @@ CREATE TABLE calendar_event_imports (
   last_seen_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
   UNIQUE (user_id, provider, external_id)
 ) STRICT;
-CREATE INDEX calendar_event_imports_user_start_idx ON calendar_event_imports(user_id, start_at);
+CREATE INDEX IF NOT EXISTS calendar_event_imports_user_start_idx ON calendar_event_imports(user_id, start_at);
 
 CREATE TABLE ai_suggestions (
   id TEXT PRIMARY KEY,
@@ -98,7 +98,7 @@ CREATE TABLE ai_suggestions (
   outcome TEXT NOT NULL CHECK (outcome IN ('accepted', 'rejected', 'edited', 'pending')) DEFAULT 'pending',
   created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
 ) STRICT;
-CREATE INDEX ai_suggestions_owner_idx ON ai_suggestions(owner_type, owner_id);
+CREATE INDEX IF NOT EXISTS ai_suggestions_owner_idx ON ai_suggestions(owner_type, owner_id);
 
 CREATE TABLE telegram_links (
   id TEXT PRIMARY KEY,
@@ -106,7 +106,7 @@ CREATE TABLE telegram_links (
   chat_id TEXT NOT NULL UNIQUE,
   linked_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000)
 ) STRICT;
-CREATE INDEX telegram_links_user_idx ON telegram_links(user_id);
+CREATE INDEX IF NOT EXISTS telegram_links_user_idx ON telegram_links(user_id);
 
 CREATE TABLE user_settings (
   user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,

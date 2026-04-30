@@ -23,9 +23,9 @@ CREATE TABLE focus_sessions (
 
 -- Partial index makes currentFocus a near-instant lookup. Once a
 -- session ends, its index entry is dropped automatically.
-CREATE INDEX focus_sessions_open_idx
+CREATE INDEX IF NOT EXISTS focus_sessions_open_idx
   ON focus_sessions(user_id, ended_at)
   WHERE ended_at IS NULL;
 
-CREATE INDEX focus_sessions_task_idx
+CREATE INDEX IF NOT EXISTS focus_sessions_task_idx
   ON focus_sessions(task_id);

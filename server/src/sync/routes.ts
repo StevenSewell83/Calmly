@@ -5,6 +5,7 @@ import {
   PushRequestSchema,
 } from "@calmly/shared";
 import { requireSession } from "../middleware/requireSession";
+import { TABLES } from "./tables";
 import { applyOp } from "./apply";
 import { pullSince } from "./pull";
 
@@ -13,20 +14,13 @@ async function getMaxVersion(
   userId: string,
   fallback: number,
 ): Promise<number> {
+  const tableNames = Object.keys(TABLES);
+  const unions = tableNames
+    .map((t) => `SELECT max(version) AS v FROM ${t} WHERE user_id = $1`)
+    .join("\n       UNION ALL ");
   // Postgres bigserial values fit in JS number range until 2^53; fine here.
   const r = await app.pool.query<{ v: string | null }>(
-    `WITH versions AS (
-       SELECT max(version) AS v FROM inbox_items WHERE user_id = $1
-       UNION ALL SELECT max(version) FROM tasks WHERE user_id = $1
-       UNION ALL SELECT max(version) FROM events WHERE user_id = $1
-       UNION ALL SELECT max(version) FROM reminder_rules WHERE user_id = $1
-       UNION ALL SELECT max(version) FROM recurrence_rules WHERE user_id = $1
-       UNION ALL SELECT max(version) FROM calendar_event_imports WHERE user_id = $1
-       UNION ALL SELECT max(version) FROM ai_suggestions WHERE user_id = $1
-       UNION ALL SELECT max(version) FROM telegram_links WHERE user_id = $1
-       UNION ALL SELECT max(version) FROM user_settings WHERE user_id = $1
-     )
-     SELECT max(v)::text AS v FROM versions`,
+    `WITH versions AS (\n       ${unions}\n     )\n     SELECT max(v)::text AS v FROM versions`,
     [userId],
   );
   const v = r.rows[0]?.v;

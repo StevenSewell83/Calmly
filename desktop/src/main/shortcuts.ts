@@ -1,4 +1,4 @@
-import { app, BrowserWindow, globalShortcut } from "electron";
+import { BrowserWindow, globalShortcut } from "electron";
 
 // Default global shortcut for quick capture, per the CL-02 spec. The "I"
 // reads as "Inbox" / "Idea" and matches the capture mental model. Note
@@ -67,16 +67,3 @@ export function registerAdHocFocusHotkey(
   };
 }
 
-// Re-export for tests that want to skip registering against the real OS.
-export const __captureFocusChannelForTests = FOCUS_CHANNEL;
-export const __adHocFocusChannelForTests = ADHOC_FOCUS_CHANNEL;
-
-// Marker — referenced by main process to ensure app.isReady() before
-// touching globalShortcut (Electron requirement).
-export function assertAppReady(): void {
-  if (!app.isReady()) {
-    throw new Error(
-      "registerCaptureHotkey: app must be ready before global shortcuts can be registered",
-    );
-  }
-}

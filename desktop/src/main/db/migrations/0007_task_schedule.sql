@@ -17,6 +17,6 @@ ALTER TABLE tasks ADD COLUMN scheduled_end INTEGER;
 -- Plan view's primary read filters on (user_id, scheduled_start) for
 -- 'placed today'. Partial index keeps it cheap and ignores backlog
 -- rows entirely.
-CREATE INDEX tasks_scheduled_idx
+CREATE INDEX IF NOT EXISTS tasks_scheduled_idx
   ON tasks(user_id, scheduled_start)
   WHERE scheduled_start IS NOT NULL;

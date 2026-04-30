@@ -16,6 +16,6 @@ ALTER TABLE inbox_items ADD COLUMN snoozed_until INTEGER;
 -- new partial index below keep the visibility predicate cheap. The
 -- WHERE clause means SQLite only stores rows actively snoozed; once
 -- they become visible again the index entry is dropped automatically.
-CREATE INDEX inbox_items_snoozed_idx
+CREATE INDEX IF NOT EXISTS inbox_items_snoozed_idx
   ON inbox_items(user_id, snoozed_until)
   WHERE snoozed_until IS NOT NULL;
