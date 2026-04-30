@@ -212,6 +212,8 @@ export default tseslint.config(
       "desktop/src/renderer/pages/Home/useTodaySummary.ts",
       // Review page renders a status chip off TaskStatus.
       "desktop/src/renderer/pages/Review/UnfinishedRow.tsx",
+      // Focus next-step helper filters typed PlanTaskItem.status.
+      "desktop/src/renderer/pages/Focus/focusUtils.ts",
       // Triage switch narrows over the typed InboxItem["source"] union.
       "desktop/src/renderer/pages/Inbox/Triage.tsx",
       // React Router config — `path: "telegram"` is a route segment, not

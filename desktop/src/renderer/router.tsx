@@ -4,7 +4,7 @@ import { Home } from "./pages/Home/Home";
 import { Inbox } from "./pages/Inbox/InboxList";
 import { Triage } from "./pages/Inbox/Triage";
 import { Plan } from "./pages/Plan/Plan";
-import { Focus } from "./pages/Focus";
+import { Focus } from "./pages/Focus/Focus";
 import { Review } from "./pages/Review/Review";
 import { SettingsLayout } from "./pages/Settings/Layout";
 import { SettingsAccount } from "./pages/Settings/Account";
