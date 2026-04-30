@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, ChevronRight, Inbox, CalendarDays, CheckCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { ReviewSummary, ReviewTaskItem } from "../../../preload/api-types";
+import { EmptyState } from "../../components/EmptyState";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -120,7 +121,13 @@ export function Review() {
           </h2>
         </div>
         {summary.completed.length === 0 ? (
-          <p className="text-sm text-stone-300 pl-6">Nothing marked done yet today.</p>
+          <div className="pl-6">
+            <EmptyState
+              name="review-no-completed"
+              title="Some days are heavy. That's okay."
+              body="You can still close out the day."
+            />
+          </div>
         ) : (
           <>
             <p className="text-2xl font-serif italic text-emerald-700 mb-3 pl-6">

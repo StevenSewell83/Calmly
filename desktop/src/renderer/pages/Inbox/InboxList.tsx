@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, Inbox as InboxIcon } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { EmptyState } from "../../components/EmptyState";
 import { InboxRow } from "./InboxRow";
 import {
   sortInboxItems,
@@ -144,7 +145,12 @@ export function Inbox() {
           ) : state.kind === "error" ? (
             <FailureNotice title="Something hiccuped." body={state.message} />
           ) : items.length === 0 ? (
-            <EmptyInbox />
+            <EmptyState
+                name="inbox-clear"
+                title="Inbox clear."
+                body="Anything you capture will land here."
+                primaryAction={{ label: "Back to Home", onClick: () => navigate("/") }}
+              />
           ) : (
             <ul role="listbox" aria-label="Inbox items" className="flex flex-col gap-2">
               {items.map((it) => (
@@ -232,18 +238,6 @@ function LoadingShell() {
   );
 }
 
-function EmptyInbox() {
-  return (
-    <div className="rounded-[1.8rem] border border-dashed border-stone-200 bg-white/30 px-8 py-12 flex flex-col items-center text-center">
-      <div className="w-12 h-12 rounded-2xl bg-stone-100 text-stone-400 flex items-center justify-center mb-4">
-        <InboxIcon className="w-5 h-5" aria-hidden="true" />
-      </div>
-      <p className="text-sm text-stone-500 font-light max-w-xs">
-        Inbox is empty. Use the capture bar above to drop a thought.
-      </p>
-    </div>
-  );
-}
 
 function FailureNotice({ title, body }: { title: string; body: string }) {
   return (

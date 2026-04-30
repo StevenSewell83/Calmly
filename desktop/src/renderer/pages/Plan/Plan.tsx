@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { RefreshCw } from "lucide-react";
 import {
   DndContext,
@@ -35,6 +36,7 @@ import {
 import { usePlanForDay } from "./usePlanForDay";
 import { ReplanModal } from "../../components/Replan/ReplanModal";
 import { usePlanShortcuts } from "../../hooks/usePlanShortcuts";
+import { EmptyState } from "../../components/EmptyState";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -77,6 +79,7 @@ export function Plan() {
     return d.getTime();
   });
   const { state, refresh } = usePlanForDay(day);
+  const navigate = useNavigate();
   const [activeTask, setActiveTask] = useState<PlanTaskItem | null>(null);
   const [replanOpen, setReplanOpen] = useState(false);
 
@@ -215,14 +218,23 @@ export function Plan() {
       ) : state.kind === "error" ? (
         <FailureNotice title="Something hiccuped." body={state.message} />
       ) : (
-        <DndContext sensors={sensors} modifiers={[restrictToVerticalAxis]} onDragEnd={onDragEnd}>
-          <div className="flex gap-6 items-start">
-            <div className="flex-1 min-w-0 max-h-[calc(100vh-14rem)] overflow-y-auto pr-2 custom-scrollbar">
-              <DayGrid blocks={blocks} onBlockResize={onBlockResize} onBlockClick={onBlockClick} />
+        {blocks.length === 0 && state.plan.backlog.length === 0 ? (
+          <EmptyState
+            name="plan-nothing-scheduled"
+            title="Nothing on the schedule."
+            body="Pick something from your backlog or capture a new task."
+            primaryAction={{ label: "Go to Inbox", onClick: () => navigate("/inbox") }}
+          />
+        ) : (
+          <DndContext sensors={sensors} modifiers={[restrictToVerticalAxis]} onDragEnd={onDragEnd}>
+            <div className="flex gap-6 items-start">
+              <div className="flex-1 min-w-0 max-h-[calc(100vh-14rem)] overflow-y-auto pr-2 custom-scrollbar">
+                <DayGrid blocks={blocks} onBlockResize={onBlockResize} onBlockClick={onBlockClick} />
+              </div>
+              <Backlog items={state.plan.backlog} onTaskClick={setActiveTask} />
             </div>
-            <Backlog items={state.plan.backlog} onTaskClick={setActiveTask} />
-          </div>
-        </DndContext>
+          </DndContext>
+        )}
       )}
 
       <ReplanModal open={replanOpen} onClose={() => setReplanOpen(false)} />

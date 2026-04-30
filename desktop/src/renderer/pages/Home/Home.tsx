@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { RefreshCw, Sparkles } from "lucide-react";
 import { InboxTriageCard } from "./InboxTriageCard";
 import { NextCard } from "./NextCard";
@@ -6,6 +7,7 @@ import { NowCard } from "./NowCard";
 import { TodayList } from "./TodayList";
 import { QuickPlan } from "../QuickPlan/QuickPlan";
 import { ReplanModal } from "../../components/Replan/ReplanModal";
+import { EmptyState } from "../../components/EmptyState";
 import {
   buildTodayList,
   pickNextItem,
@@ -20,6 +22,7 @@ function todayLocalStr(): string {
 
 export function Home() {
   const { state } = useTodaySummary();
+  const navigate = useNavigate();
   const [replanOpen, setReplanOpen] = useState(false);
   const [quickPlanOpen, setQuickPlanOpen] = useState(false);
   const autoSuggestFired = useRef(false);
@@ -81,6 +84,16 @@ export function Home() {
           title="Something hiccuped."
           body={state.message}
         />
+      ) : summary && summary.tasks.length === 0 && summary.unresolvedInboxCount === 0 && summary.events.length === 0 ? (
+        <EmptyState
+          name="home-first-open"
+          title="Welcome to Calmly. Capture anything to start."
+          body="Whatever's on your mind — tasks, ideas, worries — drop it here and sort it later."
+          primaryAction={{
+            label: "Capture a thought",
+            onClick: () => (document.querySelector<HTMLInputElement>('[aria-label="Capture a thought"]'))?.focus(),
+          }}
+        />
       ) : (
         <div className="flex flex-col gap-8 max-w-3xl">
           <NowCard task={nowTask} />
@@ -115,7 +128,16 @@ export function Home() {
                 </button>
               </div>
             </div>
-            <TodayList items={todayItems} />
+            {todayItems.length === 0 ? (
+              <EmptyState
+                name="home-nothing-scheduled"
+                title="Nothing on the schedule."
+                body="Pick something from your backlog or capture a new task."
+                primaryAction={{ label: "Go to Plan", onClick: () => navigate("/plan") }}
+              />
+            ) : (
+              <TodayList items={todayItems} />
+            )}
           </div>
         </div>
       )}

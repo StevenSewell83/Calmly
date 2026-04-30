@@ -5,6 +5,7 @@ import { formatClock } from "../../utils/time";
 import { ActiveSession } from "./ActiveSession";
 import { AdHocStart } from "./AdHocStart";
 import { useFocusSession } from "./useFocusSession";
+import { EmptyState } from "../../components/EmptyState";
 
 export function Focus() {
   const { state, startFocus, endFocus, markDone, switchTask, refresh } = useFocusSession();
@@ -60,15 +61,12 @@ export function Focus() {
         )}
 
         {state.todayTasks.length === 0 && !adHocOpen && (
-          <div className="rounded-[1.8rem] border border-dashed border-stone-200 bg-white/30 px-6 py-8 text-center">
-            <p className="text-sm text-stone-400 mb-3">Nothing scheduled today.</p>
-            <button
-              onClick={() => setAdHocOpen(true)}
-              className="text-xs px-4 py-2 rounded-2xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
-            >
-              Start ad-hoc focus
-            </button>
-          </div>
+          <EmptyState
+            name="focus-no-tasks"
+            title="No focus right now."
+            body="Start an ad-hoc focus block, or pick from any open task."
+            primaryAction={{ label: "Start ad-hoc focus", onClick: () => setAdHocOpen(true) }}
+          />
         )}
 
         {/* Ad-hoc start section */}
