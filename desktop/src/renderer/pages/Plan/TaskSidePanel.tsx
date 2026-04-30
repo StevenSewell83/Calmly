@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Trash2 } from "lucide-react";
 import type { PlanTaskItem } from "../../../preload/api-types";
+import { RescheduleControls } from "./RescheduleControls";
 
 interface Props {
   task: PlanTaskItem | null;
@@ -236,6 +237,11 @@ export function TaskSidePanel({ task, day, onClose, onSaved }: Props) {
             <p role="alert" className="text-xs text-red-500 font-medium px-1">{error}</p>
           ) : null}
         </form>
+
+        {/* Reschedule controls */}
+        <div className="px-5 pb-2">
+          <RescheduleControls task={task} onSaved={onSaved} />
+        </div>
 
         {/* Footer actions */}
         <div className="flex flex-col gap-2 px-5 pb-5 pt-3 border-t border-stone-100">

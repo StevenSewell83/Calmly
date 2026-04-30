@@ -203,6 +203,113 @@ export function updateTask(
   }
 }
 
+export type MoveToDateResult =
+  | { ok: true }
+  | { ok: false; error: "NotFound" | "InvalidArgs" | "InternalError" };
+
+// Moves a task to a different calendar day. Preserves the time-of-day
+// for scheduled_start/end; shifts due_at to the same target day.
+export function moveToDate(
+  db: Database.Database,
+  userId: string,
+  taskId: string,
+  targetDayMs: number,
+  now: number,
+): MoveToDateResult {
+  if (!Number.isFinite(targetDayMs)) return { ok: false, error: "InvalidArgs" };
+  try {
+    let found = false;
+    const tx = db.transaction(() => {
+      const row = loadTask(db, userId, taskId);
+      if (!row) return;
+      const target = new Date(targetDayMs);
+      const applyDay = (ms: number | null): number | null => {
+        if (ms === null) return null;
+        const d = new Date(ms);
+        d.setFullYear(target.getFullYear(), target.getMonth(), target.getDate());
+        return d.getTime();
+      };
+      const nextVersion = row.version + 1;
+      const dueAt = row.due_at !== null ? applyDay(targetDayMs) : null;
+      const scheduledStart = applyDay(row.scheduled_start);
+      const scheduledEnd = applyDay(row.scheduled_end);
+      db.prepare(
+        `UPDATE tasks SET due_at=?, scheduled_start=?, scheduled_end=?, updated_at=?, version=? WHERE id=? AND user_id=?`,
+      ).run(dueAt, scheduledStart, scheduledEnd, now, nextVersion, taskId, userId);
+      enqueueTaskUpsert(db, taskId, row, { due_at: dueAt, scheduled_start: scheduledStart, scheduled_end: scheduledEnd }, now, nextVersion);
+      found = true;
+    });
+    tx();
+    return found ? { ok: true } : { ok: false, error: "NotFound" };
+  } catch {
+    return { ok: false, error: "InternalError" };
+  }
+}
+
+export type PushByResult =
+  | { ok: true }
+  | { ok: false; error: "NotFound" | "InvalidArgs" | "InternalError" };
+
+// Shifts a placed task's scheduled_start/end forward by offsetMs.
+export function pushBy(
+  db: Database.Database,
+  userId: string,
+  taskId: string,
+  offsetMs: number,
+  now: number,
+): PushByResult {
+  if (!Number.isFinite(offsetMs) || offsetMs <= 0) return { ok: false, error: "InvalidArgs" };
+  try {
+    let found = false;
+    const tx = db.transaction(() => {
+      const row = loadTask(db, userId, taskId);
+      if (!row || row.scheduled_start === null) return;
+      const nextVersion = row.version + 1;
+      const scheduledStart = row.scheduled_start + offsetMs;
+      const scheduledEnd = row.scheduled_end !== null ? row.scheduled_end + offsetMs : null;
+      db.prepare(
+        `UPDATE tasks SET scheduled_start=?, scheduled_end=?, updated_at=?, version=? WHERE id=? AND user_id=?`,
+      ).run(scheduledStart, scheduledEnd, now, nextVersion, taskId, userId);
+      enqueueTaskUpsert(db, taskId, row, { scheduled_start: scheduledStart, scheduled_end: scheduledEnd }, now, nextVersion);
+      found = true;
+    });
+    tx();
+    return found ? { ok: true } : { ok: false, error: "NotFound" };
+  } catch {
+    return { ok: false, error: "InternalError" };
+  }
+}
+
+export type DropFromTodayResult =
+  | { ok: true }
+  | { ok: false; error: "NotFound" | "InternalError" };
+
+// Removes the task from today's plan view by clearing due_at + scheduled pair.
+export function dropFromToday(
+  db: Database.Database,
+  userId: string,
+  taskId: string,
+  now: number,
+): DropFromTodayResult {
+  try {
+    let found = false;
+    const tx = db.transaction(() => {
+      const row = loadTask(db, userId, taskId);
+      if (!row) return;
+      const nextVersion = row.version + 1;
+      db.prepare(
+        `UPDATE tasks SET due_at=NULL, scheduled_start=NULL, scheduled_end=NULL, updated_at=?, version=? WHERE id=? AND user_id=?`,
+      ).run(now, nextVersion, taskId, userId);
+      enqueueTaskUpsert(db, taskId, row, { due_at: null, scheduled_start: null, scheduled_end: null }, now, nextVersion);
+      found = true;
+    });
+    tx();
+    return found ? { ok: true } : { ok: false, error: "NotFound" };
+  } catch {
+    return { ok: false, error: "InternalError" };
+  }
+}
+
 export type UnscheduleResult =
   | { ok: true }
   | { ok: false; error: "NotFound" | "InternalError" };

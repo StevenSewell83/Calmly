@@ -3,11 +3,17 @@ import {
   scheduleTask,
   unscheduleTask,
   updateTask,
+  moveToDate,
+  pushBy,
+  dropFromToday,
   type PlanForDay,
   type ScheduleResult,
   type UnscheduleResult,
   type UpdateTaskResult,
   type UpdateTaskArgs,
+  type MoveToDateResult,
+  type PushByResult,
+  type DropFromTodayResult,
 } from "../plan/store";
 import { authedHandler, isObject, isStringId } from "./handler";
 
@@ -25,6 +31,18 @@ export type PlanUnscheduleResult =
 
 export type PlanUpdateResult =
   | UpdateTaskResult
+  | { ok: false; error: "NotSignedIn" };
+
+export type PlanMoveToDateResult =
+  | MoveToDateResult
+  | { ok: false; error: "NotSignedIn" };
+
+export type PlanPushByResult =
+  | PushByResult
+  | { ok: false; error: "NotSignedIn" };
+
+export type PlanDropFromTodayResult =
+  | DropFromTodayResult
   | { ok: false; error: "NotSignedIn" };
 
 export function registerPlanIpc(): void {
@@ -79,5 +97,29 @@ export function registerPlanIpc(): void {
       args.scheduledEnd = raw.scheduledEnd as number | null;
     }
     return updateTask(ctx.db, ctx.userId, raw.taskId, args, ctx.now);
+  });
+
+  authedHandler<PlanMoveToDateResult>("plan:moveToDate", (ctx, raw) => {
+    if (!isObject(raw) || !isStringId(raw.taskId) || typeof raw.targetDayMs !== "number") {
+      return { ok: false, error: "InvalidArgs" };
+    }
+    return moveToDate(ctx.db, ctx.userId, raw.taskId, raw.targetDayMs as number, ctx.now);
+  });
+
+  authedHandler<PlanPushByResult>("plan:pushBy", (ctx, raw) => {
+    if (!isObject(raw) || !isStringId(raw.taskId) || typeof raw.offsetMs !== "number") {
+      return { ok: false, error: "InvalidArgs" };
+    }
+    return pushBy(ctx.db, ctx.userId, raw.taskId, raw.offsetMs as number, ctx.now);
+  });
+
+  authedHandler<PlanUnscheduleResult>("plan:toBacklog", (ctx, raw) => {
+    if (!isStringId(raw)) return { ok: false, error: "InvalidArgs" };
+    return unscheduleTask(ctx.db, ctx.userId, raw, ctx.now);
+  });
+
+  authedHandler<PlanDropFromTodayResult>("plan:dropFromToday", (ctx, raw) => {
+    if (!isStringId(raw)) return { ok: false, error: "InvalidArgs" };
+    return dropFromToday(ctx.db, ctx.userId, raw, ctx.now);
   });
 }

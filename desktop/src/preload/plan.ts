@@ -7,6 +7,11 @@ import type {
   PlanUnscheduleResult,
   PlanUpdateArgs,
   PlanUpdateResult,
+  PlanMoveToDateArgs,
+  PlanMoveToDateResult,
+  PlanPushByArgs,
+  PlanPushByResult,
+  PlanDropResult,
 } from "./api-types";
 
 export const planBridge: PlanBridge = {
@@ -21,5 +26,17 @@ export const planBridge: PlanBridge = {
   },
   update(args: PlanUpdateArgs): Promise<PlanUpdateResult> {
     return ipcRenderer.invoke("plan:update", args) as Promise<PlanUpdateResult>;
+  },
+  moveToDate(args: PlanMoveToDateArgs): Promise<PlanMoveToDateResult> {
+    return ipcRenderer.invoke("plan:moveToDate", args) as Promise<PlanMoveToDateResult>;
+  },
+  pushBy(args: PlanPushByArgs): Promise<PlanPushByResult> {
+    return ipcRenderer.invoke("plan:pushBy", args) as Promise<PlanPushByResult>;
+  },
+  toBacklog(taskId: string): Promise<PlanUnscheduleResult> {
+    return ipcRenderer.invoke("plan:toBacklog", taskId) as Promise<PlanUnscheduleResult>;
+  },
+  dropFromToday(taskId: string): Promise<PlanDropResult> {
+    return ipcRenderer.invoke("plan:dropFromToday", taskId) as Promise<PlanDropResult>;
   },
 };

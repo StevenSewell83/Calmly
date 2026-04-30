@@ -312,11 +312,41 @@ export type PlanUpdateResult =
       error: "NotSignedIn" | "NotFound" | "InvalidArgs" | "InternalError";
     };
 
+export interface PlanMoveToDateArgs {
+  taskId: string;
+  /** Unix-ms timestamp of any moment on the target day (local midnight is fine). */
+  targetDayMs: number;
+}
+
+export type PlanMoveToDateResult =
+  | { ok: true }
+  | { ok: false; error: "NotSignedIn" | "NotFound" | "InvalidArgs" | "InternalError" };
+
+export interface PlanPushByArgs {
+  taskId: string;
+  /** Positive ms offset (e.g. 3_600_000 for +1 h). */
+  offsetMs: number;
+}
+
+export type PlanPushByResult =
+  | { ok: true }
+  | { ok: false; error: "NotSignedIn" | "NotFound" | "InvalidArgs" | "InternalError" };
+
+export type PlanDropResult =
+  | { ok: true }
+  | { ok: false; error: "NotSignedIn" | "NotFound" | "InternalError" };
+
 export interface PlanBridge {
   listForDay(day?: number): Promise<PlanListResult>;
   schedule(args: PlanScheduleArgs): Promise<PlanScheduleResult>;
   unschedule(taskId: string): Promise<PlanUnscheduleResult>;
   update(args: PlanUpdateArgs): Promise<PlanUpdateResult>;
+  moveToDate(args: PlanMoveToDateArgs): Promise<PlanMoveToDateResult>;
+  pushBy(args: PlanPushByArgs): Promise<PlanPushByResult>;
+  /** Alias for unschedule — clears scheduled_* but keeps due_at. */
+  toBacklog(taskId: string): Promise<PlanUnscheduleResult>;
+  /** Clears due_at AND scheduled_* — task leaves today's plan view entirely. */
+  dropFromToday(taskId: string): Promise<PlanDropResult>;
 }
 
 // Focus mode — local-only sessions (see migration 0008). At most one
