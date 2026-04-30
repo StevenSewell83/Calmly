@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type Database from "better-sqlite3";
 import type { InboxSource, TaskStatus } from "@calmly/shared";
 import { enqueueOp } from "../sync/queue";
+import { enqueueTaskUpsert } from "../tasks/repo";
 
 // CL-04 triage resolutions.
 //
@@ -164,11 +165,10 @@ export function resolveAsTask(args: ResolveAsTaskArgs): ResolveResult {
           args.now,
         );
 
-      enqueueOp(args.db, {
-        table: "tasks",
-        op: "upsert",
-        payload: {
-          id: taskId,
+      enqueueTaskUpsert(
+        args.db,
+        taskId,
+        {
           title: trimmedTitle,
           notes: null,
           type: "task",
@@ -177,11 +177,14 @@ export function resolveAsTask(args: ResolveAsTaskArgs): ResolveResult {
           parent_task_id: null,
           source: loaded.row.source,
           created_at: args.now,
-          updated_at: args.now,
-          deleted_at: null,
+          scheduled_start: null,
+          scheduled_end: null,
           version: 0,
         },
-      });
+        {},
+        args.now,
+        0,
+      );
 
       markInboxResolved(
         args.db,
