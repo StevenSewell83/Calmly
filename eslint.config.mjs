@@ -199,6 +199,7 @@ export default tseslint.config(
       // Store layers build typed TaskStatus arrays / consts at module scope.
       "desktop/src/main/focus/store.ts",
       "desktop/src/main/plan/store.ts",
+      "desktop/src/main/review/tasks.ts",
       "desktop/src/main/triage/store.ts",
       // IPC handlers pass typed enum values into the domain layer.
       "desktop/src/main/ipc/inbox.ts",

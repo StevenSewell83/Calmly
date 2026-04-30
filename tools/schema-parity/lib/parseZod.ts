@@ -28,6 +28,7 @@ const SCHEMA_TO_TABLE: Record<string, string> = {
   AiSuggestionSchema: "ai_suggestions",
   TelegramLinkSchema: "telegram_links",
   FocusSessionSchema: "focus_sessions",
+  DailyReflectionSchema: "daily_reflections",
 };
 
 function bucketForZodCall(zodToken: string): ColumnTypeBucket {

@@ -14,8 +14,8 @@ const id = "11111111-1111-4111-8111-111111111111";
 const now = 1_730_000_000_000;
 
 describe("SyncTableSchema", () => {
-  it("includes the canonical 9 domain tables", () => {
-    expect(syncTables.length).toBe(9);
+  it("includes the canonical 10 domain tables", () => {
+    expect(syncTables.length).toBe(10);
   });
 
   it("rejects auth tables", () => {

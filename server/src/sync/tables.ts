@@ -94,4 +94,8 @@ export const TABLES: Record<SyncTable, TableSpec> = {
     columns: ["user_id", "settings_json"],
     jsonColumns: ["settings_json"],
   },
+  daily_reflections: {
+    name: "daily_reflections",
+    columns: ["id", "date", "text", "created_at"],
+  },
 } as const;

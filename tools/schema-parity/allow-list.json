@@ -237,6 +237,27 @@
       "reason": "F-11 sync tombstone."
     },
     {
+      "table": "daily_reflections",
+      "column": "version",
+      "presentIn": ["desktop", "server"],
+      "absentIn": ["shared"],
+      "reason": "F-11 sync metadata."
+    },
+    {
+      "table": "daily_reflections",
+      "column": "updated_at",
+      "presentIn": ["desktop", "server"],
+      "absentIn": ["shared"],
+      "reason": "F-11 sync mtime — desktop and server both track; the public DTO uses created_at as its single timestamp."
+    },
+    {
+      "table": "daily_reflections",
+      "column": "deleted_at",
+      "presentIn": ["desktop", "server"],
+      "absentIn": ["shared"],
+      "reason": "F-11 sync tombstone."
+    },
+    {
       "table": "users",
       "column": "magic_link_token_hash",
       "presentIn": ["shared", "desktop"],

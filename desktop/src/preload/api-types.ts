@@ -370,6 +370,103 @@ export interface FocusBridge {
   switch(args: FocusStartArgs): Promise<FocusSwitchResult>;
 }
 
+// Daily Shutdown — read summary + bulk task ops + reflection + the
+// single-tx completeShutdown. Status / source enums kept as inline
+// unions to avoid pulling @calmly/shared into the renderer's type
+// graph (matches the convention used by the other bridges above).
+export interface ReviewTaskItem {
+  id: string;
+  title: string;
+  status: "open" | "in_progress" | "done" | "dropped" | "snoozed";
+  due_at: number | null;
+  scheduled_start: number | null;
+  scheduled_end: number | null;
+  updated_at: number;
+}
+
+export interface ReviewReflectionItem {
+  id: string;
+  text: string;
+}
+
+export interface ReviewSummary {
+  date: string;
+  completedTasks: ReviewTaskItem[];
+  unfinishedTasks: ReviewTaskItem[];
+  focusedMs: number;
+  reflection: ReviewReflectionItem | null;
+  lastShutdownDate: string | null;
+}
+
+export type ReviewSummaryResult =
+  | { ok: true; summary: ReviewSummary }
+  | { ok: false; error: "NotSignedIn" };
+
+export type ReviewBulkResult =
+  | { ok: true; updated: number }
+  | {
+      ok: false;
+      error: "NotSignedIn" | "InvalidArgs" | "InternalError";
+    };
+
+export type ReviewSaveReflectionResult =
+  | { ok: true; id: string }
+  | {
+      ok: false;
+      error: "NotSignedIn" | "InvalidArgs" | "EmptyText" | "InternalError";
+    };
+
+export type ReviewCompleteShutdownResult =
+  | { ok: true; reflectionId: string | null }
+  | {
+      ok: false;
+      error: "NotSignedIn" | "InvalidArgs" | "InternalError";
+    };
+
+export interface ReviewBulkArgs {
+  taskIds: string[];
+}
+
+export interface ReviewMoveToDateArgs extends ReviewBulkArgs {
+  dueAt: number;
+}
+
+export interface ReviewSaveReflectionArgs {
+  date: string;
+  text: string;
+}
+
+export interface ReviewCompleteShutdownArgs {
+  date: string;
+  reflection: string | null;
+}
+
+export interface ReviewBridge {
+  // Snapshot for the /review screen — completed today, unfinished
+  // today, focused-ms aggregate, today's reflection (if any), and the
+  // last shutdown date so the UI can show 'already closed today'.
+  summary(): Promise<ReviewSummaryResult>;
+  // Push due_at +24h and clear the schedule pair on each task.
+  carryForward(args: ReviewBulkArgs): Promise<ReviewBulkResult>;
+  // Mark each task as 'dropped'.
+  drop(args: ReviewBulkArgs): Promise<ReviewBulkResult>;
+  // Mark each task as 'done' (the 'I forgot to mark these earlier'
+  // affordance — distinct from focus.markDone which closes a session).
+  markDone(args: ReviewBulkArgs): Promise<ReviewBulkResult>;
+  // Set due_at to a specific instant + clear the schedule pair.
+  moveToDate(args: ReviewMoveToDateArgs): Promise<ReviewBulkResult>;
+  // Upsert today's reflection. Empty/whitespace-only text is rejected
+  // with EmptyText; the renderer should skip the call instead.
+  saveReflection(
+    args: ReviewSaveReflectionArgs,
+  ): Promise<ReviewSaveReflectionResult>;
+  // Single-tx close: optionally save reflection + write
+  // last_shutdown_date=date into user_settings.
+  completeShutdown(
+    args: ReviewCompleteShutdownArgs,
+  ): Promise<ReviewCompleteShutdownResult>;
+}
+
 export interface CalmlyApi {
   version: string;
   platform: string;
@@ -383,5 +480,6 @@ export interface CalmlyApi {
   triage: TriageBridge;
   plan: PlanBridge;
   focus: FocusBridge;
+  review: ReviewBridge;
   log: LogBridge;
 }

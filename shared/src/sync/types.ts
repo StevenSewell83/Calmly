@@ -13,6 +13,7 @@ export const syncTables = [
   "ai_suggestions",
   "telegram_links",
   "user_settings",
+  "daily_reflections",
 ] as const;
 export const SyncTableSchema = z.enum(syncTables);
 export type SyncTable = z.infer<typeof SyncTableSchema>;

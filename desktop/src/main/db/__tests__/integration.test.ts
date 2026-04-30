@@ -6,6 +6,7 @@ import {
   AiSuggestionSchema,
   CalendarEventImportSchema,
   CalendarEventSchema,
+  DailyReflectionSchema,
   InboxItemSchema,
   ReminderRuleSchema,
   RecurrenceRuleSchema,
@@ -321,6 +322,54 @@ describe.skipIf(!nodeSqlite)("F-05b · DB round-trip integration", () => {
       .get(USER_ID) as Record<string, unknown>;
     const parsed = UserSettingsSchema.parse(row);
     expect(parsed.user_id).toBe(USER_ID);
+  });
+
+  it("round-trips a DailyReflection", () => {
+    const db = freshDb();
+    db.prepare(
+      `INSERT INTO users (id, email, created_at) VALUES (?, ?, ?)`,
+    ).run(USER_ID, "alex@example.com", NOW);
+    db.prepare(
+      `INSERT INTO daily_reflections
+         (id, user_id, date, text, created_at, updated_at, version, deleted_at)
+       VALUES (?, ?, ?, ?, ?, ?, 1, NULL)`,
+    ).run(OTHER_ID, USER_ID, "2026-04-30", "long day", NOW, NOW);
+
+    const row = db
+      .prepare(`SELECT * FROM daily_reflections WHERE id = ?`)
+      .get(OTHER_ID) as Record<string, unknown>;
+    const parsed = DailyReflectionSchema.parse(row);
+    expect(parsed.date).toBe("2026-04-30");
+    expect(parsed.text).toBe("long day");
+  });
+
+  it("UNIQUE (user_id, date) prevents two reflections per day", () => {
+    const db = freshDb();
+    db.prepare(
+      `INSERT INTO users (id, email, created_at) VALUES (?, ?, ?)`,
+    ).run(USER_ID, "alex@example.com", NOW);
+    db.prepare(
+      `INSERT INTO daily_reflections
+         (id, user_id, date, text, created_at, updated_at, version)
+       VALUES (?, ?, ?, ?, ?, ?, 1)`,
+    ).run(OTHER_ID, USER_ID, "2026-04-30", "first", NOW, NOW);
+
+    expect(() =>
+      db
+        .prepare(
+          `INSERT INTO daily_reflections
+             (id, user_id, date, text, created_at, updated_at, version)
+           VALUES (?, ?, ?, ?, ?, ?, 2)`,
+        )
+        .run(
+          "33333333-3333-4333-8333-333333333333",
+          USER_ID,
+          "2026-04-30",
+          "second",
+          NOW + 1,
+          NOW + 1,
+        ),
+    ).toThrow();
   });
 
   it("FK CASCADE wipes a user's children", () => {

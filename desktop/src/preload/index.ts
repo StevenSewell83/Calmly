@@ -7,6 +7,7 @@ import { secretsBridge } from "./secrets";
 import { syncBridge } from "./sync";
 import { focusBridge } from "./focus";
 import { planBridge } from "./plan";
+import { reviewBridge } from "./review";
 import { eventsBridge, tasksBridge } from "./today";
 import { triageBridge } from "./triage";
 import type { CalmlyApi } from "./api-types";
@@ -24,6 +25,7 @@ const calmlyApi: CalmlyApi = {
   triage: triageBridge,
   plan: planBridge,
   focus: focusBridge,
+  review: reviewBridge,
   log: logBridge,
 };
 
