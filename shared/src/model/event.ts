@@ -16,3 +16,10 @@ export const CalendarEventSchema = z
     path: ["end_at"],
   });
 export type CalendarEvent = z.infer<typeof CalendarEventSchema>;
+
+export const CalendarEventRecordSchema = CalendarEventSchema.innerType().extend({
+  version: z.number().int().nonnegative(),
+  updated_at: unixMs,
+  deleted_at: unixMs.nullable(),
+});
+export type CalendarEventRecord = z.infer<typeof CalendarEventRecordSchema>;

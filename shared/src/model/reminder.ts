@@ -10,3 +10,10 @@ export const ReminderRuleSchema = z.object({
   active: z.union([z.literal(0), z.literal(1)]),
 });
 export type ReminderRule = z.infer<typeof ReminderRuleSchema>;
+
+export const ReminderRuleRecordSchema = ReminderRuleSchema.extend({
+  version: z.number().int().nonnegative(),
+  updated_at: z.number().int().nonnegative(),
+  deleted_at: z.number().int().nonnegative().nullable(),
+});
+export type ReminderRuleRecord = z.infer<typeof ReminderRuleRecordSchema>;

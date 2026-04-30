@@ -34,3 +34,11 @@ export const TaskSchema = z
     },
   );
 export type Task = z.infer<typeof TaskSchema>;
+
+// Wire-format variant: drops the refinement (not needed for parse-from-server)
+// and adds the sync trio. updated_at already present in TaskSchema.
+export const TaskRecordSchema = TaskSchema.innerType().extend({
+  version: z.number().int().nonnegative(),
+  deleted_at: unixMs.nullable(),
+});
+export type TaskRecord = z.infer<typeof TaskRecordSchema>;

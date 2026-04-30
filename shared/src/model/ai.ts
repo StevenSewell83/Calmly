@@ -18,3 +18,10 @@ export const AiSuggestionSchema = z.object({
   created_at: unixMs,
 });
 export type AiSuggestion = z.infer<typeof AiSuggestionSchema>;
+
+export const AiSuggestionRecordSchema = AiSuggestionSchema.extend({
+  version: z.number().int().nonnegative(),
+  updated_at: z.number().int().nonnegative(),
+  deleted_at: z.number().int().nonnegative().nullable(),
+});
+export type AiSuggestionRecord = z.infer<typeof AiSuggestionRecordSchema>;

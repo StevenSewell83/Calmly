@@ -14,3 +14,10 @@ export const InboxItemSchema = z.object({
   snoozed_until: unixMs.nullable(),
 });
 export type InboxItem = z.infer<typeof InboxItemSchema>;
+
+export const InboxItemRecordSchema = InboxItemSchema.extend({
+  version: z.number().int().nonnegative(),
+  updated_at: unixMs,
+  deleted_at: unixMs.nullable(),
+});
+export type InboxItemRecord = z.infer<typeof InboxItemRecordSchema>;
