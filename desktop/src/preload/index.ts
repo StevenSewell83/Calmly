@@ -6,6 +6,7 @@ import { logBridge } from "./log";
 import { secretsBridge } from "./secrets";
 import { syncBridge } from "./sync";
 import { eventsBridge, tasksBridge } from "./today";
+import { triageBridge } from "./triage";
 import type { CalmlyApi } from "./api-types";
 
 const calmlyApi: CalmlyApi = {
@@ -18,6 +19,7 @@ const calmlyApi: CalmlyApi = {
   inbox: inboxBridge,
   tasks: tasksBridge,
   events: eventsBridge,
+  triage: triageBridge,
   log: logBridge,
 };
 

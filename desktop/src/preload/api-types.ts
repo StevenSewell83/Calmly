@@ -194,6 +194,57 @@ export interface EventsBridge {
   listToday(): Promise<ListTodayEventsResult>;
 }
 
+// Triage resolutions — each converts an inbox item into a Task / Event
+// or discards it, atomically. NotFound when the item is missing for
+// the current user; AlreadyResolved when another client (or this one)
+// has already resolved it.
+export type TriageResolveTaskResult =
+  | { ok: true; id: string }
+  | {
+      ok: false;
+      error:
+        | "NotSignedIn"
+        | "NotFound"
+        | "AlreadyResolved"
+        | "InvalidArgs"
+        | "InternalError";
+    };
+
+export type TriageResolveEventResult = TriageResolveTaskResult;
+
+export type TriageDiscardResult =
+  | { ok: true }
+  | {
+      ok: false;
+      error:
+        | "NotSignedIn"
+        | "NotFound"
+        | "AlreadyResolved"
+        | "InternalError";
+    };
+
+export interface TriageResolveAsTaskArgs {
+  inboxId: string;
+  title: string;
+  // null when the user picked the 'Later' chip — no due date.
+  dueAt: number | null;
+}
+
+export interface TriageResolveAsEventArgs {
+  inboxId: string;
+  title: string;
+  startAt: number;
+  endAt: number;
+}
+
+export interface TriageBridge {
+  resolveAsTask(args: TriageResolveAsTaskArgs): Promise<TriageResolveTaskResult>;
+  resolveAsEvent(
+    args: TriageResolveAsEventArgs,
+  ): Promise<TriageResolveEventResult>;
+  discard(inboxId: string): Promise<TriageDiscardResult>;
+}
+
 export interface CalmlyApi {
   version: string;
   platform: string;
@@ -204,5 +255,6 @@ export interface CalmlyApi {
   inbox: InboxBridge;
   tasks: TasksBridge;
   events: EventsBridge;
+  triage: TriageBridge;
   log: LogBridge;
 }

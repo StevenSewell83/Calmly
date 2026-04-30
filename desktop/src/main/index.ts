@@ -22,6 +22,7 @@ import { registerLogIpc } from "./ipc/log";
 import { registerSecretsIpc } from "./ipc/secrets";
 import { registerSyncIpc } from "./ipc/sync";
 import { registerTodayIpc } from "./ipc/today";
+import { registerTriageIpc } from "./ipc/triage";
 import { createDesktopLogger } from "./logging";
 import {
   configureElectronLog,
@@ -209,6 +210,7 @@ if (!gotInstanceLock) {
     registerAuthIpc(orchestrator);
     registerInboxIpc();
     registerTodayIpc();
+    registerTriageIpc();
 
     const syncLoop: SyncLoop = createSyncLoop({
       getDb,
