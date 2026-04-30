@@ -1,4 +1,5 @@
 import { ArrowRight, CalendarDays, Clock } from "lucide-react";
+import { formatClock, formatRelativeFuture } from "../../utils/time";
 import type { NextItem } from "./useTodaySummary";
 
 interface Props {
@@ -57,7 +58,7 @@ export function NextCard({ next, now }: Props) {
           {formatClock(at)}
         </div>
         <div className="text-[11px] text-stone-400 tracking-wide">
-          {formatRelative(at, now)}
+          {formatRelativeFuture(at, now)}
         </div>
       </div>
     </article>
@@ -65,24 +66,3 @@ export function NextCard({ next, now }: Props) {
 }
 
 // Format an absolute clock label in the user's local zone. Twelve-hour
-// matches the GUI_draft's typographic style; tabular-nums keeps the
-// digits from jumping every minute.
-function formatClock(at: number): string {
-  const d = new Date(at);
-  const h12 = ((d.getHours() + 11) % 12) + 1;
-  const minutes = d.getMinutes().toString().padStart(2, "0");
-  const meridiem = d.getHours() < 12 ? "am" : "pm";
-  return `${h12}:${minutes} ${meridiem}`;
-}
-
-// Coarse relative phrasing — minutes for the next hour, hours past
-// that. Past timestamps render as "Just now" rather than negative
-// numbers (defensive: pickNextItem already filters out stale items).
-function formatRelative(at: number, now: number): string {
-  const diffMs = at - now;
-  if (diffMs <= 0) return "Just now";
-  const minutes = Math.round(diffMs / 60_000);
-  if (minutes < 60) return `In ${minutes} ${minutes === 1 ? "minute" : "minutes"}`;
-  const hours = Math.round(minutes / 60);
-  return `In ${hours} ${hours === 1 ? "hour" : "hours"}`;
-}

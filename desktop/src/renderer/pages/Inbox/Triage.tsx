@@ -20,6 +20,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { formatRelativePast } from "../../utils/time";
 import { MountainClimberIcon } from "../../components/MountainClimberIcon";
 import type { InboxItem } from "../../../preload/api-types";
 import {
@@ -339,7 +340,7 @@ export function Triage() {
                 <span>From {sourceLabel(current.source)}</span>
                 <span aria-hidden="true">·</span>
                 <span className="normal-case tracking-wide font-medium">
-                  {formatRelative(current.created_at, Date.now())}
+                  {formatRelativePast(current.created_at, Date.now())}
                 </span>
               </div>
               <p className="mt-3 text-2xl text-stone-800 leading-snug font-light">
@@ -848,19 +849,6 @@ function humanizeError(error: string): string {
     default:
       return "Couldn't save — try again.";
   }
-}
-
-function formatRelative(at: number, now: number): string {
-  const diffMs = Math.max(0, now - at);
-  const minutes = Math.round(diffMs / 60_000);
-  if (minutes < 1) return "Just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.round(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  const weeks = Math.round(days / 7);
-  return `${weeks}w ago`;
 }
 
 // Round forward to the next hour boundary local time. Used as the

@@ -1,4 +1,5 @@
 import { CalendarDays, CheckCircle2, Clock } from "lucide-react";
+import { formatClockParts } from "../../utils/time";
 import type { TodayListItem } from "./useTodaySummary";
 
 interface Props {
@@ -95,14 +96,11 @@ function TimePill({ at, optional }: TimePillProps) {
       </span>
     );
   }
-  const d = new Date(at);
-  const h12 = ((d.getHours() + 11) % 12) + 1;
-  const minutes = d.getMinutes().toString().padStart(2, "0");
-  const meridiem = d.getHours() < 12 ? "am" : "pm";
+  const { hm, meridiem } = formatClockParts(at);
   return (
     <span className="w-16 shrink-0 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-xl bg-stone-100 text-stone-700 text-xs font-medium tabular-nums">
       <Clock className="w-3 h-3 text-stone-400" aria-hidden="true" />
-      {h12}:{minutes}
+      {hm}
       <span className="text-stone-400 text-[9px]">{meridiem}</span>
     </span>
   );
