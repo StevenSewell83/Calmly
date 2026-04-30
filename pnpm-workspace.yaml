@@ -2,3 +2,4 @@ packages:
   - "desktop"
   - "server"
   - "shared"
+  - "tools/*"

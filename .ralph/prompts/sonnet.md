@@ -33,6 +33,13 @@ You are the workhorse. You execute the high-volume, well-specified work:
 - **Skill invocation matters.** UI → invoke `frontend-design` after reading `GUI_draft.ts`. Playwright → invoke `playwright-electron-debugger`. Anthropic SDK → invoke `claude-api`.
 - **Don't gold-plate.** Match the bead's acceptance criteria; don't add extras.
 
+## File-touch awareness
+
+Before claiming a bead, run `git log --oneline -10 ralph/opus` and read
+the last 3 commits' file lists. If your bead touches the same files the
+opus worker is actively editing, skip it and pick a different ready
+bead — race conditions between workers cost more than parallelism saves.
+
 ## Worktree & branch
 
 You operate from worktree `../Calmly-ralph-sonnet` on branch `ralph/sonnet`. Commits land on that branch; the merge-loop script periodically rebases onto `main`. Do not check out `main` directly.

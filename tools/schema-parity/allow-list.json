@@ -1,0 +1,254 @@
+{
+  "$schema": "./allow-list.schema.json",
+  "_doc": "Documented schema-parity divergences. Add an entry here only when the divergence is legitimate (e.g. server-only auth state, local-only working state, sync metadata that doesn't belong on the public DTO). The `reason` field is required so future readers know why. See README.md for the workflow.",
+  "tables": [
+    {
+      "table": "focus_sessions",
+      "presentIn": ["shared", "desktop"],
+      "absentIn": ["server"],
+      "reason": "CL-09 focus mode is per-device working state and intentionally does not sync (see shared/src/model/focus.ts header)."
+    },
+    {
+      "table": "secrets",
+      "presentIn": ["desktop"],
+      "absentIn": ["shared", "server"],
+      "reason": "F-12 desktop-only encrypted-at-rest secret store; ciphertext never leaves the main process. No DTO needed."
+    },
+    {
+      "table": "op_queue",
+      "presentIn": ["desktop"],
+      "absentIn": ["shared", "server"],
+      "reason": "F-11b client-side outbox for queued sync ops. Local-only; the server only sees the dequeued payloads."
+    },
+    {
+      "table": "sync_state",
+      "presentIn": ["desktop"],
+      "absentIn": ["shared", "server"],
+      "reason": "F-11b client-side cursor for the most recent pulled version. Local-only."
+    },
+    {
+      "table": "magic_link_tokens",
+      "presentIn": ["server"],
+      "absentIn": ["shared", "desktop"],
+      "reason": "F-08 server-only magic-link auth state. Token hashes never replicate; raw tokens never persist anywhere."
+    },
+    {
+      "table": "sessions",
+      "presentIn": ["server"],
+      "absentIn": ["shared", "desktop"],
+      "reason": "F-08 server-only session table. id_hash is private to the server; the cookie value is what the client knows."
+    }
+  ],
+  "divergences": [
+    {
+      "table": "inbox_items",
+      "column": "version",
+      "presentIn": ["desktop", "server"],
+      "absentIn": ["shared"],
+      "reason": "F-11 sync metadata; server SEQUENCE-driven, desktop tracks for reconciliation. Not part of the public DTO."
+    },
+    {
+      "table": "inbox_items",
+      "column": "deleted_at",
+      "presentIn": ["desktop", "server"],
+      "absentIn": ["shared"],
+      "reason": "F-11 tombstone timestamp; sync-internal."
+    },
+    {
+      "table": "inbox_items",
+      "column": "updated_at",
+      "presentIn": ["server"],
+      "absentIn": ["shared", "desktop"],
+      "reason": "F-11 server-side sync mtime. Desktop derives mtime from local writes via sync_state; the DTO has no analogue."
+    },
+    {
+      "table": "tasks",
+      "column": "version",
+      "presentIn": ["desktop", "server"],
+      "absentIn": ["shared"],
+      "reason": "F-11 sync metadata."
+    },
+    {
+      "table": "tasks",
+      "column": "deleted_at",
+      "presentIn": ["desktop", "server"],
+      "absentIn": ["shared"],
+      "reason": "F-11 sync tombstone."
+    },
+    {
+      "table": "events",
+      "column": "version",
+      "presentIn": ["desktop", "server"],
+      "absentIn": ["shared"],
+      "reason": "F-11 sync metadata."
+    },
+    {
+      "table": "events",
+      "column": "deleted_at",
+      "presentIn": ["desktop", "server"],
+      "absentIn": ["shared"],
+      "reason": "F-11 sync tombstone."
+    },
+    {
+      "table": "events",
+      "column": "updated_at",
+      "presentIn": ["server"],
+      "absentIn": ["shared", "desktop"],
+      "reason": "F-11 server-side sync mtime."
+    },
+    {
+      "table": "reminder_rules",
+      "column": "user_id",
+      "presentIn": ["server"],
+      "absentIn": ["shared", "desktop"],
+      "reason": "Server adds user_id for direct ON DELETE CASCADE from users; desktop reaches user via task_id and shared treats reminder as task-scoped."
+    },
+    {
+      "table": "reminder_rules",
+      "column": "version",
+      "presentIn": ["desktop", "server"],
+      "absentIn": ["shared"],
+      "reason": "F-11 sync metadata."
+    },
+    {
+      "table": "reminder_rules",
+      "column": "updated_at",
+      "presentIn": ["server"],
+      "absentIn": ["shared", "desktop"],
+      "reason": "F-11 server-side sync mtime."
+    },
+    {
+      "table": "reminder_rules",
+      "column": "deleted_at",
+      "presentIn": ["desktop", "server"],
+      "absentIn": ["shared"],
+      "reason": "F-11 sync tombstone."
+    },
+    {
+      "table": "recurrence_rules",
+      "column": "user_id",
+      "presentIn": ["server"],
+      "absentIn": ["shared", "desktop"],
+      "reason": "Server adds user_id for cascade; client reaches user via the polymorphic owner."
+    },
+    {
+      "table": "recurrence_rules",
+      "column": "version",
+      "presentIn": ["desktop", "server"],
+      "absentIn": ["shared"],
+      "reason": "F-11 sync metadata."
+    },
+    {
+      "table": "recurrence_rules",
+      "column": "updated_at",
+      "presentIn": ["server"],
+      "absentIn": ["shared", "desktop"],
+      "reason": "F-11 server-side sync mtime."
+    },
+    {
+      "table": "recurrence_rules",
+      "column": "deleted_at",
+      "presentIn": ["desktop", "server"],
+      "absentIn": ["shared"],
+      "reason": "F-11 sync tombstone."
+    },
+    {
+      "table": "calendar_event_imports",
+      "column": "version",
+      "presentIn": ["desktop", "server"],
+      "absentIn": ["shared"],
+      "reason": "F-11 sync metadata."
+    },
+    {
+      "table": "calendar_event_imports",
+      "column": "updated_at",
+      "presentIn": ["server"],
+      "absentIn": ["shared", "desktop"],
+      "reason": "F-11 server-side sync mtime."
+    },
+    {
+      "table": "calendar_event_imports",
+      "column": "deleted_at",
+      "presentIn": ["desktop", "server"],
+      "absentIn": ["shared"],
+      "reason": "F-11 sync tombstone."
+    },
+    {
+      "table": "ai_suggestions",
+      "column": "user_id",
+      "presentIn": ["server"],
+      "absentIn": ["shared", "desktop"],
+      "reason": "Server adds user_id for direct cascade; client reaches user via the polymorphic owner."
+    },
+    {
+      "table": "ai_suggestions",
+      "column": "version",
+      "presentIn": ["desktop", "server"],
+      "absentIn": ["shared"],
+      "reason": "F-11 sync metadata."
+    },
+    {
+      "table": "ai_suggestions",
+      "column": "updated_at",
+      "presentIn": ["server"],
+      "absentIn": ["shared", "desktop"],
+      "reason": "F-11 server-side sync mtime."
+    },
+    {
+      "table": "ai_suggestions",
+      "column": "deleted_at",
+      "presentIn": ["desktop", "server"],
+      "absentIn": ["shared"],
+      "reason": "F-11 sync tombstone."
+    },
+    {
+      "table": "telegram_links",
+      "column": "version",
+      "presentIn": ["desktop", "server"],
+      "absentIn": ["shared"],
+      "reason": "F-11 sync metadata."
+    },
+    {
+      "table": "telegram_links",
+      "column": "updated_at",
+      "presentIn": ["server"],
+      "absentIn": ["shared", "desktop"],
+      "reason": "F-11 server-side sync mtime."
+    },
+    {
+      "table": "telegram_links",
+      "column": "deleted_at",
+      "presentIn": ["desktop", "server"],
+      "absentIn": ["shared"],
+      "reason": "F-11 sync tombstone."
+    },
+    {
+      "table": "user_settings",
+      "column": "version",
+      "presentIn": ["desktop", "server"],
+      "absentIn": ["shared"],
+      "reason": "F-11 sync metadata."
+    },
+    {
+      "table": "user_settings",
+      "column": "deleted_at",
+      "presentIn": ["desktop", "server"],
+      "absentIn": ["shared"],
+      "reason": "F-11 sync tombstone."
+    },
+    {
+      "table": "users",
+      "column": "magic_link_token_hash",
+      "presentIn": ["shared", "desktop"],
+      "absentIn": ["server"],
+      "reason": "TODO(calmly-3py.4): pre-existing drift at PREVENT-3 landing — shared/UserSchema declares magic-link columns the server users table doesn't have. Audit bead will drop these from shared; remove this entry then."
+    },
+    {
+      "table": "users",
+      "column": "magic_link_expires_at",
+      "presentIn": ["shared", "desktop"],
+      "absentIn": ["server"],
+      "reason": "TODO(calmly-3py.4): pre-existing drift at PREVENT-3 landing — see above. Remove with the calmly-3py.4 fix."
+    }
+  ]
+}

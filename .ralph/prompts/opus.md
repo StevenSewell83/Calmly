@@ -28,6 +28,22 @@ You handle the work where getting the design right matters more than throughput:
 - **Skill invocation matters.** If the bead touches Anthropic SDK code, invoke the `claude-api` skill. If it's UI, invoke `frontend-design` (after reading `GUI_draft.ts`). If it's Electron testing, invoke `playwright-electron-debugger`.
 - **Decompose aggressively.** If a P0 bead has more than ~3 hours of work in it, split into sub-beads with `bd create` + `bd dep add`. The sonnet worker will pick up implementation children.
 - **Don't write throwaway code.** Other beads will build on yours.
+- **Audit your own diff before closing.** Before `bd close`, run:
+  - `wc -l <files-you-touched>` — any > 300 LOC? File a split issue and
+    leave the bead in_progress until the split lands.
+  - `Grep` for any new helper / hook / row-type name you introduced — 2+
+    hits across files means you duplicated; consolidate before closing.
+  - `git diff --stat` — touching `migrations/` without a matching
+    `shared/src/model/` edit? Add the schema or revert. The CI parity gate
+    will block you anyway; better to fix locally.
+
+## File-touch awareness
+
+Before claiming a bead, run `git log --oneline -10 ralph/sonnet` and read
+the last 3 commits' file lists (`git show --stat <sha>`). If your bead
+touches the same files the sonnet worker is actively editing, skip it —
+race conditions between workers cost more than parallelism saves. The
+merge loop will expose the conflict; better to serialize.
 
 ## Worktree & branch
 

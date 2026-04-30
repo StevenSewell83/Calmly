@@ -35,6 +35,9 @@ importers:
       prettier:
         specifier: 3.3.3
         version: 3.3.3
+      tsx:
+        specifier: 4.19.2
+        version: 4.19.2
       typescript:
         specifier: 5.6.3
         version: 5.6.3
@@ -182,6 +185,21 @@ importers:
         specifier: 3.23.8
         version: 3.23.8
     devDependencies:
+      typescript:
+        specifier: 5.6.3
+        version: 5.6.3
+      vitest:
+        specifier: 2.1.4
+        version: 2.1.4(@types/node@20.16.10)
+
+  tools/schema-parity:
+    devDependencies:
+      '@types/node':
+        specifier: 20.16.10
+        version: 20.16.10
+      tsx:
+        specifier: 4.19.2
+        version: 4.19.2
       typescript:
         specifier: 5.6.3
         version: 5.6.3

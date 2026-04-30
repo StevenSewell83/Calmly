@@ -15,7 +15,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "schema:check": "tsx tools/schema-parity/check.ts"
   },
   "lint-staged": {
     "*.{ts,tsx,js,cjs,mjs}": [
@@ -36,6 +37,7 @@
     "husky": "9.1.6",
     "lint-staged": "15.2.10",
     "prettier": "3.3.3",
+    "tsx": "4.19.2",
     "typescript": "5.6.3",
     "typescript-eslint": "8.13.0"
   },

@@ -57,6 +57,72 @@ export default tseslint.config(
       // We reach for `unknown` casts in IPC boundaries; opt-in error only when
       // the assertion isn't to a narrow type.
       "@typescript-eslint/no-explicit-any": "warn",
+      // PREVENT-2: object-literal `as` casts erase optional/required mismatches.
+      // Force callers to use `satisfies` or a typed const so structural drift
+      // surfaces at compile time.
+      "@typescript-eslint/consistent-type-assertions": [
+        "error",
+        { assertionStyle: "as", objectLiteralTypeAssertions: "never" },
+      ],
+    },
+  },
+
+  // PREVENT-2: cap source files at 300 LOC across the three workspaces. Tests,
+  // generated `.d.ts` files, and SQL migration glue are exempt (see ignores
+  // and the per-files block below). Per-file overrides for currently-too-large
+  // files are listed further down with a tracking-bead comment so they get
+  // removed once the underlying refactor lands.
+  {
+    files: [
+      "desktop/src/**/*.{ts,tsx}",
+      "server/src/**/*.ts",
+      "shared/src/**/*.ts",
+    ],
+    ignores: [
+      "**/__tests__/**",
+      "**/*.test.{ts,tsx}",
+      "**/*.spec.{ts,tsx}",
+      "**/migrations/**",
+      "**/*.d.ts",
+    ],
+    rules: {
+      "max-lines": [
+        "error",
+        { max: 300, skipBlankLines: true, skipComments: true },
+      ],
+    },
+  },
+
+  // PREVENT-2: ban literal enum strings outside `shared/`. Drift audit on
+  // 2026-04-30 found dozens of stray "open" / "in_progress" etc. literals in
+  // call-sites, which made it impossible to refactor TaskStatus safely. Force
+  // imports from @calmly/shared instead. Tests, migrations, model definitions
+  // (where the literal is the canonical source), and the shared package itself
+  // are exempt — see the override block below.
+  {
+    files: ["desktop/src/**/*.{ts,tsx}", "server/src/**/*.ts"],
+    ignores: [
+      "**/__tests__/**",
+      "**/*.test.{ts,tsx}",
+      "**/*.spec.{ts,tsx}",
+      "**/migrations/**",
+      "**/model/**",
+      "**/db/migrations/**",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "Literal[value=/^(open|in_progress|done|dropped)$/]",
+          message:
+            "Use TaskStatus from @calmly/shared, not a string literal.",
+        },
+        {
+          selector: "Literal[value=/^(telegram|desktop)$/]",
+          message: "Use Source enum from @calmly/shared, not a string literal.",
+        },
+      ],
     },
   },
 
@@ -111,6 +177,85 @@ export default tseslint.config(
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-non-null-assertion": "off",
+      // Tests build object-literal fixtures that shape-match domain types via
+      // `as`; insisting on `satisfies` for every fixture is more noise than
+      // signal.
+      "@typescript-eslint/consistent-type-assertions": "off",
+      // Tests legitimately reference enum string literals in assertions and
+      // mock payloads; the shared-import rule would create thousands of false
+      // positives there.
+      "no-restricted-syntax": "off",
+      "max-lines": "off",
+    },
+  },
+
+  // PREVENT-2: per-file overrides for the banned-literal rule. Each entry
+  // names a file where the literal is part of a typed surface (store helpers
+  // building TaskStatus arrays, IPC handlers passing typed Source values,
+  // preload type definitions) — i.e. the *opposite* of the drift the rule
+  // exists to catch. The rule still applies to the rest of the workspace.
+  {
+    files: [
+      // Store layers build typed TaskStatus arrays / consts at module scope.
+      "desktop/src/main/focus/store.ts",
+      "desktop/src/main/plan/store.ts",
+      "desktop/src/main/triage/store.ts",
+      // IPC handlers pass typed enum values into the domain layer.
+      "desktop/src/main/ipc/inbox.ts",
+      // Preload api-types is the canonical renderer-side mirror of the shared
+      // unions; pulling @calmly/shared into the renderer just for this would
+      // tangle the dep graph.
+      "desktop/src/preload/api-types.ts",
+      // Renderer Today views read TaskStatus off typed payloads.
+      "desktop/src/renderer/pages/Home/TodayList.tsx",
+      "desktop/src/renderer/pages/Home/useTodaySummary.ts",
+      // Triage switch narrows over the typed InboxItem["source"] union.
+      "desktop/src/renderer/pages/Inbox/Triage.tsx",
+      // React Router config — `path: "telegram"` is a route segment, not
+      // a Source enum value (the regex match is coincidental).
+      "desktop/src/renderer/router.tsx",
+    ],
+    rules: {
+      "no-restricted-syntax": "off",
+    },
+  },
+
+  // PREVENT-2: per-file max-lines overrides. Each entry cites the bead that
+  // tracks the underlying split/refactor so this list shrinks over time.
+  {
+    files: ["desktop/src/renderer/pages/Inbox/Triage.tsx"],
+    rules: {
+      // TODO(calmly-3py.7): remove once Triage.tsx is split — see PREVENT-2.
+      "max-lines": ["off"],
+    },
+  },
+  {
+    files: ["desktop/src/preload/api-types.ts"],
+    rules: {
+      // TODO(calmly-3py.6): remove once row types are deduped — see PREVENT-2.
+      "max-lines": ["off"],
+    },
+  },
+  {
+    files: ["desktop/src/main/triage/store.ts"],
+    rules: {
+      // PREVENT-2 drift cleanup: 314 LOC, no dedicated bead — bump cap to 320
+      // so the rule lands today; revisit when triage store is next touched.
+      "max-lines": [
+        "error",
+        { max: 320, skipBlankLines: true, skipComments: true },
+      ],
+    },
+  },
+  {
+    files: ["desktop/src/main/index.ts"],
+    rules: {
+      // PREVENT-2 drift cleanup: 306 LOC, no dedicated bead — bump cap to 320
+      // so the rule lands today; revisit when main bootstrap is next touched.
+      "max-lines": [
+        "error",
+        { max: 320, skipBlankLines: true, skipComments: true },
+      ],
     },
   },
 

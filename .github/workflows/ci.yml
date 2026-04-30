@@ -130,11 +130,38 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # PREVENT-4: skip the heavy Electron e2e run when a PR only touches
+      # docs / beads / ralph / non-code files. Push to main always runs.
+      - uses: dorny/paths-filter@v3
+        id: filter
+        if: github.event_name == 'pull_request'
+        with:
+          filters: |
+            code:
+              - 'desktop/**'
+              - 'server/**'
+              - 'shared/**'
+              - 'tools/**'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'eslint.config.mjs'
+              - '.github/workflows/**'
+      - name: Skip e2e (docs/beads-only PR)
+        if: github.event_name == 'pull_request' && steps.filter.outputs.code != 'true'
+        run: |
+          echo "::notice::Docs/beads-only PR — skipping Electron e2e."
+          exit 0
       - run: corepack enable
+        if: github.event_name != 'pull_request' || steps.filter.outputs.code == 'true'
       - uses: actions/setup-node@v4
+        if: github.event_name != 'pull_request' || steps.filter.outputs.code == 'true'
         with:
           node-version: ${{ env.NODE_VERSION }}
       - uses: actions/cache@v4
+        if: github.event_name != 'pull_request' || steps.filter.outputs.code == 'true'
         with:
           path: ~/.local/share/pnpm/store
           key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -144,7 +171,9 @@ jobs:
       # system libs (libnss3 et al.) are required to render the window under
       # Xvfb on the GitHub-hosted runner.
       - run: pnpm install --frozen-lockfile
+        if: github.event_name != 'pull_request' || steps.filter.outputs.code == 'true'
       - name: Install Electron runtime libs
+        if: github.event_name != 'pull_request' || steps.filter.outputs.code == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
@@ -164,11 +193,13 @@ jobs:
             libasound2t64 \
             xvfb
       - name: Build desktop (electron-vite)
+        if: github.event_name != 'pull_request' || steps.filter.outputs.code == 'true'
         run: pnpm --filter @calmly/desktop build
       - name: Run Playwright E2E (Xvfb)
+        if: github.event_name != 'pull_request' || steps.filter.outputs.code == 'true'
         run: xvfb-run -a pnpm --filter @calmly/desktop test:e2e
       - name: Upload Playwright trace on failure
-        if: failure()
+        if: failure() && (github.event_name != 'pull_request' || steps.filter.outputs.code == 'true')
         uses: actions/upload-artifact@v4
         with:
           name: playwright-trace
@@ -177,3 +208,57 @@ jobs:
             desktop/playwright-report/**
           if-no-files-found: ignore
           retention-days: 7
+
+  schema-parity:
+    # PREVENT-3: column-level parity check across the three sources of
+    # truth (zod schemas, sqlite migrations, pg-migrate migrations).
+    # Fast (~1s) so we run unconditionally rather than gating on a
+    # paths-filter; the path filter felt like overkill.
+    name: Schema parity
+    needs: setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: actions/cache@v4
+        with:
+          path: ~/.local/share/pnpm/store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm schema:check
+
+  schema-paths:
+    name: Migrations touch shared
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            migrations:
+              - 'desktop/src/main/db/migrations/**'
+              - 'server/migrations/**'
+            shared-model:
+              - 'shared/src/model/**'
+      - name: Check label override
+        id: label
+        run: |
+          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'migrations-only-on-purpose') }}" == "true" ]]; then
+            echo "override=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "override=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Enforce shared model touch
+        if: steps.filter.outputs.migrations == 'true' && steps.filter.outputs.shared-model != 'true' && steps.label.outputs.override != 'true'
+        run: |
+          echo "::error::This PR modifies migrations but not shared/src/model/. Update the matching shared zod schema, or apply the 'migrations-only-on-purpose' label if this is intentional (e.g. backfill / index-only)."
+          exit 1

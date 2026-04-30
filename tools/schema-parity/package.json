@@ -1,0 +1,18 @@
+{
+  "name": "@calmly/schema-parity",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Cross-source schema parity check (PREVENT-3): zod ↔ sqlite ↔ pg-migrate.",
+  "scripts": {
+    "check": "tsx check.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "20.16.10",
+    "tsx": "4.19.2",
+    "typescript": "5.6.3",
+    "vitest": "2.1.4"
+  }
+}

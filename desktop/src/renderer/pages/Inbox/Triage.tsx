@@ -40,8 +40,13 @@ type DateChoice =
   | { kind: "today" | "tomorrow" | "thisWeek" | "later" }
   | { kind: "pick"; ms: number };
 
+// Chip keys are only the simple (no-payload) DateChoice variants — the
+// "pick" variant carries a timestamp and is selected via the date picker
+// instead of a chip.
+type SimpleDateKind = Exclude<DateChoice["kind"], "pick">;
+
 interface ChipDef {
-  key: DateChoice["kind"];
+  key: SimpleDateKind;
   label: string;
 }
 
@@ -558,7 +563,7 @@ function DueDateChips({ value, onChange }: DueDateChipsProps) {
             <button
               key={chip.key}
               type="button"
-              onClick={() => onChange({ kind: chip.key } as DateChoice)}
+              onClick={() => onChange({ kind: chip.key })}
               className={[
                 "px-4 py-2 rounded-2xl text-xs font-medium tracking-wide transition-colors",
                 active
