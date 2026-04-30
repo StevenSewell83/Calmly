@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { PageStateView } from "../../components/PageStateView";
 import { useTriageShortcuts } from "../../hooks/useTriageShortcuts";
 import { useInboxList } from "./useInboxList";
 import {
@@ -40,7 +41,7 @@ export function Triage() {
 
   // Flat list of unresolved items (newest first matches list view).
   const queue = useMemo(
-    () => (state.kind === "ready" ? state.items : []),
+    () => (state.kind === "ready" ? state.data.items : []),
     [state],
   );
 
@@ -223,133 +224,126 @@ export function Triage() {
           Back to Inbox
         </Link>
 
-        {state.kind === "loading" ? (
-          <LoadingShell />
-        ) : state.kind === "signed-out" ? (
-          <FailureNotice
-            title="You're signed out."
-            body="Sign in to start triaging."
-          />
-        ) : state.kind === "error" ? (
-          <FailureNotice title="Something hiccuped." body={state.message} />
-        ) : queue.length === 0 ? (
-          <InboxClear onHome={() => navigate("/")} />
-        ) : current ? (
-          <>
-            <header className="mb-6 flex items-center justify-between">
-              <h1 className="font-serif italic text-4xl tracking-tight text-stone-800">
-                Triage.
-              </h1>
-              <span className="text-[11px] font-bold tracking-[0.22em] uppercase text-stone-400">
-                Item {queueIndex + 1} of {queue.length}
-              </span>
-            </header>
+        <PageStateView
+          state={state}
+          loading={<LoadingShell />}
+          signedOutBody="Sign in to start triaging."
+          ready={() =>
+            queue.length === 0 ? (
+              <InboxClear onHome={() => navigate("/")} />
+            ) : current ? (
+              <>
+                <header className="mb-6 flex items-center justify-between">
+                  <h1 className="font-serif italic text-4xl tracking-tight text-stone-800">
+                    Triage.
+                  </h1>
+                  <span className="text-[11px] font-bold tracking-[0.22em] uppercase text-stone-400">
+                    Item {queueIndex + 1} of {queue.length}
+                  </span>
+                </header>
 
-            <ItemCard item={current} now={Date.now()} />
+                <ItemCard item={current} now={Date.now()} />
 
-            <TypeClassifier value={type} onChange={setType} />
+                <TypeClassifier value={type} onChange={setType} />
 
-            <div className="mt-6">
-              <label
-                htmlFor="triage-title"
-                className="block text-[10px] font-bold tracking-[0.22em] uppercase text-stone-500 mb-2"
-              >
-                Title
-              </label>
-              <input
-                id="triage-title"
-                ref={titleInputRef}
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full bg-white border border-stone-200 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100 outline-none rounded-2xl px-5 py-3 text-base text-stone-800"
-                aria-label="Title"
-              />
-            </div>
+                <div className="mt-6">
+                  <label
+                    htmlFor="triage-title"
+                    className="block text-[10px] font-bold tracking-[0.22em] uppercase text-stone-500 mb-2"
+                  >
+                    Title
+                  </label>
+                  <input
+                    id="triage-title"
+                    ref={titleInputRef}
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="w-full bg-white border border-stone-200 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100 outline-none rounded-2xl px-5 py-3 text-base text-stone-800"
+                    aria-label="Title"
+                  />
+                </div>
 
-            {type === "task" ? (
-              <DueDateChips value={dateChoice} onChange={setDateChoice} />
-            ) : null}
+                {type === "task" ? (
+                  <DueDateChips value={dateChoice} onChange={setDateChoice} />
+                ) : null}
 
-            {type === "event" ? (
-              <div className="mt-6 grid grid-cols-2 gap-4">
-                <TimeInput
-                  id="triage-event-start"
-                  label="Starts"
-                  value={eventStart}
-                  onChange={setEventStart}
+                {type === "event" ? (
+                  <div className="mt-6 grid grid-cols-2 gap-4">
+                    <TimeInput
+                      id="triage-event-start"
+                      label="Starts"
+                      value={eventStart}
+                      onChange={setEventStart}
+                    />
+                    <TimeInput
+                      id="triage-event-end"
+                      label="Ends"
+                      value={eventEnd}
+                      onChange={setEventEnd}
+                    />
+                  </div>
+                ) : null}
+
+                {errorMsg ? (
+                  <p
+                    role="alert"
+                    className="mt-5 text-sm text-rose-600 font-medium tracking-wide"
+                  >
+                    {errorMsg}
+                  </p>
+                ) : null}
+
+                <TriageActionBar
+                  type={type}
+                  submitting={submitting}
+                  titleEmpty={title.trim().length === 0}
+                  setDateChoice={setDateChoice}
+                  submitTask={() => void submitTask()}
+                  submitEvent={() => void submitEvent()}
+                  submitDiscard={() => void submitDiscard()}
+                  toggleSnooze={() => setSnoozeOpen((v) => !v)}
+                  skip={() => void skip()}
+                  showBreakDownStub={() =>
+                    setErrorMsg("Break-down lands in CL-05.")
+                  }
                 />
-                <TimeInput
-                  id="triage-event-end"
-                  label="Ends"
-                  value={eventEnd}
-                  onChange={setEventEnd}
-                />
-              </div>
-            ) : null}
 
-            {errorMsg ? (
-              <p
-                role="alert"
-                className="mt-5 text-sm text-rose-600 font-medium tracking-wide"
-              >
-                {errorMsg}
-              </p>
-            ) : null}
+                {snoozeOpen ? (
+                  <SnoozeMenu
+                    onPick={(untilMs) => void snooze(untilMs)}
+                    onClose={() => setSnoozeOpen(false)}
+                  />
+                ) : null}
 
-            <TriageActionBar
-              type={type}
-              submitting={submitting}
-              titleEmpty={title.trim().length === 0}
-              setDateChoice={setDateChoice}
-              submitTask={() => void submitTask()}
-              submitEvent={() => void submitEvent()}
-              submitDiscard={() => void submitDiscard()}
-              toggleSnooze={() => setSnoozeOpen((v) => !v)}
-              skip={() => void skip()}
-              showBreakDownStub={() => setErrorMsg("Break-down lands in CL-05.")}
-            />
-
-            {snoozeOpen ? (
-              <SnoozeMenu
-                onPick={(untilMs) => void snooze(untilMs)}
-                onClose={() => setSnoozeOpen(false)}
-              />
-            ) : null}
-
-            <p className="mt-8 text-[11px] text-stone-400 tracking-wide">
-              <span className="font-bold tracking-[0.18em] uppercase">Keys</span>{" "}
-              · 1 Task · 2 Event · 3 Discard · T Today · W This Week · L Later
-              · S Snooze · X Skip · Enter Confirm
-            </p>
-          </>
-        ) : null}
+                <p className="mt-8 text-[11px] text-stone-400 tracking-wide">
+                  <span className="font-bold tracking-[0.18em] uppercase">
+                    Keys
+                  </span>{" "}
+                  · 1 Task · 2 Event · 3 Discard · T Today · W This Week · L
+                  Later · S Snooze · X Skip · Enter Confirm
+                </p>
+              </>
+            ) : null
+          }
+        />
       </div>
     </section>
   );
 }
 
-// LoadingShell + FailureNotice intentionally inline — REFACTOR-AUDIT-4
-// owns the dedup against the same-named widgets in Home / Plan / Inbox
-// once the shared <PageStateView> lands.
+// Per-page loading skeleton; signed-out + error shells live in
+// PageStateView (REFACTOR-AUDIT-4).
 function LoadingShell() {
   return (
-    <div role="status" aria-label="Loading triage" className="flex flex-col gap-4">
+    <div
+      role="status"
+      aria-label="Loading triage"
+      className="flex flex-col gap-4"
+    >
       <div className="rounded-[2.5rem] bg-stone-100/60 h-32 animate-pulse" />
       <div className="rounded-2xl bg-stone-100/60 h-12 animate-pulse" />
       <div className="rounded-2xl bg-stone-100/60 h-12 animate-pulse" />
-    </div>
-  );
-}
-
-function FailureNotice({ title, body }: { title: string; body: string }) {
-  return (
-    <div
-      role="alert"
-      className="rounded-[1.8rem] border border-stone-200 bg-white/60 px-6 py-5 max-w-md"
-    >
-      <p className="text-sm text-stone-800 font-medium">{title}</p>
-      <p className="mt-1 text-xs text-stone-500">{body}</p>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { PlanTaskItem } from "../../../preload/api-types";
+import { FailureNotice } from "../../components/PageStateView";
 import { usePlanForDay } from "../Plan/usePlanForDay";
 import { ActiveSession } from "./ActiveSession";
 import { Chooser } from "./Chooser";
@@ -108,10 +109,10 @@ export function Focus(): JSX.Element {
   }
 
   const todaysTasks = focusableTasks(
-    planForDay.state.plan.scheduled,
-    planForDay.state.plan.backlog,
+    planForDay.state.data.plan.scheduled,
+    planForDay.state.data.plan.backlog,
   );
-  const session = focus.state.session;
+  const session = focus.state.data;
 
   if (session) {
     return (
@@ -137,8 +138,8 @@ export function Focus(): JSX.Element {
     <Frame>
       <ChooserHeader />
       <Chooser
-        scheduled={planForDay.state.plan.scheduled}
-        backlog={planForDay.state.plan.backlog}
+        scheduled={planForDay.state.data.plan.scheduled}
+        backlog={planForDay.state.data.plan.backlog}
         onPick={(t) => void startFocus(t)}
       />
     </Frame>
@@ -176,20 +177,3 @@ function LoadingShell(): JSX.Element {
   );
 }
 
-function FailureNotice({
-  title,
-  body,
-}: {
-  title: string;
-  body: string;
-}): JSX.Element {
-  return (
-    <div
-      role="alert"
-      className="rounded-[1.8rem] border border-stone-200 bg-white/60 px-6 py-5 max-w-md"
-    >
-      <p className="text-sm text-stone-800 font-medium">{title}</p>
-      <p className="mt-1 text-xs text-stone-500">{body}</p>
-    </div>
-  );
-}

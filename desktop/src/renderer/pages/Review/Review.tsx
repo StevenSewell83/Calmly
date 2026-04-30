@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { ReviewTaskItem } from "../../../preload/api-types";
+import { PageStateView } from "../../components/PageStateView";
 import { CompletedList } from "./CompletedList";
 import { ReflectionInput } from "./ReflectionInput";
 import {
-  FailureNotice,
   LoadingShell,
   ShutdownFooter,
   SummaryStrip,
@@ -28,7 +28,7 @@ export function Review(): JSX.Element {
   const rowRefs = useRef<Map<string, HTMLLIElement>>(new Map());
   const reflectionInitialRef = useRef<string>("");
 
-  const summary = state.kind === "ready" ? state.summary : null;
+  const summary = state.kind === "ready" ? state.data : null;
   const unfinished = useMemo<ReviewTaskItem[]>(
     () => summary?.unfinishedTasks ?? [],
     [summary],
@@ -161,43 +161,39 @@ export function Review(): JSX.Element {
       </header>
 
       <div className="max-w-3xl flex flex-col gap-12">
-        {state.kind === "loading" ? (
-          <LoadingShell />
-        ) : state.kind === "signed-out" ? (
-          <FailureNotice
-            title="You're signed out."
-            body="Sign in to close out your day."
-          />
-        ) : state.kind === "error" ? (
-          <FailureNotice title="Something hiccuped." body={state.message} />
-        ) : (
-          <>
-            <CompletedList items={summary!.completedTasks} />
-            <UnfinishedSection
-              items={unfinished}
-              selectedId={selectedId}
-              movePopoverId={movePopoverId}
-              rowRefs={rowRefs}
-              onSelect={setSelectedId}
-              onCarryForward={(id) => void carryForward(id)}
-              onDrop={(id) => void dropTask(id)}
-              onMarkDone={(id) => void markDone(id)}
-              onMoveToDate={(id, ms) => void moveToDate(id, ms)}
-              onMovePopoverChange={(id, open) =>
-                setMovePopoverId(open ? id : null)
-              }
-            />
-            <ReflectionInput
-              initialText={reflectionInitialRef.current}
-              onChange={setReflection}
-            />
-            <ShutdownFooter
-              committing={committing}
-              onComplete={() => void completeShutdown()}
-              onSkip={() => navigate("/")}
-            />
-          </>
-        )}
+        <PageStateView
+          state={state}
+          loading={<LoadingShell />}
+          signedOutBody="Sign in to close out your day."
+          ready={(data) => (
+            <>
+              <CompletedList items={data.completedTasks} />
+              <UnfinishedSection
+                items={unfinished}
+                selectedId={selectedId}
+                movePopoverId={movePopoverId}
+                rowRefs={rowRefs}
+                onSelect={setSelectedId}
+                onCarryForward={(id) => void carryForward(id)}
+                onDrop={(id) => void dropTask(id)}
+                onMarkDone={(id) => void markDone(id)}
+                onMoveToDate={(id, ms) => void moveToDate(id, ms)}
+                onMovePopoverChange={(id, open) =>
+                  setMovePopoverId(open ? id : null)
+                }
+              />
+              <ReflectionInput
+                initialText={reflectionInitialRef.current}
+                onChange={setReflection}
+              />
+              <ShutdownFooter
+                committing={committing}
+                onComplete={() => void completeShutdown()}
+                onSkip={() => navigate("/")}
+              />
+            </>
+          )}
+        />
       </div>
     </section>
   );

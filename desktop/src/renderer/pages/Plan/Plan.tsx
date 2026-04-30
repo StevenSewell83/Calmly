@@ -10,6 +10,7 @@ import {
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import type { PlanTaskItem } from "../../../preload/api-types";
+import { PageStateView } from "../../components/PageStateView";
 import { Backlog } from "./Backlog";
 import { DayGrid } from "./DayGrid";
 import {
@@ -131,7 +132,7 @@ export function Plan() {
   const onBlockResize = useCallback(
     (taskId: string, newEndMinutes: number) => {
       if (state.kind !== "ready") return;
-      const block = state.plan.scheduled.find((t) => t.id === taskId);
+      const block = state.data.plan.scheduled.find((t) => t.id === taskId);
       if (!block || block.scheduled_start === null) return;
       const endMs = gridMinutesToMs(newEndMinutes, day);
       void persistSchedule(taskId, block.scheduled_start, endMs);
@@ -147,7 +148,7 @@ export function Plan() {
 
   const blocks = useMemo(() => {
     if (state.kind !== "ready") return [];
-    const placed = state.plan.scheduled.filter(
+    const placed = state.data.plan.scheduled.filter(
       (t) => t.scheduled_start !== null && t.scheduled_end !== null,
     );
     const overlaps = detectOverlaps(
@@ -195,33 +196,29 @@ export function Plan() {
         />
       </header>
 
-      {state.kind === "loading" ? (
-        <LoadingShell />
-      ) : state.kind === "signed-out" ? (
-        <FailureNotice
-          title="You're signed out."
-          body="Sign in to plan your day."
-        />
-      ) : state.kind === "error" ? (
-        <FailureNotice title="Something hiccuped." body={state.message} />
-      ) : (
-        <DndContext
-          sensors={sensors}
-          modifiers={[restrictToVerticalAxis]}
-          onDragEnd={onDragEnd}
-        >
-          <div className="flex gap-6 items-start">
-            <div className="flex-1 min-w-0 max-h-[calc(100vh-14rem)] overflow-y-auto pr-2 custom-scrollbar">
-              <DayGrid
-                blocks={blocks}
-                onBlockResize={onBlockResize}
-                onBlockClick={onBlockClick}
-              />
+      <PageStateView
+        state={state}
+        loading={<LoadingShell />}
+        signedOutBody="Sign in to plan your day."
+        ready={(data) => (
+          <DndContext
+            sensors={sensors}
+            modifiers={[restrictToVerticalAxis]}
+            onDragEnd={onDragEnd}
+          >
+            <div className="flex gap-6 items-start">
+              <div className="flex-1 min-w-0 max-h-[calc(100vh-14rem)] overflow-y-auto pr-2 custom-scrollbar">
+                <DayGrid
+                  blocks={blocks}
+                  onBlockResize={onBlockResize}
+                  onBlockClick={onBlockClick}
+                />
+              </div>
+              <Backlog items={data.plan.backlog} />
             </div>
-            <Backlog items={state.plan.backlog} />
-          </div>
-        </DndContext>
-      )}
+          </DndContext>
+        )}
+      />
     </section>
   );
 }
@@ -282,18 +279,6 @@ function LoadingShell() {
     >
       <div className="flex-1 rounded-[1.8rem] bg-stone-100/60 h-[40rem] animate-pulse" />
       <div className="w-72 rounded-[2rem] bg-stone-100/60 h-[20rem] animate-pulse" />
-    </div>
-  );
-}
-
-function FailureNotice({ title, body }: { title: string; body: string }) {
-  return (
-    <div
-      role="alert"
-      className="rounded-[1.8rem] border border-stone-200 bg-white/60 px-6 py-5 max-w-md"
-    >
-      <p className="text-sm text-stone-800 font-medium">{title}</p>
-      <p className="mt-1 text-xs text-stone-500">{body}</p>
     </div>
   );
 }

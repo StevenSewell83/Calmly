@@ -1,41 +1,16 @@
-import { useCallback, useEffect, useState } from "react";
 import type { FocusSessionItem } from "../../../preload/api-types";
+import { useResource } from "../../hooks/useResource";
 
-// CL-09b session state hook. Mirrors the discriminated-union shape of
-// usePlanForDay / useReviewSummary so the Focus page drives all
-// visual state from the same handful of branches.
+// CL-09b session state hook. Built on the shared useResource state
+// machine (REFACTOR-AUDIT-4); the page renders via PageStateView.
+//
+// `data` is the open session, or null when there isn't one — the
+// page branches on null to show the chooser.
 
-export type FocusSessionState =
-  | { kind: "loading" }
-  | { kind: "ready"; session: FocusSessionItem | null }
-  | { kind: "signed-out" }
-  | { kind: "error"; message: string };
-
-export function useFocusSession(): {
-  state: FocusSessionState;
-  refresh: () => Promise<void>;
-} {
-  const [state, setState] = useState<FocusSessionState>({ kind: "loading" });
-
-  const refresh = useCallback(async () => {
-    try {
-      const r = await window.calmly.focus.current();
-      if (!r.ok) {
-        setState({ kind: "signed-out" });
-        return;
-      }
-      setState({ kind: "ready", session: r.session });
-    } catch (e) {
-      setState({
-        kind: "error",
-        message: e instanceof Error ? e.message : String(e),
-      });
-    }
+export function useFocusSession() {
+  return useResource<FocusSessionItem | null>(async () => {
+    const r = await window.calmly.focus.current();
+    if (!r.ok) return { kind: "signed-out" };
+    return { kind: "ok", data: r.session };
   }, []);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
-  return { state, refresh };
 }

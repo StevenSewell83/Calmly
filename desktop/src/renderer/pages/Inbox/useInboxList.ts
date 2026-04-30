@@ -1,42 +1,20 @@
-import { useCallback, useEffect, useState } from "react";
 import type { InboxItem } from "../../../preload/api-types";
+import { useResource } from "../../hooks/useResource";
 
-export type InboxListState =
-  | { kind: "loading" }
-  | { kind: "ready"; items: InboxItem[] }
-  | { kind: "signed-out" }
-  | { kind: "error"; message: string };
+export interface InboxListReady {
+  items: InboxItem[];
+}
 
 // Single hook that owns the inbox-list fetch and exposes a refresh
 // thunk so per-row mutations (snooze / skip / capture) can drop an
-// item without round-tripping through the parent page.
-export function useInboxList(): {
-  state: InboxListState;
-  refresh: () => Promise<void>;
-} {
-  const [state, setState] = useState<InboxListState>({ kind: "loading" });
-
-  const refresh = useCallback(async () => {
-    try {
-      const r = await window.calmly.inbox.list();
-      if (!r.ok) {
-        setState({ kind: "signed-out" });
-        return;
-      }
-      setState({ kind: "ready", items: r.items });
-    } catch (e) {
-      setState({
-        kind: "error",
-        message: e instanceof Error ? e.message : String(e),
-      });
-    }
+// item without round-tripping through the parent page. Built on the
+// shared useResource state machine (REFACTOR-AUDIT-4).
+export function useInboxList() {
+  return useResource<InboxListReady>(async () => {
+    const r = await window.calmly.inbox.list();
+    if (!r.ok) return { kind: "signed-out" };
+    return { kind: "ok", data: { items: r.items } };
   }, []);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
-  return { state, refresh };
 }
 
 export type InboxSortMode = "newest" | "oldest" | "source";

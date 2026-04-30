@@ -2,8 +2,8 @@ import { Moon, Timer } from "lucide-react";
 import { formatDateLabel, formatFocusedMs } from "./reviewFormat";
 
 // Presentational chrome for Review.tsx: the date+focused-ms strip,
-// the close-the-day footer, and the standard loading/failure shells.
-// Lives in its own file so Review.tsx stays under the 300-LOC budget.
+// the close-the-day footer, and the per-page loading skeleton. The
+// signed-out / error shells live in PageStateView (REFACTOR-AUDIT-4).
 
 export interface SummaryStripProps {
   date: string;
@@ -83,24 +83,6 @@ export function LoadingShell(): JSX.Element {
       <div className="rounded-[1.4rem] bg-stone-100/60 h-20 animate-pulse" />
       <div className="rounded-[1.4rem] bg-stone-100/60 h-20 animate-pulse" />
       <div className="rounded-[1.4rem] bg-stone-100/60 h-14 animate-pulse" />
-    </div>
-  );
-}
-
-export function FailureNotice({
-  title,
-  body,
-}: {
-  title: string;
-  body: string;
-}): JSX.Element {
-  return (
-    <div
-      role="alert"
-      className="rounded-[1.8rem] border border-stone-200 bg-white/60 px-6 py-5 max-w-md"
-    >
-      <p className="text-sm text-stone-800 font-medium">{title}</p>
-      <p className="mt-1 text-xs text-stone-500">{body}</p>
     </div>
   );
 }
