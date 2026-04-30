@@ -34,6 +34,8 @@ export const TABLES: Record<SyncTable, TableSpec> = {
       "parent_task_id",
       "source",
       "created_at",
+      "scheduled_start",
+      "scheduled_end",
     ],
   },
   events: {

@@ -245,6 +245,68 @@ export interface TriageBridge {
   discard(inboxId: string): Promise<TriageDiscardResult>;
 }
 
+// Plan view — wire shape mirrors main/plan/store.PlanTaskRow. Two
+// columns per day: scheduled (placed TimeBlocks) and backlog (open
+// tasks due today, unplaced).
+export interface PlanTaskItem {
+  id: string;
+  title: string;
+  notes: string | null;
+  status: "open" | "in_progress" | "done" | "dropped" | "snoozed";
+  due_at: number | null;
+  scheduled_start: number | null;
+  scheduled_end: number | null;
+  source: "desktop" | "telegram-text" | "telegram-voice" | "ai-split";
+  created_at: number;
+  updated_at: number;
+  type: string;
+  parent_task_id: string | null;
+}
+
+export interface PlanForDay {
+  scheduled: PlanTaskItem[];
+  backlog: PlanTaskItem[];
+}
+
+export type PlanListResult =
+  | { ok: true; plan: PlanForDay; day: number }
+  | { ok: false; error: "NotSignedIn" };
+
+export type PlanScheduleResult =
+  | { ok: true }
+  | {
+      ok: false;
+      error:
+        | "NotSignedIn"
+        | "NotFound"
+        | "InvalidArgs"
+        | "InternalError";
+    };
+
+export type PlanUnscheduleResult =
+  | { ok: true }
+  | {
+      ok: false;
+      error: "NotSignedIn" | "NotFound" | "InternalError";
+    };
+
+export interface PlanScheduleArgs {
+  taskId: string;
+  startAt: number;
+  endAt: number;
+}
+
+export interface PlanBridge {
+  // Scheduled blocks + backlog for the local-day containing `day`
+  // (defaults to today when omitted).
+  listForDay(day?: number): Promise<PlanListResult>;
+  // Place / move a task on the day grid. End must be >= start.
+  schedule(args: PlanScheduleArgs): Promise<PlanScheduleResult>;
+  // Return a placed task to the backlog by clearing both schedule
+  // fields.
+  unschedule(taskId: string): Promise<PlanUnscheduleResult>;
+}
+
 export interface CalmlyApi {
   version: string;
   platform: string;
@@ -256,5 +318,6 @@ export interface CalmlyApi {
   tasks: TasksBridge;
   events: EventsBridge;
   triage: TriageBridge;
+  plan: PlanBridge;
   log: LogBridge;
 }

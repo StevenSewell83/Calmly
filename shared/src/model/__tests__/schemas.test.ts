@@ -113,6 +113,8 @@ describe("TaskSchema", () => {
         source: "desktop",
         created_at: now,
         updated_at: now,
+        scheduled_start: null,
+        scheduled_end: null,
       }).status,
     ).toBe("open");
   });
@@ -131,6 +133,8 @@ describe("TaskSchema", () => {
         source: "desktop",
         created_at: now,
         updated_at: now,
+        scheduled_start: null,
+        scheduled_end: null,
       }),
     ).toThrow();
   });
@@ -149,6 +153,68 @@ describe("TaskSchema", () => {
         source: "desktop",
         created_at: now,
         updated_at: now,
+        scheduled_start: null,
+        scheduled_end: null,
+      }),
+    ).toThrow();
+  });
+
+  it("accepts a placed task with start <= end", () => {
+    expect(
+      TaskSchema.parse({
+        id: otherId,
+        user_id: userId,
+        title: "Lunch",
+        notes: null,
+        type: "task",
+        status: "open",
+        due_at: null,
+        parent_task_id: null,
+        source: "desktop",
+        created_at: now,
+        updated_at: now,
+        scheduled_start: now + 60_000,
+        scheduled_end: now + 180_000,
+      }).scheduled_start,
+    ).toBe(now + 60_000);
+  });
+
+  it("rejects half-placed schedule (only start set)", () => {
+    expect(() =>
+      TaskSchema.parse({
+        id: otherId,
+        user_id: userId,
+        title: "Lunch",
+        notes: null,
+        type: "task",
+        status: "open",
+        due_at: null,
+        parent_task_id: null,
+        source: "desktop",
+        created_at: now,
+        updated_at: now,
+        scheduled_start: now + 60_000,
+        scheduled_end: null,
+      }),
+    ).toThrow();
+  });
+
+  it("rejects scheduled_end < scheduled_start", () => {
+    expect(() =>
+      TaskSchema.parse({
+        id: otherId,
+        user_id: userId,
+        title: "Lunch",
+        notes: null,
+        type: "task",
+        status: "open",
+        due_at: null,
+        parent_task_id: null,
+        source: "desktop",
+        created_at: now,
+        updated_at: now,
+        scheduled_start: now + 200_000,
+        scheduled_end: now + 100_000,
       }),
     ).toThrow();
   });

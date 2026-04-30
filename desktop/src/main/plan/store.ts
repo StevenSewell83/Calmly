@@ -1,0 +1,243 @@
+import type Database from "better-sqlite3";
+import type { InboxSource, TaskStatus } from "@calmly/shared";
+import { localDayWindow } from "../today/store";
+import { enqueueOp } from "../sync/queue";
+
+// CL-06 plan-view reads + writes.
+//
+// listForDay returns the day's two columns in one IPC: scheduled
+// (open|in_progress tasks with scheduled_start in the local-day
+// window) and backlog (open|in_progress tasks with due_at in the day
+// window AND no scheduled_start). schedule + unschedule mutate the
+// pair as a unit and enqueue full-snapshot upserts so the server's
+// EXCLUDED-based ON CONFLICT can't null out unrelated columns.
+
+export interface PlanTaskRow {
+  id: string;
+  title: string;
+  notes: string | null;
+  status: TaskStatus;
+  due_at: number | null;
+  scheduled_start: number | null;
+  scheduled_end: number | null;
+  source: InboxSource;
+  created_at: number;
+  updated_at: number;
+  version: number;
+  type: string;
+  parent_task_id: string | null;
+}
+
+export interface PlanForDay {
+  scheduled: PlanTaskRow[];
+  backlog: PlanTaskRow[];
+}
+
+const SCHEDULABLE_STATUSES: readonly TaskStatus[] = ["open", "in_progress"];
+
+const TASK_COLS =
+  "id, title, notes, status, due_at, scheduled_start, scheduled_end, source, created_at, updated_at, version, type, parent_task_id";
+
+// Returns the day's scheduled blocks AND the backlog of unplaced
+// tasks that target the same day. Both lists exclude done/dropped/
+// snoozed and soft-deleted rows.
+export function listForDay(
+  db: Database.Database,
+  userId: string,
+  now: number,
+  tzOffsetMinutes: number,
+): PlanForDay {
+  const { start, endExclusive } = localDayWindow(now, tzOffsetMinutes);
+
+  const scheduled = db
+    .prepare(
+      `SELECT ${TASK_COLS}
+         FROM tasks
+        WHERE user_id = ?
+          AND deleted_at IS NULL
+          AND status IN ('open', 'in_progress')
+          AND scheduled_start IS NOT NULL
+          AND scheduled_start >= ? AND scheduled_start < ?
+        ORDER BY scheduled_start ASC`,
+    )
+    .all(userId, start, endExclusive) as PlanTaskRow[];
+
+  const backlog = db
+    .prepare(
+      `SELECT ${TASK_COLS}
+         FROM tasks
+        WHERE user_id = ?
+          AND deleted_at IS NULL
+          AND status IN ('open', 'in_progress')
+          AND scheduled_start IS NULL
+          AND due_at IS NOT NULL
+          AND due_at >= ? AND due_at < ?
+        ORDER BY COALESCE(due_at, updated_at) ASC`,
+    )
+    .all(userId, start, endExclusive) as PlanTaskRow[];
+
+  return { scheduled, backlog };
+}
+
+export type ScheduleResult =
+  | { ok: true }
+  | {
+      ok: false;
+      error: "NotFound" | "InvalidArgs" | "InternalError";
+    };
+
+// Loaded inside the same tx as the UPDATE so the enqueued payload is
+// a true snapshot of the post-update row.
+interface TaskRow {
+  title: string;
+  notes: string | null;
+  status: TaskStatus;
+  due_at: number | null;
+  scheduled_start: number | null;
+  scheduled_end: number | null;
+  parent_task_id: string | null;
+  source: InboxSource;
+  created_at: number;
+  type: string;
+  version: number;
+}
+
+function loadTask(
+  db: Database.Database,
+  userId: string,
+  taskId: string,
+): TaskRow | undefined {
+  return db
+    .prepare(
+      `SELECT title, notes, status, due_at, scheduled_start, scheduled_end,
+              parent_task_id, source, created_at, type, version
+         FROM tasks
+        WHERE id = ? AND user_id = ? AND deleted_at IS NULL`,
+    )
+    .get(taskId, userId) as TaskRow | undefined;
+}
+
+function enqueueTaskUpsert(
+  db: Database.Database,
+  taskId: string,
+  row: TaskRow,
+  override: Partial<TaskRow>,
+  now: number,
+  nextVersion: number,
+): void {
+  const merged = { ...row, ...override };
+  enqueueOp(db, {
+    table: "tasks",
+    op: "upsert",
+    payload: {
+      id: taskId,
+      title: merged.title,
+      notes: merged.notes,
+      type: merged.type,
+      status: merged.status,
+      due_at: merged.due_at,
+      parent_task_id: merged.parent_task_id,
+      source: merged.source,
+      created_at: merged.created_at,
+      updated_at: now,
+      deleted_at: null,
+      version: nextVersion,
+      scheduled_start: merged.scheduled_start,
+      scheduled_end: merged.scheduled_end,
+    },
+  });
+}
+
+// Places a task on the day grid (or moves an already-placed one).
+// startMs/endMs are unix-ms; end must be >= start. Status must be
+// schedulable (open|in_progress). Atomic: UPDATE + sync upsert in one
+// tx.
+export function scheduleTask(
+  db: Database.Database,
+  userId: string,
+  taskId: string,
+  startMs: number,
+  endMs: number,
+  now: number,
+): ScheduleResult {
+  if (
+    !Number.isFinite(startMs) ||
+    !Number.isFinite(endMs) ||
+    endMs < startMs
+  ) {
+    return { ok: false, error: "InvalidArgs" };
+  }
+  try {
+    let found = false;
+    const tx = db.transaction(() => {
+      const row = loadTask(db, userId, taskId);
+      if (!row) return;
+      if (!SCHEDULABLE_STATUSES.includes(row.status)) {
+        // Out-of-band guard — the renderer should never offer scheduling
+        // for done/dropped tasks, but a stale render could try.
+        return;
+      }
+      const nextVersion = row.version + 1;
+      db.prepare(
+        `UPDATE tasks
+            SET scheduled_start = ?, scheduled_end = ?, updated_at = ?, version = ?
+          WHERE id = ? AND user_id = ?`,
+      ).run(startMs, endMs, now, nextVersion, taskId, userId);
+      enqueueTaskUpsert(
+        db,
+        taskId,
+        row,
+        { scheduled_start: startMs, scheduled_end: endMs },
+        now,
+        nextVersion,
+      );
+      found = true;
+    });
+    tx();
+    return found ? { ok: true } : { ok: false, error: "NotFound" };
+  } catch {
+    return { ok: false, error: "InternalError" };
+  }
+}
+
+export type UnscheduleResult =
+  | { ok: true }
+  | { ok: false; error: "NotFound" | "InternalError" };
+
+// Returns a placed task to the backlog (clears scheduled_start/end
+// pair). Idempotent — clearing an already-cleared task succeeds and
+// still bumps version so other clients converge.
+export function unscheduleTask(
+  db: Database.Database,
+  userId: string,
+  taskId: string,
+  now: number,
+): UnscheduleResult {
+  try {
+    let found = false;
+    const tx = db.transaction(() => {
+      const row = loadTask(db, userId, taskId);
+      if (!row) return;
+      const nextVersion = row.version + 1;
+      db.prepare(
+        `UPDATE tasks
+            SET scheduled_start = NULL, scheduled_end = NULL,
+                updated_at = ?, version = ?
+          WHERE id = ? AND user_id = ?`,
+      ).run(now, nextVersion, taskId, userId);
+      enqueueTaskUpsert(
+        db,
+        taskId,
+        row,
+        { scheduled_start: null, scheduled_end: null },
+        now,
+        nextVersion,
+      );
+      found = true;
+    });
+    tx();
+    return found ? { ok: true } : { ok: false, error: "NotFound" };
+  } catch {
+    return { ok: false, error: "InternalError" };
+  }
+}
