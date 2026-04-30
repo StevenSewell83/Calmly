@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw, Sparkles } from "lucide-react";
 import { InboxTriageCard } from "./InboxTriageCard";
 import { NextCard } from "./NextCard";
 import { NowCard } from "./NowCard";
 import { StubModal } from "./StubModal";
 import { TodayList } from "./TodayList";
+import { QuickPlan } from "../QuickPlan/QuickPlan";
 import {
   buildTodayList,
   pickNextItem,
@@ -12,10 +13,16 @@ import {
   useTodaySummary,
 } from "./useTodaySummary";
 
+function todayLocalStr(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export function Home() {
   const { state } = useTodaySummary();
   const [replanOpen, setReplanOpen] = useState(false);
   const [quickPlanOpen, setQuickPlanOpen] = useState(false);
+  const autoSuggestFired = useRef(false);
 
   // Now is recomputed every render — cheap, and avoids stale-time
   // bugs across day rollovers when the app sits open through midnight.
@@ -36,6 +43,20 @@ export function Home() {
     () => (summary ? buildTodayList(summary.tasks, summary.events) : []),
     [summary],
   );
+
+  // Auto-suggest Quick Plan once per calendar day when there are commitments.
+  useEffect(() => {
+    if (autoSuggestFired.current || state.kind !== "ready") return;
+    const scheduled = summary?.tasks.filter((t) => t.scheduledStart !== null) ?? [];
+    if (scheduled.length === 0) return;
+    autoSuggestFired.current = true;
+    void (async () => {
+      const r = await window.calmly.quickplan.getDate();
+      if (r.ok && r.date === todayLocalStr()) return;
+      const timer = setTimeout(() => setQuickPlanOpen(true), 1_500);
+      return () => clearTimeout(timer);
+    })();
+  }, [state.kind, summary]);
 
   return (
     <section className="flex-1 px-12 pt-10 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -99,13 +120,7 @@ export function Home() {
         </div>
       )}
 
-      <StubModal
-        open={quickPlanOpen}
-        onClose={() => setQuickPlanOpen(false)}
-        title="Quick Plan ritual"
-        body="Each morning we'll walk through Today's plan together — confirm, reorder, drop, or shrink. The ritual itself is still on the way."
-        beadId="CL-08"
-      />
+      <QuickPlan open={quickPlanOpen} onClose={() => setQuickPlanOpen(false)} />
       <StubModal
         open={replanOpen}
         onClose={() => setReplanOpen(false)}

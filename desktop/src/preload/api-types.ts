@@ -412,6 +412,11 @@ export interface FocusBridge {
   switch(args: FocusStartArgs): Promise<FocusSwitchResult>;
 }
 
+export interface QuickPlanBridge {
+  getDate(): Promise<{ ok: true; date: string | null } | { ok: false; error: string }>;
+  setDate(date: string): Promise<{ ok: true } | { ok: false; error: string }>;
+}
+
 export interface CalmlyApi {
   version: string;
   platform: string;
@@ -425,5 +430,6 @@ export interface CalmlyApi {
   triage: TriageBridge;
   plan: PlanBridge;
   focus: FocusBridge;
+  quickplan: QuickPlanBridge;
   log: LogBridge;
 }
