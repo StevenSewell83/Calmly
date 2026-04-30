@@ -277,6 +277,37 @@ describe.skipIf(!dockerAvailable)(
       ).reduce((n, rows) => n + (rows?.length ?? 0), 0);
       expect(totalRecords).toBe(0);
     });
+
+    it("user_settings push + pull round-trip (BUG-AUDIT-1)", async () => {
+      const settingsId = randomUUID();
+      const now = Date.now();
+
+      // Push a settings upsert — this used to fail because user_settings had
+      // no `id` column and SyncMetaSchema requires id: uuid.
+      const pushRes = await push(cookieA, [
+        {
+          table: "user_settings",
+          op: "upsert",
+          payload: {
+            id: settingsId,
+            settings_json: JSON.stringify({ theme: "dark", notifications: true }),
+            updated_at: now,
+            deleted_at: null,
+            version: 0,
+          },
+        },
+      ]);
+
+      expect(pushRes.results).toHaveLength(1);
+      expect(pushRes.results[0]!.status).toBe("accepted");
+
+      // Pull from version 0 — should receive the settings row with the same id.
+      const pullRes = await pull(cookieA, 0);
+      const settings = (pullRes.records.user_settings ?? []) as Record<string, unknown>[];
+      const received = settings.find((s: Record<string, unknown>) => s["id"] === settingsId);
+      expect(received).toBeTruthy();
+      expect(received!["settings_json"]).toContain("dark");
+    });
   },
   { timeout: 120_000 },
 );
