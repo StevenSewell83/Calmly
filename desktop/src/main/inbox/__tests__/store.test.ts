@@ -98,7 +98,7 @@ describe("addInboxItem · validation", () => {
       rawText: "",
       source: "desktop",
     });
-    expect(empty).toEqual({ ok: false, error: "EmptyInput" });
+    expect(empty).toEqual({ ok: false, error: "InvalidArgs" });
 
     const whitespace = addInboxItem({
       db: fake.db,
@@ -106,7 +106,7 @@ describe("addInboxItem · validation", () => {
       rawText: "   \t\n  ",
       source: "desktop",
     });
-    expect(whitespace).toEqual({ ok: false, error: "EmptyInput" });
+    expect(whitespace).toEqual({ ok: false, error: "InvalidArgs" });
 
     expect(fake.prepared).toHaveLength(0);
   });
@@ -261,7 +261,7 @@ describe("listInbox", () => {
 describe("snoozeInboxItem", () => {
   const ITEM = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 
-  it("rejects past untilMs as InvalidUntil", () => {
+  it("rejects past untilMs as InvalidArgs", () => {
     const fake = makeFakeDb();
     const r = snoozeInboxItem(
       fake.db,
@@ -270,7 +270,7 @@ describe("snoozeInboxItem", () => {
       1_000,
       2_000,
     );
-    expect(r).toEqual({ ok: false, error: "InvalidUntil" });
+    expect(r).toEqual({ ok: false, error: "InvalidArgs" });
     expect(fake.prepared).toHaveLength(0);
   });
 

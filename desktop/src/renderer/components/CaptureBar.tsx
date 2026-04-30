@@ -77,7 +77,7 @@ export function CaptureBar() {
       }
       setText(trimmed);
       const message =
-        result.error === "EmptyInput"
+        result.error === "InvalidArgs"
           ? "Empty — type something to capture."
           : result.error === "NotSignedIn"
             ? "Sign in first to capture."

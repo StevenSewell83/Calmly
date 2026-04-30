@@ -20,7 +20,7 @@ export type AddInboxItemResult =
       // Renderer surfaces a brief "Trimmed at 4000 chars" note in that case.
       truncated: boolean;
     }
-  | { ok: false; error: "EmptyInput" | "InternalError" };
+  | { ok: false; error: "InvalidArgs" | "InternalError" };
 
 // Persists a captured inbox item to local SQLite and queues the upsert for
 // sync. Trims, rejects empty, truncates oversized text rather than failing
@@ -30,7 +30,7 @@ export type AddInboxItemResult =
 export function addInboxItem(args: AddInboxItemArgs): AddInboxItemResult {
   const trimmed = args.rawText.trim();
   if (trimmed.length === 0) {
-    return { ok: false, error: "EmptyInput" };
+    return { ok: false, error: "InvalidArgs" };
   }
 
   const truncated = trimmed.length > MAX_RAW_TEXT_CHARS;
@@ -110,7 +110,7 @@ export function listInbox(
 
 export type SnoozeInboxResult =
   | { ok: true }
-  | { ok: false; error: "NotFound" | "InternalError" | "InvalidUntil" };
+  | { ok: false; error: "NotFound" | "InternalError" | "InvalidArgs" };
 
 // Sets snoozed_until on an item the caller owns. The user_id predicate
 // in the UPDATE doubles as the ownership check — a stale renderer that
@@ -128,7 +128,7 @@ export function snoozeInboxItem(
   now: number,
 ): SnoozeInboxResult {
   if (!Number.isFinite(untilMs) || untilMs <= now) {
-    return { ok: false, error: "InvalidUntil" };
+    return { ok: false, error: "InvalidArgs" };
   }
   try {
     let found = false;

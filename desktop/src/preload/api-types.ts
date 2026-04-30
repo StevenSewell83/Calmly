@@ -99,7 +99,7 @@ export interface LogBridge {
 // then on `error` for messaging.
 export type InboxAddResult =
   | { ok: true; id: string; truncated: boolean }
-  | { ok: false; error: "EmptyInput" | "NotSignedIn" | "InternalError" };
+  | { ok: false; error: "InvalidArgs" | "NotSignedIn" | "InternalError" };
 
 export type UnresolvedInboxCountResult =
   | { ok: true; count: number }
@@ -130,7 +130,7 @@ export type InboxSnoozeResult =
   | { ok: true }
   | {
       ok: false;
-      error: "NotSignedIn" | "NotFound" | "InternalError" | "InvalidUntil";
+      error: "NotSignedIn" | "NotFound" | "InvalidArgs" | "InternalError";
     };
 
 export type InboxSkipResult =

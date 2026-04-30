@@ -49,7 +49,7 @@ export function registerPlanIpc(): void {
   });
 
   authedHandler<PlanUnscheduleResult>("plan:unschedule", (ctx, raw) => {
-    if (!isStringId(raw)) return { ok: false, error: "NotFound" };
+    if (!isStringId(raw)) return { ok: false, error: "InvalidArgs" };
     return unscheduleTask(ctx.db, ctx.userId, raw, ctx.now);
   });
 

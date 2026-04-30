@@ -59,7 +59,7 @@ export function registerTriageIpc(): void {
   });
 
   authedHandler<TriageDiscardResult>("triage:discard", (ctx, raw) => {
-    if (!isStringId(raw)) return { ok: false, error: "NotFound" };
+    if (!isStringId(raw)) return { ok: false, error: "InvalidArgs" };
     return discardInboxItem({ db: ctx.db, userId: ctx.userId, inboxId: raw, now: ctx.now });
   });
 }
