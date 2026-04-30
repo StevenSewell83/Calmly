@@ -1,11 +1,13 @@
 import { ipcRenderer } from "electron";
 import type {
   TriageBridge,
+  TriageBreakdownResult,
   TriageDiscardResult,
   TriageResolveAsEventArgs,
   TriageResolveAsTaskArgs,
   TriageResolveEventResult,
   TriageResolveTaskResult,
+  TriageResolveWithBreakdownArgs,
 } from "./api-types";
 
 export const triageBridge: TriageBridge = {
@@ -25,5 +27,13 @@ export const triageBridge: TriageBridge = {
     return ipcRenderer.invoke("triage:discard", inboxId) as Promise<
       TriageDiscardResult
     >;
+  },
+  resolveWithBreakdown(
+    args: TriageResolveWithBreakdownArgs,
+  ): Promise<TriageBreakdownResult> {
+    return ipcRenderer.invoke(
+      "triage:resolveWithBreakdown",
+      args,
+    ) as Promise<TriageBreakdownResult>;
   },
 };

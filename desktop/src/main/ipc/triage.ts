@@ -2,8 +2,10 @@ import {
   discardInboxItem,
   resolveAsEvent,
   resolveAsTask,
+  resolveWithBreakdown,
   type DiscardResult,
   type ResolveResult,
+  type ResolveWithBreakdownResult,
 } from "../triage/store";
 import { authedHandler, isObject, isStringId } from "./handler";
 
@@ -17,6 +19,10 @@ export type TriageResolveEventResult =
 
 export type TriageDiscardResult =
   | DiscardResult
+  | { ok: false; error: "NotSignedIn" };
+
+export type TriageBreakdownResult =
+  | ResolveWithBreakdownResult
   | { ok: false; error: "NotSignedIn" };
 
 export function registerTriageIpc(): void {
@@ -61,5 +67,29 @@ export function registerTriageIpc(): void {
   authedHandler<TriageDiscardResult>("triage:discard", (ctx, raw) => {
     if (!isStringId(raw)) return { ok: false, error: "InvalidArgs" };
     return discardInboxItem({ db: ctx.db, userId: ctx.userId, inboxId: raw, now: ctx.now });
+  });
+
+  authedHandler<TriageBreakdownResult>("triage:resolveWithBreakdown", (ctx, raw) => {
+    if (
+      !isObject(raw) ||
+      !isStringId(raw.inboxId) ||
+      typeof raw.parentTitle !== "string" ||
+      !Array.isArray(raw.subtasks) ||
+      !(raw.subtasks as unknown[]).every((s) => typeof s === "string")
+    ) {
+      return { ok: false, error: "InvalidArgs" };
+    }
+    if (raw.dueAt !== null && (typeof raw.dueAt !== "number" || !Number.isFinite(raw.dueAt as number))) {
+      return { ok: false, error: "InvalidArgs" };
+    }
+    return resolveWithBreakdown({
+      db: ctx.db,
+      userId: ctx.userId,
+      inboxId: raw.inboxId as string,
+      parentTitle: raw.parentTitle as string,
+      dueAt: raw.dueAt as number | null,
+      subtasks: raw.subtasks as string[],
+      now: ctx.now,
+    });
   });
 }

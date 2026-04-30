@@ -8,6 +8,7 @@ export const inboxSources = [
   "telegram-text",
   "telegram-voice",
   "ai-split",
+  "manual-split",
 ] as const;
 export const InboxSourceSchema = z.enum(inboxSources);
 export type InboxSource = z.infer<typeof InboxSourceSchema>;

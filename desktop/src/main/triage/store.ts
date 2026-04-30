@@ -315,3 +315,136 @@ export function discardInboxItem(args: ResolveBaseArgs): DiscardResult {
   }
   return { ok: true };
 }
+
+// ── CL-05: resolveWithBreakdown ──────────────────────────────────────────────
+
+export interface ResolveWithBreakdownArgs extends ResolveBaseArgs {
+  /** Title for the parent task (the "next action"). */
+  parentTitle: string;
+  /** Due-at timestamp (ms) for the parent task; null = no due date. */
+  dueAt: number | null;
+  /** Titles of child subtasks to create. Empty entries are ignored. */
+  subtasks: string[];
+}
+
+export type ResolveWithBreakdownResult =
+  | { ok: true; parentId: string; subtaskIds: string[] }
+  | {
+      ok: false;
+      error: "NotFound" | "AlreadyResolved" | "InvalidArgs" | "InternalError";
+    };
+
+/**
+ * Resolves an inbox item by splitting it into a parent task + N child subtasks.
+ * All rows are inserted in a single transaction. source='manual-split' on all
+ * created tasks records that the user performed the breakdown manually.
+ */
+export function resolveWithBreakdown(
+  args: ResolveWithBreakdownArgs,
+): ResolveWithBreakdownResult {
+  const trimmedParent = args.parentTitle.trim();
+  if (trimmedParent.length === 0) {
+    return { ok: false, error: "InvalidArgs" };
+  }
+  if (args.dueAt !== null && !Number.isFinite(args.dueAt)) {
+    return { ok: false, error: "InvalidArgs" };
+  }
+  const cleanSubs = args.subtasks.map((s) => s.trim()).filter(Boolean);
+
+  const parentId = randomUUID();
+  const subtaskIds = cleanSubs.map(() => randomUUID());
+  const initialStatus: TaskStatus = "open";
+  let outcome: "ok" | "missing" | "already-resolved" = "missing";
+
+  try {
+    const tx = args.db.transaction(() => {
+      const loaded = loadInboxForResolve(args.db, args.userId, args.inboxId);
+      if (loaded.kind !== "ok") {
+        outcome = loaded.kind === "missing" ? "missing" : "already-resolved";
+        return;
+      }
+
+      const insertTask = args.db.prepare(
+        `INSERT INTO tasks
+           (id, user_id, title, notes, type, status, due_at, parent_task_id,
+            source, created_at, updated_at, version, deleted_at)
+         VALUES (?, ?, ?, NULL, 'task', ?, ?, ?, 'manual-split', ?, ?, 0, NULL)`,
+      );
+
+      insertTask.run(
+        parentId,
+        args.userId,
+        trimmedParent,
+        initialStatus,
+        args.dueAt,
+        null,
+        args.now,
+        args.now,
+      );
+      enqueueTaskUpsert(
+        args.db,
+        parentId,
+        {
+          title: trimmedParent,
+          notes: null,
+          type: "task",
+          status: initialStatus,
+          due_at: args.dueAt,
+          parent_task_id: null,
+          source: "manual-split",
+          created_at: args.now,
+          scheduled_start: null,
+          scheduled_end: null,
+          version: 0,
+        },
+        {},
+        args.now,
+        0,
+      );
+
+      for (let i = 0; i < cleanSubs.length; i++) {
+        const subId = subtaskIds[i];
+        insertTask.run(
+          subId,
+          args.userId,
+          cleanSubs[i],
+          initialStatus,
+          null,
+          parentId,
+          args.now,
+          args.now,
+        );
+        enqueueTaskUpsert(
+          args.db,
+          subId,
+          {
+            title: cleanSubs[i],
+            notes: null,
+            type: "task",
+            status: initialStatus,
+            due_at: null,
+            parent_task_id: parentId,
+            source: "manual-split",
+            created_at: args.now,
+            scheduled_start: null,
+            scheduled_end: null,
+            version: 0,
+          },
+          {},
+          args.now,
+          0,
+        );
+      }
+
+      markInboxResolved(args.db, args.userId, args.inboxId, loaded.row, args.now);
+      outcome = "ok";
+    });
+    tx();
+  } catch {
+    return { ok: false, error: "InternalError" };
+  }
+
+  if (outcome === "missing") return { ok: false, error: "NotFound" };
+  if (outcome === "already-resolved") return { ok: false, error: "AlreadyResolved" };
+  return { ok: true, parentId, subtaskIds };
+}

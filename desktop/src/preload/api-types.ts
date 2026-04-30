@@ -237,12 +237,24 @@ export interface TriageResolveAsEventArgs {
   endAt: number;
 }
 
+export type TriageBreakdownResult =
+  | { ok: true; parentId: string; subtaskIds: string[] }
+  | { ok: false; error: "NotSignedIn" | "NotFound" | "AlreadyResolved" | "InvalidArgs" | "InternalError" };
+
+export interface TriageResolveWithBreakdownArgs {
+  inboxId: string;
+  parentTitle: string;
+  dueAt: number | null;
+  subtasks: string[];
+}
+
 export interface TriageBridge {
   resolveAsTask(args: TriageResolveAsTaskArgs): Promise<TriageResolveTaskResult>;
   resolveAsEvent(
     args: TriageResolveAsEventArgs,
   ): Promise<TriageResolveEventResult>;
   discard(inboxId: string): Promise<TriageDiscardResult>;
+  resolveWithBreakdown(args: TriageResolveWithBreakdownArgs): Promise<TriageBreakdownResult>;
 }
 
 // Plan view — wire shape mirrors main/plan/store.PlanTaskRow. Two

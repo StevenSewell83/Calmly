@@ -24,6 +24,7 @@ import { formatRelativePast } from "../../utils/time";
 import { MountainClimberIcon } from "../../components/MountainClimberIcon";
 import type { InboxItem } from "../../../preload/api-types";
 import { useInboxList } from "./useInboxList";
+import { BreakdownPanel } from "./BreakdownPanel";
 import {
   snoozeNextWeek,
   snoozeOneHour,
@@ -104,6 +105,7 @@ export function Triage() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [snoozeOpen, setSnoozeOpen] = useState(false);
+  const [breakdownOpen, setBreakdownOpen] = useState(false);
   const titleInputRef = useRef<HTMLInputElement | null>(null);
 
   // Each new item resets form defaults. Title defaults to raw_text,
@@ -120,6 +122,7 @@ export function Triage() {
     setDateChoice({ kind: "today" });
     setErrorMsg(null);
     setSnoozeOpen(false);
+    setBreakdownOpen(false);
     const start = nextRoundHour(Date.now());
     setEventStart(toLocalInputValue(start));
     setEventEnd(toLocalInputValue(start + 60 * 60 * 1000));
@@ -217,6 +220,27 @@ export function Triage() {
     const r = await window.calmly.inbox.skip(current.id);
     if (r.ok) await refresh();
   }, [current, refresh]);
+
+  const handleBreakdown = useCallback(
+    async (parentTitle: string, subtasks: string[]) => {
+      if (!current) return;
+      setSubmitting(true);
+      const r = await window.calmly.triage.resolveWithBreakdown({
+        inboxId: current.id,
+        parentTitle,
+        dueAt,
+        subtasks,
+      });
+      setSubmitting(false);
+      if (r.ok) {
+        setBreakdownOpen(false);
+        await refresh();
+      } else {
+        setErrorMsg("Could not create tasks — please try again.");
+      }
+    },
+    [current, dueAt, refresh],
+  );
 
   // Confirm = whichever primary action matches the current type. The
   // 'task' branch additionally honors T/W/L shortcuts via dateChoice.
@@ -468,8 +492,7 @@ export function Triage() {
                   label="Break down"
                   hint=""
                   icon={ListTree}
-                  onClick={() => setErrorMsg("Break-down lands in CL-05.")}
-                  disabled
+                  onClick={() => { setBreakdownOpen((v) => !v); setSnoozeOpen(false); }}
                 />
               </span>
             </div>
@@ -478,6 +501,17 @@ export function Triage() {
               <SnoozeMenu
                 onPick={(untilMs) => void snooze(untilMs)}
                 onClose={() => setSnoozeOpen(false)}
+              />
+            ) : null}
+
+            {breakdownOpen && current ? (
+              <BreakdownPanel
+                rawText={current.raw_text}
+                dueAt={dueAt}
+                onConfirm={(parentTitle, subtasks) =>
+                  void handleBreakdown(parentTitle, subtasks)
+                }
+                onCancel={() => setBreakdownOpen(false)}
               />
             ) : null}
 
