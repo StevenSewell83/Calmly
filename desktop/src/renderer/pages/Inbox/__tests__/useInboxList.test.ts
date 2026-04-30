@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { InboxItem } from "../../../../preload/api-types";
+import { sortInboxItems } from "../useInboxList";
 import {
   snoozeNextWeek,
   snoozeOneHour,
   snoozeTomorrowMorning,
-  sortInboxItems,
-} from "../useInboxList";
+} from "../../../utils/snooze";
 
 function item(overrides: Partial<InboxItem>): InboxItem {
   return {

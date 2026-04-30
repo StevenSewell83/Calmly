@@ -14,7 +14,7 @@ import {
   snoozeNextWeek,
   snoozeOneHour,
   snoozeTomorrowMorning,
-} from "./useInboxList";
+} from "../../utils/snooze";
 
 interface Props {
   item: InboxItem;

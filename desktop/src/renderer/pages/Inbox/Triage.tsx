@@ -23,12 +23,12 @@ import {
 import { formatRelativePast } from "../../utils/time";
 import { MountainClimberIcon } from "../../components/MountainClimberIcon";
 import type { InboxItem } from "../../../preload/api-types";
+import { useInboxList } from "./useInboxList";
 import {
   snoozeNextWeek,
   snoozeOneHour,
   snoozeTomorrowMorning,
-  useInboxList,
-} from "./useInboxList";
+} from "../../utils/snooze";
 import {
   chipThisWeek,
   chipToday,

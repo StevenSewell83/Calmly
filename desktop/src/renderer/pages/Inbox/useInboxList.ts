@@ -66,20 +66,3 @@ export function sortInboxItems(
   return copy;
 }
 
-// Snooze preset durations. Returns absolute unix-ms targets so the
-// IPC contract stays tied to a timestamp, not a human label.
-export function snoozeOneHour(now: number): number {
-  return now + 60 * 60 * 1000;
-}
-
-export function snoozeTomorrowMorning(now: number): number {
-  // 8am local time the day after `now`.
-  const d = new Date(now);
-  d.setDate(d.getDate() + 1);
-  d.setHours(8, 0, 0, 0);
-  return d.getTime();
-}
-
-export function snoozeNextWeek(now: number): number {
-  return now + 7 * 24 * 60 * 60 * 1000;
-}
