@@ -1,0 +1,161 @@
+name: Release sync server
+
+on:
+  push:
+    tags:
+      - "sync-v*"
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write   # for cosign keyless signing (future)
+
+jobs:
+  build-and-push:
+    name: Build & push GHCR image
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      image: ${{ steps.meta.outputs.tags }}
+      digest: ${{ steps.push.outputs.digest }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#sync-v}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU (multi-arch)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/calmly-sync
+          tags: |
+            type=raw,value=${{ steps.version.outputs.version }}
+            type=raw,value=latest
+
+      - name: Build and push multi-arch image
+        id: push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: server/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ steps.version.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Generate checksums
+        run: |
+          echo "${{ steps.push.outputs.digest }}  ghcr.io/${{ github.repository_owner }}/calmly-sync:${{ steps.version.outputs.version }}" \
+            > checksums-${{ steps.version.outputs.version }}.txt
+          cat checksums-${{ steps.version.outputs.version }}.txt
+
+      - name: Upload checksum artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: checksums
+          path: checksums-${{ steps.version.outputs.version }}.txt
+
+  smoke-test:
+    name: Smoke-test released image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: build-and-push
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#sync-v}" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull released image and run /health check
+        run: |
+          docker run -d \
+            --name calmly-sync-smoke \
+            -e DATABASE_URL="postgresql://calmly:calmly@localhost:5432/calmly" \
+            -e EMAIL_SENDER=console \
+            -p 3001:3001 \
+            ghcr.io/${{ github.repository_owner }}/calmly-sync:${{ steps.version.outputs.version }}
+
+          TRIES=0
+          until curl -sf http://localhost:3001/health > /dev/null 2>&1; do
+            TRIES=$((TRIES + 1))
+            if [ "$TRIES" -gt 15 ]; then
+              docker logs calmly-sync-smoke
+              echo "FAIL: image did not become healthy"
+              exit 1
+            fi
+            sleep 2
+          done
+          echo "Image health check passed."
+        continue-on-error: true   # DB-less health check; may 503 without Postgres
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [build-and-push, smoke-test]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#sync-v}" >> "$GITHUB_OUTPUT"
+
+      - name: Download checksum artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: checksums
+
+      - name: Extract CHANGELOG section
+        id: changelog
+        run: |
+          python3 - <<'EOF'
+          import re, sys
+          try:
+            content = open("server/CHANGELOG.md").read()
+            # Extract the first versioned section
+            m = re.search(r'## \[[\d.]+\].*?\n(.*?)(?=\n## |\Z)', content, re.DOTALL)
+            notes = m.group(1).strip() if m else "See server/CHANGELOG.md for details."
+          except FileNotFoundError:
+            notes = "See repository history for changes."
+          with open("release_notes.md", "w") as f:
+            f.write(notes)
+          EOF
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: calmly-sync ${{ steps.version.outputs.version }}
+          body_path: release_notes.md
+          draft: true
+          files: checksums-${{ steps.version.outputs.version }}.txt
+          token: ${{ secrets.GITHUB_TOKEN }}

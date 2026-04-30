@@ -1,0 +1,29 @@
+name: Changelog lint
+
+on:
+  pull_request:
+    paths:
+      - "server/**"
+
+jobs:
+  check-unreleased:
+    name: server/CHANGELOG.md has Unreleased entry
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for Unreleased section
+        run: |
+          if ! grep -q '## \[Unreleased\]' server/CHANGELOG.md 2>/dev/null; then
+            echo "FAIL: server/CHANGELOG.md is missing an [Unreleased] section."
+            echo "Add a bullet under '## [Unreleased]' describing your change."
+            exit 1
+          fi
+          if git diff origin/${{ github.base_ref }}...HEAD -- server/CHANGELOG.md | grep -q '^+'; then
+            echo "CHANGELOG.md updated — OK"
+          else
+            echo "FAIL: server/ files changed but server/CHANGELOG.md was not updated."
+            echo "Add a bullet under '## [Unreleased]' in server/CHANGELOG.md."
+            exit 1
+          fi
