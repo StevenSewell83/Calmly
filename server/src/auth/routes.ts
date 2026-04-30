@@ -3,8 +3,8 @@ import { z } from "zod";
 import type { EmailAdapter } from "../email/adapter";
 import { requireSession } from "../middleware/requireSession";
 import { checkMagicLinkRateLimit } from "./rate-limit";
+import { redeemMagicLink } from "./redeem";
 import {
-  createSession,
   deleteSessionByToken,
   resolveSessionByToken,
 } from "./session";
@@ -127,47 +127,17 @@ export function authRoutesPlugin(deps: AuthRoutesDeps) {
         reply.code(400).send({ error: "invalid_request" });
         return;
       }
-      const tokenHash = hashToken(parsed.data.token);
-
-      // Atomic consume: only consume rows that haven't been consumed AND
-      // haven't expired. The RETURNING gives us the user_id in one round-trip.
-      const r = await app.pool.query<{ user_id: string; email: string }>(
-        `WITH consumed AS (
-           UPDATE magic_link_tokens
-              SET consumed_at = now()
-            WHERE token_hash = $1
-              AND consumed_at IS NULL
-              AND expires_at > now()
-            RETURNING user_id
-         )
-         SELECT consumed.user_id, users.email
-           FROM consumed
-           JOIN users ON users.id = consumed.user_id`,
-        [tokenHash],
-      );
-      const row = r.rows[0];
-      if (!row) {
-        reply.code(410).send({ error: "token_invalid_or_expired" });
-        return;
-      }
-
-      const session = await createSession(app.pool, {
-        userId: row.user_id,
-        ttlMs: cfg.SESSION_TTL_DAYS * 24 * 60 * 60 * 1000,
+      const result = await redeemMagicLink(app.pool, cfg, {
+        rawToken: parsed.data.token,
+        ip: req.ip,
         userAgent: req.headers["user-agent"] ?? null,
       });
-
-      setSessionCookie(
-        reply,
-        cookieName,
-        session.rawToken,
-        session.expiresAt,
-        isProd,
-      );
-      return {
-        user: { id: row.user_id, email: row.email },
-        session: { expiresAt: session.expiresAt.toISOString() },
-      };
+      if (!result.ok) {
+        reply.code(result.status).send({ error: result.error, ...(result.status === 429 && result.reason ? { reason: result.reason } : {}) });
+        return;
+      }
+      setSessionCookie(reply, cookieName, result.rawToken, result.expiresAt, isProd);
+      return { user: result.user, session: { expiresAt: result.expiresAt.toISOString() } };
     });
 
     app.post("/auth/logout", async (req, reply) => {
@@ -194,42 +164,17 @@ export function authRoutesPlugin(deps: AuthRoutesDeps) {
           reply.code(400).send({ error: "invalid_request" });
           return;
         }
-        const tokenHash = hashToken(raw);
-        const r = await app.pool.query<{ user_id: string; email: string }>(
-          `WITH consumed AS (
-             UPDATE magic_link_tokens
-                SET consumed_at = now()
-              WHERE token_hash = $1
-                AND consumed_at IS NULL
-                AND expires_at > now()
-              RETURNING user_id
-           )
-           SELECT consumed.user_id, users.email
-             FROM consumed
-             JOIN users ON users.id = consumed.user_id`,
-          [tokenHash],
-        );
-        const row = r.rows[0];
-        if (!row) {
-          reply.code(410).send({ error: "token_invalid_or_expired" });
-          return;
-        }
-        const session = await createSession(app.pool, {
-          userId: row.user_id,
-          ttlMs: cfg.SESSION_TTL_DAYS * 24 * 60 * 60 * 1000,
+        const result = await redeemMagicLink(app.pool, cfg, {
+          rawToken: raw,
+          ip: req.ip,
           userAgent: req.headers["user-agent"] ?? null,
         });
-        setSessionCookie(
-          reply,
-          cookieName,
-          session.rawToken,
-          session.expiresAt,
-          isProd,
-        );
-        return {
-          user: { id: row.user_id, email: row.email },
-          session: { expiresAt: session.expiresAt.toISOString() },
-        };
+        if (!result.ok) {
+          reply.code(result.status).send({ error: result.error, ...(result.status === 429 && result.reason ? { reason: result.reason } : {}) });
+          return;
+        }
+        setSessionCookie(reply, cookieName, result.rawToken, result.expiresAt, isProd);
+        return { user: result.user, session: { expiresAt: result.expiresAt.toISOString() } };
       },
     );
 

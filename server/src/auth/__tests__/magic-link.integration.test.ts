@@ -264,6 +264,58 @@ describe.skipIf(!dockerAvailable)(
       // NODE_ENV=test is not "production" so Secure must be absent
       expect(cookieStr).not.toMatch(/;\s*Secure(?!=)/i);
     });
+
+    it("GET /auth/magic-link/redeem — happy path creates session", async () => {
+      const userId = await ensureUser("get-redeem@example.com");
+      const rawToken = generateToken();
+      await insertToken(userId, rawToken, new Date(Date.now() + 15 * 60_000));
+
+      const res = await app.inject({
+        method: "GET",
+        url: `/auth/magic-link/redeem?token=${encodeURIComponent(rawToken)}`,
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.json()).toMatchObject({ user: expect.any(Object), session: { expiresAt: expect.any(String) } });
+      const setCookie = res.headers["set-cookie"];
+      const cookieStr = Array.isArray(setCookie) ? setCookie[0] ?? "" : (setCookie ?? "");
+      expect(cookieStr).toMatch(/^calmly_session=/);
+    });
+
+    // Both redeem endpoints must enforce IP-based rate limiting via the shared
+    // redeemMagicLink helper. Pre-seeding 20 token-request rows for the test IP
+    // fills the perIpPerHour bucket (default=20); the next redeem → 429.
+    it.each(["POST", "GET"] as const)(
+      "%s /auth/magic-link/redeem — 429 when IP is over the request rate limit",
+      async (method) => {
+        const uniqueIp = `10.${method === "POST" ? 1 : 2}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
+        const userId = await ensureUser(`ip-rl-${method.toLowerCase()}-${Date.now()}@example.com`);
+        const raw = generateToken();
+        // Token must exist; the rate-limit fires before the token lookup.
+        await pool.query(
+          `INSERT INTO magic_link_tokens (token_hash, user_id, expires_at, requested_ip)
+           VALUES ($1, $2, now() + interval '15 minutes', $3)`,
+          [hashToken(raw), userId, "127.0.0.1"],
+        );
+
+        // Fill the IP bucket.
+        for (let i = 0; i < 20; i++) {
+          await pool.query(
+            `INSERT INTO magic_link_tokens (token_hash, user_id, expires_at, requested_ip)
+             VALUES ($1, $2, now() + interval '1 hour', $3)`,
+            [hashToken(generateToken()), userId, uniqueIp],
+          );
+        }
+
+        const injectOpts =
+          method === "POST"
+            ? { method: "POST" as const, url: "/auth/magic-link/redeem", payload: { token: raw }, remoteAddress: uniqueIp }
+            : { method: "GET"  as const, url: `/auth/magic-link/redeem?token=${encodeURIComponent(raw)}`, remoteAddress: uniqueIp };
+
+        const res = await app.inject(injectOpts);
+        expect(res.statusCode).toBe(429);
+        expect(res.json()).toMatchObject({ error: "rate_limited" });
+      },
+    );
   },
   { timeout: 120_000 },
 );
