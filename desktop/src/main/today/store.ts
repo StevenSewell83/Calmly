@@ -1,26 +1,15 @@
 import type Database from "better-sqlite3";
-import type { TaskStatus } from "@calmly/shared";
+import type { TaskTodayRow, EventTodayRow } from "../wireTypes";
 
 // Read-side helpers that drive the Home screen. Each function is a pure
 // query builder — given a db, a user, and a "now" instant, return the
 // rows for that local-day window. Keeping `now` and `tzOffsetMinutes`
 // as args (rather than reading the system clock inside) makes the unit
 // tests deterministic across machines and timezones.
-
-export interface TaskTodayRow {
-  id: string;
-  title: string;
-  status: TaskStatus;
-  due_at: number | null;
-  updated_at: number;
-}
-
-export interface EventTodayRow {
-  id: string;
-  title: string;
-  start_at: number;
-  end_at: number;
-}
+//
+// Row interfaces (TaskTodayRow, EventTodayRow) live in main/wireTypes.ts
+// so preload/api-types.ts can import them under the web tsconfig.
+export type { TaskTodayRow, EventTodayRow };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

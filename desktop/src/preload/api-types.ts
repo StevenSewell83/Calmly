@@ -1,4 +1,12 @@
-import type { FocusSource, InboxSource, TaskStatus } from "@calmly/shared";
+import type { FocusSource, InboxSource } from "@calmly/shared";
+import type {
+  EventTodayRow,
+  FocusSessionRow,
+  InboxListRow,
+  PlanTaskRow,
+  ReviewTaskRow,
+  TaskTodayRow,
+} from "../main/wireTypes";
 
 export interface DbHealth {
   ok: boolean;
@@ -112,14 +120,9 @@ export type UnresolvedInboxCountResult =
 // the same diff that lifts the type off @calmly/shared.
 export type InboxItemSource = InboxSource;
 
-export interface InboxItem {
-  id: string;
-  raw_text: string;
-  source: InboxSource;
-  created_at: number;
-  resolved_at: number | null;
-  snoozed_until: number | null;
-}
+// Wire shape for the inbox list IPC. Re-exports the canonical row
+// type from main/inbox/store so adding a column lands in one place.
+export type InboxItem = InboxListRow;
 
 export type InboxListResult =
   | { ok: true; items: InboxItem[] }
@@ -156,21 +159,10 @@ export interface InboxBridge {
   onFocusRequest(handler: () => void): () => void;
 }
 
-// Today-window read shapes — mirror main/today/store.ts.
-export interface TaskTodayItem {
-  id: string;
-  title: string;
-  status: TaskStatus;
-  due_at: number | null;
-  updated_at: number;
-}
-
-export interface EventTodayItem {
-  id: string;
-  title: string;
-  start_at: number;
-  end_at: number;
-}
+// Today-window read shapes re-exported from main/today/store so the
+// columns the Home screen reads stay in one place.
+export type TaskTodayItem = TaskTodayRow;
+export type EventTodayItem = EventTodayRow;
 
 export type ListTodayTasksResult =
   | { ok: true; tasks: TaskTodayItem[] }
@@ -242,23 +234,9 @@ export interface TriageBridge {
   discard(inboxId: string): Promise<TriageDiscardResult>;
 }
 
-// Plan view — wire shape mirrors main/plan/store.PlanTaskRow. Two
-// columns per day: scheduled (placed TimeBlocks) and backlog (open
-// tasks due today, unplaced).
-export interface PlanTaskItem {
-  id: string;
-  title: string;
-  notes: string | null;
-  status: TaskStatus;
-  due_at: number | null;
-  scheduled_start: number | null;
-  scheduled_end: number | null;
-  source: InboxSource;
-  created_at: number;
-  updated_at: number;
-  type: string;
-  parent_task_id: string | null;
-}
+// Plan view — re-exports main/plan/store.PlanTaskRow with `version`
+// stripped (DB-internal field the renderer doesn't need).
+export type PlanTaskItem = Omit<PlanTaskRow, "version">;
 
 export interface PlanForDay {
   scheduled: PlanTaskItem[];
@@ -312,14 +290,8 @@ export interface PlanBridge {
 // same diff that lifts the type off @calmly/shared.
 export type FocusSourceWire = FocusSource;
 
-export interface FocusSessionItem {
-  id: string;
-  user_id: string;
-  task_id: string;
-  started_at: number;
-  ended_at: number | null;
-  source: FocusSource;
-}
+// Re-exports the canonical session row from main/focus/store.
+export type FocusSessionItem = FocusSessionRow;
 
 export type FocusCurrentResult =
   | { ok: true; session: FocusSessionItem | null }
@@ -373,15 +345,9 @@ export interface FocusBridge {
 
 // Daily Shutdown — read summary + bulk task ops + reflection + the
 // single-tx completeShutdown.
-export interface ReviewTaskItem {
-  id: string;
-  title: string;
-  status: TaskStatus;
-  due_at: number | null;
-  scheduled_start: number | null;
-  scheduled_end: number | null;
-  updated_at: number;
-}
+//
+// Re-exports the canonical row from main/review/summary.
+export type ReviewTaskItem = ReviewTaskRow;
 
 export interface ReviewReflectionItem {
   id: string;

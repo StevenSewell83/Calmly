@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type Database from "better-sqlite3";
 import type { FocusSource, InboxSource, TaskStatus } from "@calmly/shared";
 import { enqueueOp } from "../sync/queue";
+import type { FocusSessionRow } from "../wireTypes";
 
 // CL-09 focus mode store.
 //
@@ -13,15 +14,10 @@ import { enqueueOp } from "../sync/queue";
 //
 // Invariant: at most one open session per user. Every startFocus /
 // switchFocus auto-ends the prior open session in the same tx.
-
-export interface FocusSessionRow {
-  id: string;
-  user_id: string;
-  task_id: string;
-  started_at: number;
-  ended_at: number | null;
-  source: FocusSource;
-}
+//
+// FocusSessionRow lives in main/wireTypes.ts (re-exported here for
+// back-compat with consumers that already import from this module).
+export type { FocusSessionRow };
 
 const SCHEDULABLE_STATUSES: readonly TaskStatus[] = ["open", "in_progress"];
 

@@ -1,20 +1,14 @@
 import type Database from "better-sqlite3";
-import type { TaskStatus } from "@calmly/shared";
 import { localDayWindow } from "../today/store";
+import type { ReviewTaskRow } from "../wireTypes";
 
 // CL-13 Daily Shutdown read path. Builds the day's review snapshot in
 // three task reads + one focus aggregate + one settings lookup so the
 // renderer can render the whole screen from a single IPC call.
-
-export interface ReviewTaskRow {
-  id: string;
-  title: string;
-  status: TaskStatus;
-  due_at: number | null;
-  scheduled_start: number | null;
-  scheduled_end: number | null;
-  updated_at: number;
-}
+//
+// ReviewTaskRow lives in main/wireTypes.ts (re-exported here for
+// back-compat with consumers that already import from this module).
+export type { ReviewTaskRow };
 
 export interface ReviewReflection {
   id: string;

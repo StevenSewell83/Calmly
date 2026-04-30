@@ -2,6 +2,7 @@ import type Database from "better-sqlite3";
 import type { InboxSource, TaskStatus } from "@calmly/shared";
 import { localDayWindow } from "../today/store";
 import { enqueueOp } from "../sync/queue";
+import type { PlanTaskRow } from "../wireTypes";
 
 // CL-06 plan-view reads + writes.
 //
@@ -11,22 +12,10 @@ import { enqueueOp } from "../sync/queue";
 // window AND no scheduled_start). schedule + unschedule mutate the
 // pair as a unit and enqueue full-snapshot upserts so the server's
 // EXCLUDED-based ON CONFLICT can't null out unrelated columns.
-
-export interface PlanTaskRow {
-  id: string;
-  title: string;
-  notes: string | null;
-  status: TaskStatus;
-  due_at: number | null;
-  scheduled_start: number | null;
-  scheduled_end: number | null;
-  source: InboxSource;
-  created_at: number;
-  updated_at: number;
-  version: number;
-  type: string;
-  parent_task_id: string | null;
-}
+//
+// PlanTaskRow lives in main/wireTypes.ts; re-exported here so existing
+// consumers (`import { PlanTaskRow } from "../plan/store"`) keep working.
+export type { PlanTaskRow };
 
 export interface PlanForDay {
   scheduled: PlanTaskRow[];

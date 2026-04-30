@@ -2,6 +2,9 @@ import { randomUUID } from "node:crypto";
 import type Database from "better-sqlite3";
 import type { InboxSource } from "@calmly/shared";
 import { enqueueOp } from "../sync/queue";
+import type { InboxListRow } from "../wireTypes";
+
+export type { InboxListRow };
 
 export const MAX_RAW_TEXT_CHARS = 4000;
 
@@ -75,17 +78,10 @@ export function addInboxItem(args: AddInboxItemArgs): AddInboxItemResult {
   }
 }
 
-// Wire shape for the inbox list IPC. Mirrors the columns the renderer
-// actually shows; resolved_at + snoozed_until come along so future
-// sort modes (e.g. 'recently snoozed') can derive without a re-fetch.
-export interface InboxListRow {
-  id: string;
-  raw_text: string;
-  source: InboxSource;
-  created_at: number;
-  resolved_at: number | null;
-  snoozed_until: number | null;
-}
+// InboxListRow lives in main/wireTypes.ts (so the preload can import
+// it without dragging better-sqlite3 into the renderer compile).
+// Re-exported above for back-compat with consumers that already
+// import it from this file.
 
 // Lists the user's visible inbox: unresolved, not currently snoozed,
 // not soft-deleted. Ordered newest-first; renderer re-sorts in memory
