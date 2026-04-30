@@ -3,3 +3,4 @@ packages:
   - "server"
   - "shared"
   - "tools/*"
+  - "oss-sync"

@@ -1,0 +1,124 @@
+name: OSS Self-Host
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "server/**"
+      - "shared/**"
+      - "docker-compose.yml"
+      - "scripts/oss-smoke-test.sh"
+      - ".github/workflows/oss-self-host.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "server/**"
+      - "shared/**"
+      - "docker-compose.yml"
+      - "scripts/oss-smoke-test.sh"
+      - ".github/workflows/oss-self-host.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: OSS smoke test (docker compose)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run smoke test
+        run: bash scripts/oss-smoke-test.sh
+
+  oss-e2e:
+    name: OSS self-host e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: smoke
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: calmly
+          POSTGRES_PASSWORD: calmly
+          POSTGRES_DB: calmly
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U calmly -d calmly"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://calmly:calmly@localhost:5432/calmly
+      PORT: "3001"
+      HOST: "0.0.0.0"
+      EMAIL_SENDER: console
+      DEV_MAIL_DIR: /tmp/calmly-mail
+      NODE_VERSION: "20"
+      PNPM_VERSION: "9.12.3"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Resolve pnpm store path
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-${{ runner.os }}-
+
+      - name: Install (frozen lockfile, ignore native scripts)
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Create mail dir
+        run: mkdir -p /tmp/calmly-mail
+
+      - name: Run migrations
+        working-directory: server
+        run: |
+          node --import=tsx/esm \
+            node_modules/node-pg-migrate/bin/node-pg-migrate.js \
+            -m migrations up
+
+      - name: Start server
+        working-directory: server
+        run: node --import=tsx/esm src/index.ts &
+
+      - name: Wait for /health
+        run: |
+          TRIES=0
+          until curl -sf http://localhost:3001/health > /dev/null 2>&1; do
+            TRIES=$((TRIES + 1))
+            if [ "$TRIES" -gt 30 ]; then
+              echo "FAIL: server did not become healthy after 60s"
+              exit 1
+            fi
+            sleep 2
+          done
+
+      - name: Run OSS e2e specs
+        run: pnpm --filter @calmly/oss-sync exec playwright test
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-trace-oss
+          path: oss-sync/test-results/
+          retention-days: 7
