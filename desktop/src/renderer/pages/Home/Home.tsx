@@ -3,9 +3,9 @@ import { RefreshCw, Sparkles } from "lucide-react";
 import { InboxTriageCard } from "./InboxTriageCard";
 import { NextCard } from "./NextCard";
 import { NowCard } from "./NowCard";
-import { StubModal } from "./StubModal";
 import { TodayList } from "./TodayList";
 import { QuickPlan } from "../QuickPlan/QuickPlan";
+import { ReplanModal } from "../../components/Replan/ReplanModal";
 import {
   buildTodayList,
   pickNextItem,
@@ -121,13 +121,7 @@ export function Home() {
       )}
 
       <QuickPlan open={quickPlanOpen} onClose={() => setQuickPlanOpen(false)} />
-      <StubModal
-        open={replanOpen}
-        onClose={() => setReplanOpen(false)}
-        title="Replan"
-        body="When the day shifts, Replan will help you push, drop, shrink, or move what's on your plate without losing your footing."
-        beadId="CL-12"
-      />
+      <ReplanModal open={replanOpen} onClose={() => setReplanOpen(false)} />
     </section>
   );
 }

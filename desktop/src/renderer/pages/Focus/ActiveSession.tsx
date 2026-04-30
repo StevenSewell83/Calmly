@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle2, ArrowLeftRight, Square, AlertCircle } from "lucide-react";
+import { CheckCircle2, ArrowLeftRight, Square, AlertCircle, RefreshCw } from "lucide-react";
 import type { FocusSessionItem, PlanTaskItem } from "../../../preload/api-types";
 import { SwitchTaskPicker } from "./SwitchTaskPicker";
 import { StuckPrompts } from "./StuckPrompts";
+import { ReplanModal } from "../../components/Replan/ReplanModal";
 
 interface Props {
   session: FocusSessionItem;
@@ -28,6 +29,7 @@ function useElapsed(startedAt: number): string {
 export function ActiveSession({ session, task, todayTasks, onMarkDone, onEnd, onSwitch }: Props) {
   const [switchOpen, setSwitchOpen] = useState(false);
   const [stuckSessionId, setStuckSessionId] = useState<string | null>(null);
+  const [replanOpen, setReplanOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const elapsed = useElapsed(session.started_at);
 
@@ -99,6 +101,15 @@ export function ActiveSession({ session, task, todayTasks, onMarkDone, onEnd, on
           <Square className="w-3.5 h-3.5" />
           End focus
         </button>
+        <button
+          onClick={() => setReplanOpen(true)}
+          disabled={busy}
+          aria-label="Replan day"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl border border-stone-200 text-stone-600 hover:bg-stone-50 disabled:opacity-50 text-xs font-medium transition-colors"
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+          Replan
+        </button>
       </div>
 
       {switchOpen && (
@@ -109,6 +120,8 @@ export function ActiveSession({ session, task, todayTasks, onMarkDone, onEnd, on
           onClose={() => setSwitchOpen(false)}
         />
       )}
+
+      <ReplanModal open={replanOpen} onClose={() => setReplanOpen(false)} />
 
       {stuckSessionId && (
         <StuckPrompts

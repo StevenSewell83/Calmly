@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { RefreshCw } from "lucide-react";
 import {
   DndContext,
   KeyboardSensor,
@@ -26,6 +27,7 @@ import {
   snapMinutes,
 } from "./planMath";
 import { usePlanForDay } from "./usePlanForDay";
+import { ReplanModal } from "../../components/Replan/ReplanModal";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -65,6 +67,7 @@ export function Plan() {
   });
   const { state, refresh } = usePlanForDay(day);
   const [activeTask, setActiveTask] = useState<PlanTaskItem | null>(null);
+  const [replanOpen, setReplanOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -165,13 +168,23 @@ export function Plan() {
             Drag from backlog to place a block. Drag blocks to reschedule.
           </p>
         </div>
-        <DayPicker
-          day={day}
-          today={today}
-          onPrev={() => setDay((d) => d - DAY_MS)}
-          onNext={() => setDay((d) => d + DAY_MS)}
-          onToday={() => setDay(today)}
-        />
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setReplanOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium tracking-wide text-stone-600 hover:bg-stone-100 transition-colors"
+          >
+            <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
+            Replan
+          </button>
+          <DayPicker
+            day={day}
+            today={today}
+            onPrev={() => setDay((d) => d - DAY_MS)}
+            onNext={() => setDay((d) => d + DAY_MS)}
+            onToday={() => setDay(today)}
+          />
+        </div>
       </header>
 
       {state.kind === "loading" ? (
@@ -191,6 +204,7 @@ export function Plan() {
         </DndContext>
       )}
 
+      <ReplanModal open={replanOpen} onClose={() => setReplanOpen(false)} />
       <TaskSidePanel
         task={activeTask}
         day={day}

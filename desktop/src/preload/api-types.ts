@@ -433,6 +433,23 @@ export interface FocusBridge {
   endStuck(args: { stuckSessionId: string; outcome: string; answers: { question: string; answer: string }[] }): Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
+export type ReplanReason = "ran_late" | "got_stuck" | "priorities_changed" | "other" | null;
+
+export type ReplanActionType = "push" | "drop" | "shrink" | "moveToDate";
+
+export interface ReplanAction {
+  type: ReplanActionType;
+  taskId: string;
+  offsetMs?: number;
+  durationMs?: number;
+  targetDayMs?: number;
+}
+
+export interface ReplanBridge {
+  recordEvent(reason: ReplanReason): Promise<{ ok: true } | { ok: false; error: string }>;
+  applyBatch(actions: ReplanAction[]): Promise<{ ok: true; applied: number } | { ok: false; error: string }>;
+}
+
 export interface QuickPlanBridge {
   getDate(): Promise<{ ok: true; date: string | null } | { ok: false; error: string }>;
   setDate(date: string): Promise<{ ok: true } | { ok: false; error: string }>;
@@ -452,5 +469,6 @@ export interface CalmlyApi {
   plan: PlanBridge;
   focus: FocusBridge;
   quickplan: QuickPlanBridge;
+  replan: ReplanBridge;
   log: LogBridge;
 }
