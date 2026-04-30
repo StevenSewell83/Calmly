@@ -6,6 +6,22 @@ import { startServerFixture, type ServerFixture } from "../fixtures/server";
 import { isDockerAvailable } from "../fixtures/docker";
 import { launchElectronApp, signInAsTestUser } from "./_helpers";
 import { seedDesktopDb } from "../fixtures/seedDesktopDb";
+import type { PlanScheduleResult } from "../../src/preload/api-types";
+
+// Drag-drop fallback (calmly-kwy risk clause): dnd-kit pointer drag is
+// unreliable in Playwright/Electron; keyboard sensor slot order is fragile.
+// We use plan.schedule IPC to simulate drag outcome and verify the TimeBlock.
+declare const window: {
+  calmly: {
+    plan: {
+      schedule: (args: {
+        taskId: string;
+        startAt: number;
+        endAt: number;
+      }) => Promise<PlanScheduleResult>;
+    };
+  };
+};
 
 // CL-06-e2e: Plan view — place, reload, persist.
 //
@@ -170,6 +186,109 @@ test.describe("CL-06-e2e · Plan view — place, reload, persist", () => {
             // ignore secondary dispose error
           }
           throw err;
+        }
+      } finally {
+        await rm(userDataDir, { recursive: true, force: true });
+      }
+    },
+  );
+
+  test(
+    "schedule via IPC: backlog task moves to grid at 09:00, persists on reload",
+    async () => {
+      const userDataDir = await mkdtemp(
+        join(tmpdir(), "calmly-e2e-plan-schedule-"),
+      );
+      try {
+        // ── Phase 1: sign in ───────────────────────────────────────────────
+        const firstLaunch = await launchElectronApp({
+          syncUrl: server!.url,
+          userDataDir,
+        });
+        let userId: string;
+        try {
+          const result = await signInAsTestUser({
+            app: firstLaunch.electronApp,
+            window: firstLaunch.window,
+            server: server!,
+            email: `plan-schedule-${Date.now()}@calmly.test`,
+          });
+          userId = result.user.id;
+        } finally {
+          await firstLaunch.dispose();
+        }
+
+        const now = Date.now();
+        const todayMidnight = (() => {
+          const d = new Date(now);
+          d.setHours(0, 0, 0, 0);
+          return d.getTime();
+        })();
+        const dueAt = todayMidnight + 12 * 60 * 60_000; // noon
+        const nineAmMs = todayMidnight + 9 * 60 * 60_000;
+        const tenAmMs = todayMidnight + 10 * 60 * 60_000;
+        const TASK_TITLE = "Deep work session";
+
+        const { tasks: seededTasks } = seedDesktopDb(userDataDir, {
+          tasks: [{ userId, title: TASK_TITLE, dueAt }],
+        });
+        const taskId = seededTasks[0]!.id;
+
+        // ── Phase 3: verify Backlog, schedule via IPC, assert grid ───────
+        const secondLaunch = await launchElectronApp({
+          syncUrl: server!.url,
+          userDataDir,
+        });
+        try {
+          const win = secondLaunch.window;
+
+          await expect(win.getByText(/Peace,/)).toBeVisible({ timeout: 20_000 });
+          await win.getByRole("link", { name: "Plan" }).click();
+          await expect(
+            win.getByRole("heading", { name: /Plan/i }),
+          ).toBeVisible({ timeout: 10_000 });
+
+          const backlog = win.getByRole("complementary", { name: "Backlog" });
+          await expect(backlog.getByText(TASK_TITLE)).toBeVisible({ timeout: 5_000 });
+
+          // Place via IPC (simulates drag outcome — see NOTE above)
+          const schedResult = await win.evaluate(
+            ([id, start, end]) =>
+              window.calmly.plan.schedule({ taskId: id, startAt: start, endAt: end }),
+            [taskId, nineAmMs, tenAmMs] as [string, number, number],
+          );
+          expect(schedResult.ok).toBe(true);
+
+          // Re-render should show the TimeBlock as a button in the grid.
+          const grid = win.getByRole("grid", { name: "Day schedule" });
+          await expect(grid).toBeVisible();
+          await expect(
+            win.getByRole("button", { name: new RegExp(TASK_TITLE) }),
+          ).toBeVisible({ timeout: 10_000 });
+
+          await expect(backlog.getByText(TASK_TITLE)).not.toBeVisible({ timeout: 5_000 });
+        } finally {
+          await secondLaunch.dispose();
+        }
+
+        const thirdLaunch = await launchElectronApp({
+          syncUrl: server!.url,
+          userDataDir,
+        });
+        try {
+          const win = thirdLaunch.window;
+
+          await expect(win.getByText(/Peace,/)).toBeVisible({ timeout: 20_000 });
+          await win.getByRole("link", { name: "Plan" }).click();
+          await expect(
+            win.getByRole("heading", { name: /Plan/i }),
+          ).toBeVisible({ timeout: 10_000 });
+
+          await expect(
+            win.getByRole("button", { name: new RegExp(TASK_TITLE) }),
+          ).toBeVisible({ timeout: 10_000 });
+        } finally {
+          await thirdLaunch.dispose();
         }
       } finally {
         await rm(userDataDir, { recursive: true, force: true });
