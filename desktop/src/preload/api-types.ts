@@ -1,3 +1,5 @@
+import type { FocusSource, InboxSource, TaskStatus } from "@calmly/shared";
+
 export interface DbHealth {
   ok: boolean;
   version: number;
@@ -105,18 +107,15 @@ export type UnresolvedInboxCountResult =
   | { ok: true; count: number }
   | { ok: false; error: "NotSignedIn" };
 
-// Source enum kept inline to avoid pulling @calmly/shared into the
-// renderer's type graph just for this one literal union.
-export type InboxItemSource =
-  | "desktop"
-  | "telegram-text"
-  | "telegram-voice"
-  | "ai-split";
+// Renderer-facing alias for the canonical InboxSource enum. Kept so
+// existing consumers (InboxRow.tsx etc.) don't have to be touched in
+// the same diff that lifts the type off @calmly/shared.
+export type InboxItemSource = InboxSource;
 
 export interface InboxItem {
   id: string;
   raw_text: string;
-  source: InboxItemSource;
+  source: InboxSource;
   created_at: number;
   resolved_at: number | null;
   snoozed_until: number | null;
@@ -157,13 +156,11 @@ export interface InboxBridge {
   onFocusRequest(handler: () => void): () => void;
 }
 
-// Today-window read shapes — mirror main/today/store.ts. Status is the
-// shared TaskStatus enum but kept as a string here so the renderer
-// doesn't need to depend on @calmly/shared at type-level.
+// Today-window read shapes — mirror main/today/store.ts.
 export interface TaskTodayItem {
   id: string;
   title: string;
-  status: "open" | "in_progress" | "done" | "dropped" | "snoozed";
+  status: TaskStatus;
   due_at: number | null;
   updated_at: number;
 }
@@ -252,11 +249,11 @@ export interface PlanTaskItem {
   id: string;
   title: string;
   notes: string | null;
-  status: "open" | "in_progress" | "done" | "dropped" | "snoozed";
+  status: TaskStatus;
   due_at: number | null;
   scheduled_start: number | null;
   scheduled_end: number | null;
-  source: "desktop" | "telegram-text" | "telegram-voice" | "ai-split";
+  source: InboxSource;
   created_at: number;
   updated_at: number;
   type: string;
@@ -309,7 +306,11 @@ export interface PlanBridge {
 
 // Focus mode — local-only sessions (see migration 0008). At most one
 // open session per user; start auto-ends any prior open one.
-export type FocusSourceWire = "scheduled" | "ad-hoc";
+//
+// FocusSourceWire kept as an alias for FocusSource so existing renderer
+// consumers (focusUtils.sourceForTask) don't have to rename in the
+// same diff that lifts the type off @calmly/shared.
+export type FocusSourceWire = FocusSource;
 
 export interface FocusSessionItem {
   id: string;
@@ -317,7 +318,7 @@ export interface FocusSessionItem {
   task_id: string;
   started_at: number;
   ended_at: number | null;
-  source: FocusSourceWire;
+  source: FocusSource;
 }
 
 export type FocusCurrentResult =
@@ -371,13 +372,11 @@ export interface FocusBridge {
 }
 
 // Daily Shutdown — read summary + bulk task ops + reflection + the
-// single-tx completeShutdown. Status / source enums kept as inline
-// unions to avoid pulling @calmly/shared into the renderer's type
-// graph (matches the convention used by the other bridges above).
+// single-tx completeShutdown.
 export interface ReviewTaskItem {
   id: string;
   title: string;
-  status: "open" | "in_progress" | "done" | "dropped" | "snoozed";
+  status: TaskStatus;
   due_at: number | null;
   scheduled_start: number | null;
   scheduled_end: number | null;
