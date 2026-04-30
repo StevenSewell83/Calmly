@@ -34,6 +34,7 @@ import {
 } from "./planMath";
 import { usePlanForDay } from "./usePlanForDay";
 import { ReplanModal } from "../../components/Replan/ReplanModal";
+import { usePlanShortcuts } from "../../hooks/usePlanShortcuts";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -143,6 +144,14 @@ export function Plan() {
     setActiveTask(task);
   }, []);
 
+  const onUnschedule = useCallback(
+    async (taskId: string) => {
+      const r = await window.calmly.plan.unschedule(taskId);
+      if (r.ok) await refresh();
+    },
+    [refresh],
+  );
+
   const blocks = useMemo(() => {
     if (state.kind !== "ready") return [];
     const placed = state.plan.scheduled.filter(isPlaced);
@@ -160,6 +169,14 @@ export function Plan() {
 
   const heading = dayHeading(day, today);
 
+  usePlanShortcuts({
+    blocks,
+    day,
+    onMoveBlock: persistSchedule,
+    onUnschedule,
+    active: state.kind === "ready" && !replanOpen && activeTask === null,
+  });
+
   return (
     <section aria-labelledby="plan-page-title" className="flex-1 px-12 pt-10 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <h1 id="plan-page-title" className="sr-only">Plan</h1>
@@ -169,7 +186,7 @@ export function Plan() {
             {heading}
           </h2>
           <p className="mt-3 text-sm text-stone-400 tracking-wide">
-            Drag from backlog to place a block. Drag blocks to reschedule.
+            Drag or use <kbd className="text-[10px] font-mono bg-stone-100 px-1 py-0.5 rounded border border-stone-200">j</kbd>/<kbd className="text-[10px] font-mono bg-stone-100 px-1 py-0.5 rounded border border-stone-200">k</kbd> to navigate · <kbd className="text-[10px] font-mono bg-stone-100 px-1 py-0.5 rounded border border-stone-200">↑↓</kbd> to move blocks · <kbd className="text-[10px] font-mono bg-stone-100 px-1 py-0.5 rounded border border-stone-200">u</kbd> to unschedule
           </p>
         </div>
         <div className="flex items-center gap-3">

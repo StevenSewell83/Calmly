@@ -8,6 +8,7 @@ import {
   PX_PER_MINUTE,
   snapAndClampEndForStart,
 } from "./planMath";
+import { PLAN_ITEM_ATTR, PLAN_BLOCK_ATTR } from "../../hooks/usePlanShortcuts";
 
 export interface TimeBlockProps {
   task: PlanTaskItem;
@@ -23,7 +24,11 @@ export interface TimeBlockProps {
 // Time block placed inside DayGrid. Move-by-drag is handled through
 // @dnd-kit (the surrounding DndContext owns drop math). Resize-by-
 // drag uses native pointer events so we can preview the height
-// during the drag without round-tripping through DndContext.
+// without round-tripping through DndContext.
+//
+// Keyboard contract: Enter/Space opens the task panel (overrides the
+// dnd-kit KeyboardSensor's default pick-up gesture). Arrow Up/Down
+// moves the block ±15 min via usePlanShortcuts. `u` unschedules.
 export function TimeBlock({
   task,
   startMinutes,
@@ -45,7 +50,6 @@ export function TimeBlock({
 
   const onResizePointerDown = useCallback(
     (e: React.PointerEvent<HTMLButtonElement>) => {
-      // Stop @dnd-kit from picking the resize as a drag.
       e.stopPropagation();
       e.preventDefault();
       resizeStartY.current = e.clientY;
@@ -81,18 +85,9 @@ export function TimeBlock({
         onResizeCommit(task.id, newEnd);
       }
     },
-    [
-      previewDuration,
-      initialDuration,
-      startMinutes,
-      endMinutes,
-      onResizeCommit,
-      task.id,
-    ],
+    [previewDuration, initialDuration, startMinutes, endMinutes, onResizeCommit, task.id],
   );
 
-  // Reset preview if the underlying schedule changes from outside
-  // mid-render (e.g., another drag completed during a stale resize).
   useEffect(() => {
     return () => {
       resizeStartY.current = null;
@@ -118,8 +113,10 @@ export function TimeBlock({
 
   const ring = overlapped
     ? "ring-2 ring-amber-300/80"
-    : "ring-1 ring-emerald-200/60 hover:ring-emerald-300";
+    : "ring-1 ring-emerald-200/60 hover:ring-emerald-300 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none";
 
+  // dnd-kit attributes include aria-roledescription and aria-disabled.
+  // We spread them but supply our own role/tabIndex/aria-label/onKeyDown.
   return (
     <div
       ref={setNodeRef}
@@ -127,11 +124,21 @@ export function TimeBlock({
       {...attributes}
       {...listeners}
       role="button"
-      aria-label={`${task.title}, ${formatBlockRange(startMinutes, startMinutes + visibleDuration)}`}
       tabIndex={0}
+      aria-label={`${task.title}, ${formatBlockRange(startMinutes, startMinutes + visibleDuration)}. Press Enter to open, Arrow keys to move.`}
+      // data attrs used by usePlanShortcuts for j/k navigation and Arrow key moves
+      {...{ [PLAN_ITEM_ATTR]: task.id, [PLAN_BLOCK_ATTR]: task.id }}
+      // Override dnd-kit's onKeyDown: Enter/Space open the task panel instead
+      // of initiating a keyboard drag. Arrow keys remain available for the
+      // usePlanShortcuts handler at the document level.
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!isDragging) onClick(task);
+        }
+      }}
       onClick={(e) => {
-        // Suppress click when this was the end of a drag (dnd-kit
-        // pointer cancel doesn't quite mute click on its own).
         if (isDragging) return;
         e.stopPropagation();
         onClick(task);

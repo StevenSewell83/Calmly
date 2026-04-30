@@ -2,6 +2,7 @@ import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Inbox } from "lucide-react";
 import type { PlanTaskItem } from "../../../preload/api-types";
+import { PLAN_ITEM_ATTR } from "../../hooks/usePlanShortcuts";
 
 interface BacklogRowProps {
   task: PlanTaskItem;
@@ -27,19 +28,41 @@ function BacklogRow({ task, onTaskClick }: BacklogRowProps) {
     <li
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
+      // dnd-kit drag attributes (aria-roledescription etc) on the grip only;
+      // the row itself gets a separate tabIndex for j/k focus navigation.
+      tabIndex={0}
+      role="listitem"
+      aria-label={`${task.title}${task.notes ? `, ${task.notes}` : ""}. Press Enter to open.`}
+      {...{ [PLAN_ITEM_ATTR]: task.id }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          if (!isDragging) onTaskClick(task);
+        }
+      }}
       onClick={(e) => { if (!isDragging) { e.stopPropagation(); onTaskClick(task); } }}
       className={[
         "group flex items-start gap-3 px-4 py-3 rounded-2xl bg-white/70",
-        "border border-stone-100 shadow-sm cursor-grab active:cursor-grabbing",
-        "hover:border-emerald-200 transition-colors select-none",
+        "border border-stone-100 shadow-sm select-none",
+        "hover:border-emerald-200 transition-colors",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400",
       ].join(" ")}
     >
-      <GripVertical
-        className="w-4 h-4 text-stone-300 mt-0.5 group-hover:text-stone-500 shrink-0"
-        aria-hidden="true"
-      />
+      {/* Drag handle — only this gets listeners so keyboard activation is separate */}
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-label={`Drag ${task.title}`}
+        {...attributes}
+        {...listeners}
+        className="mt-0.5 shrink-0 cursor-grab active:cursor-grabbing focus:outline-none"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <GripVertical
+          className="w-4 h-4 text-stone-300 group-hover:text-stone-500"
+          aria-hidden="true"
+        />
+      </button>
       <div className="flex-1 min-w-0">
         <p className="text-sm text-stone-800 font-medium leading-snug truncate">
           {task.title}
@@ -81,7 +104,10 @@ export function Backlog({ items, onTaskClick }: BacklogProps) {
           </p>
         </div>
       ) : (
-        <ul className="flex-1 overflow-y-auto pr-1 flex flex-col gap-2 custom-scrollbar">
+        <ul
+          className="flex-1 overflow-y-auto pr-1 flex flex-col gap-2 custom-scrollbar"
+          aria-label="Unscheduled tasks"
+        >
           {items.map((task) => (
             <BacklogRow key={task.id} task={task} onTaskClick={onTaskClick} />
           ))}
