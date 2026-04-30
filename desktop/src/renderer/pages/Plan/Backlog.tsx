@@ -5,9 +5,10 @@ import type { PlanTaskItem } from "../../../preload/api-types";
 
 interface BacklogRowProps {
   task: PlanTaskItem;
+  onTaskClick(task: PlanTaskItem): void;
 }
 
-function BacklogRow({ task }: BacklogRowProps) {
+function BacklogRow({ task, onTaskClick }: BacklogRowProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
       id: `backlog:${task.id}`,
@@ -28,6 +29,7 @@ function BacklogRow({ task }: BacklogRowProps) {
       style={style}
       {...attributes}
       {...listeners}
+      onClick={(e) => { if (!isDragging) { e.stopPropagation(); onTaskClick(task); } }}
       className={[
         "group flex items-start gap-3 px-4 py-3 rounded-2xl bg-white/70",
         "border border-stone-100 shadow-sm cursor-grab active:cursor-grabbing",
@@ -54,9 +56,10 @@ function BacklogRow({ task }: BacklogRowProps) {
 
 export interface BacklogProps {
   items: PlanTaskItem[];
+  onTaskClick(task: PlanTaskItem): void;
 }
 
-export function Backlog({ items }: BacklogProps) {
+export function Backlog({ items, onTaskClick }: BacklogProps) {
   return (
     <aside
       aria-label="Backlog"
@@ -80,7 +83,7 @@ export function Backlog({ items }: BacklogProps) {
       ) : (
         <ul className="flex-1 overflow-y-auto pr-1 flex flex-col gap-2 custom-scrollbar">
           {items.map((task) => (
-            <BacklogRow key={task.id} task={task} />
+            <BacklogRow key={task.id} task={task} onTaskClick={onTaskClick} />
           ))}
         </ul>
       )}

@@ -296,15 +296,27 @@ export interface PlanScheduleArgs {
   endAt: number;
 }
 
+export interface PlanUpdateArgs {
+  taskId: string;
+  title?: string;
+  notes?: string | null;
+  dueAt?: number | null;
+  scheduledStart?: number | null;
+  scheduledEnd?: number | null;
+}
+
+export type PlanUpdateResult =
+  | { ok: true }
+  | {
+      ok: false;
+      error: "NotSignedIn" | "NotFound" | "InvalidArgs" | "InternalError";
+    };
+
 export interface PlanBridge {
-  // Scheduled blocks + backlog for the local-day containing `day`
-  // (defaults to today when omitted).
   listForDay(day?: number): Promise<PlanListResult>;
-  // Place / move a task on the day grid. End must be >= start.
   schedule(args: PlanScheduleArgs): Promise<PlanScheduleResult>;
-  // Return a placed task to the backlog by clearing both schedule
-  // fields.
   unschedule(taskId: string): Promise<PlanUnscheduleResult>;
+  update(args: PlanUpdateArgs): Promise<PlanUpdateResult>;
 }
 
 // Focus mode — local-only sessions (see migration 0008). At most one

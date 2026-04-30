@@ -141,6 +141,68 @@ export function scheduleTask(
   }
 }
 
+export type UpdateTaskResult =
+  | { ok: true }
+  | { ok: false; error: "NotFound" | "InvalidArgs" | "InternalError" };
+
+export interface UpdateTaskArgs {
+  title?: string;
+  notes?: string | null;
+  dueAt?: number | null;
+  scheduledStart?: number | null;
+  scheduledEnd?: number | null;
+}
+
+// Patches mutable task fields from the TaskSidePanel. Clears schedule
+// pair atomically when scheduledStart is explicitly set to null.
+export function updateTask(
+  db: Database.Database,
+  userId: string,
+  taskId: string,
+  args: UpdateTaskArgs,
+  now: number,
+): UpdateTaskResult {
+  if (args.title !== undefined && (typeof args.title !== "string" || args.title.trim() === "")) {
+    return { ok: false, error: "InvalidArgs" };
+  }
+  try {
+    let found = false;
+    const tx = db.transaction(() => {
+      const row = loadTask(db, userId, taskId);
+      if (!row) return;
+      const nextVersion = row.version + 1;
+      const title = args.title ?? row.title;
+      const notes = args.notes !== undefined ? args.notes : row.notes;
+      const dueAt = args.dueAt !== undefined ? args.dueAt : row.due_at;
+      // Clearing scheduledStart also clears scheduledEnd.
+      const scheduledStart = args.scheduledStart !== undefined ? args.scheduledStart : row.scheduled_start;
+      const scheduledEnd =
+        args.scheduledStart === null
+          ? null
+          : args.scheduledEnd !== undefined
+            ? args.scheduledEnd
+            : row.scheduled_end;
+      db.prepare(
+        `UPDATE tasks
+            SET title = ?, notes = ?, due_at = ?,
+                scheduled_start = ?, scheduled_end = ?,
+                updated_at = ?, version = ?
+          WHERE id = ? AND user_id = ?`,
+      ).run(title, notes, dueAt, scheduledStart, scheduledEnd, now, nextVersion, taskId, userId);
+      enqueueTaskUpsert(
+        db, taskId, row,
+        { title, notes, due_at: dueAt, scheduled_start: scheduledStart, scheduled_end: scheduledEnd },
+        now, nextVersion,
+      );
+      found = true;
+    });
+    tx();
+    return found ? { ok: true } : { ok: false, error: "NotFound" };
+  } catch {
+    return { ok: false, error: "InternalError" };
+  }
+}
+
 export type UnscheduleResult =
   | { ok: true }
   | { ok: false; error: "NotFound" | "InternalError" };

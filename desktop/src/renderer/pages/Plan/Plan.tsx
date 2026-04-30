@@ -8,10 +8,11 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
-import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import type { PlanTaskItem } from "../../../preload/api-types";
 import { Backlog } from "./Backlog";
 import { DayGrid } from "./DayGrid";
+import { DayPicker, FailureNotice, LoadingShell } from "./PlanShells";
+import { TaskSidePanel } from "./TaskSidePanel";
 import {
   clampDurationMinutes,
   clampStartMinutes,
@@ -56,9 +57,6 @@ function dayHeading(day: number, today: number): string {
 }
 
 export function Plan() {
-  // Day anchor — any unix-ms within the desired local day. Defaults
-  // to today; ±1 day buttons walk the picker. The first render uses
-  // Date.now() once; the user can revisit "Today" via a button.
   const [day, setDay] = useState<number>(() => Date.now());
   const [today] = useState<number>(() => {
     const d = new Date();
@@ -66,23 +64,16 @@ export function Plan() {
     return d.getTime();
   });
   const { state, refresh } = usePlanForDay(day);
+  const [activeTask, setActiveTask] = useState<PlanTaskItem | null>(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      // Avoid hijacking clicks for tap targets; require a small drag
-      // distance before move starts.
-      activationConstraint: { distance: 4 },
-    }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor),
   );
 
   const persistSchedule = useCallback(
     async (taskId: string, startMs: number, endMs: number) => {
-      const r = await window.calmly.plan.schedule({
-        taskId,
-        startAt: startMs,
-        endAt: endMs,
-      });
+      const r = await window.calmly.plan.schedule({ taskId, startAt: startMs, endAt: endMs });
       if (r.ok) await refresh();
     },
     [refresh],
@@ -106,24 +97,21 @@ export function Plan() {
           DEFAULT_BLOCK_MINUTES,
         );
         const endMinutes = startMinutes + DEFAULT_BLOCK_MINUTES;
-        const startMs = gridMinutesToMs(startMinutes, day);
-        const endMs = gridMinutesToMs(endMinutes, day);
-        void persistSchedule(data.taskId, startMs, endMs);
+        void persistSchedule(data.taskId, gridMinutesToMs(startMinutes, day), gridMinutesToMs(endMinutes, day));
         return;
       }
 
-      // block move — purely delta-driven so the snap matches the
-      // drag direction even when the block crosses many slots.
       const dyMinutes = e.delta.y / PX_PER_MINUTE;
       const snappedDelta = snapMinutes(dyMinutes);
       if (snappedDelta === 0) return;
       const duration = data.endMinutes - data.startMinutes;
       const newStart = clampStartMinutes(data.startMinutes + snappedDelta);
       const safeDuration = clampDurationMinutes(duration, newStart);
-      const newEnd = newStart + safeDuration;
-      const startMs = gridMinutesToMs(newStart, day);
-      const endMs = gridMinutesToMs(newEnd, day);
-      void persistSchedule(data.taskId, startMs, endMs);
+      void persistSchedule(
+        data.taskId,
+        gridMinutesToMs(newStart, day),
+        gridMinutesToMs(newStart + safeDuration, day),
+      );
     },
     [day, persistSchedule],
   );
@@ -133,16 +121,13 @@ export function Plan() {
       if (state.kind !== "ready") return;
       const block = state.plan.scheduled.find((t) => t.id === taskId);
       if (!block || block.scheduled_start === null) return;
-      const endMs = gridMinutesToMs(newEndMinutes, day);
-      void persistSchedule(taskId, block.scheduled_start, endMs);
+      void persistSchedule(taskId, block.scheduled_start, gridMinutesToMs(newEndMinutes, day));
     },
     [day, state, persistSchedule],
   );
 
-  const onBlockClick = useCallback((_task: PlanTaskItem) => {
-    // CL-06c (TaskSidePanel) wires the actual editor here. For
-    // CL-06b we keep the click handler but no-op so the block stays
-    // keyboard-reachable without throwing surprise modals.
+  const onBlockClick = useCallback((task: PlanTaskItem) => {
+    setActiveTask(task);
   }, []);
 
   const blocks = useMemo(() => {
@@ -160,16 +145,9 @@ export function Plan() {
     return placed.map((task) => {
       const rawStart = msToGridMinutes(task.scheduled_start as number, day);
       const rawEnd = msToGridMinutes(task.scheduled_end as number, day);
-      // Visually clamp blocks that bleed past 06:00 / 23:00. The DB
-      // values stay untouched — we only round for layout.
       const startMinutes = Math.max(0, Math.min(GRID_HOURS * 60 - 15, rawStart));
       const endMinutes = Math.max(startMinutes + 15, Math.min(GRID_HOURS * 60, rawEnd));
-      return {
-        task,
-        startMinutes,
-        endMinutes,
-        overlapped: overlaps.has(task.id),
-      };
+      return { task, startMinutes, endMinutes, overlapped: overlaps.has(task.id) };
     });
   }, [state, day]);
 
@@ -199,102 +177,26 @@ export function Plan() {
       {state.kind === "loading" ? (
         <LoadingShell />
       ) : state.kind === "signed-out" ? (
-        <FailureNotice
-          title="You're signed out."
-          body="Sign in to plan your day."
-        />
+        <FailureNotice title="You're signed out." body="Sign in to plan your day." />
       ) : state.kind === "error" ? (
         <FailureNotice title="Something hiccuped." body={state.message} />
       ) : (
-        <DndContext
-          sensors={sensors}
-          modifiers={[restrictToVerticalAxis]}
-          onDragEnd={onDragEnd}
-        >
+        <DndContext sensors={sensors} modifiers={[restrictToVerticalAxis]} onDragEnd={onDragEnd}>
           <div className="flex gap-6 items-start">
             <div className="flex-1 min-w-0 max-h-[calc(100vh-14rem)] overflow-y-auto pr-2 custom-scrollbar">
-              <DayGrid
-                blocks={blocks}
-                onBlockResize={onBlockResize}
-                onBlockClick={onBlockClick}
-              />
+              <DayGrid blocks={blocks} onBlockResize={onBlockResize} onBlockClick={onBlockClick} />
             </div>
-            <Backlog items={state.plan.backlog} />
+            <Backlog items={state.plan.backlog} onTaskClick={setActiveTask} />
           </div>
         </DndContext>
       )}
+
+      <TaskSidePanel
+        task={activeTask}
+        day={day}
+        onClose={() => setActiveTask(null)}
+        onSaved={async () => { await refresh(); setActiveTask(null); }}
+      />
     </section>
-  );
-}
-
-interface DayPickerProps {
-  day: number;
-  today: number;
-  onPrev(): void;
-  onNext(): void;
-  onToday(): void;
-}
-
-function DayPicker({ day, today, onPrev, onNext, onToday }: DayPickerProps) {
-  const isToday =
-    new Date(day).toDateString() === new Date(today).toDateString();
-  return (
-    <div className="flex items-center gap-1.5 shrink-0">
-      <button
-        type="button"
-        onClick={onPrev}
-        aria-label="Previous day"
-        className="p-2 rounded-xl text-stone-500 hover:bg-stone-100 transition-colors"
-      >
-        <ChevronLeft className="w-4 h-4" aria-hidden="true" />
-      </button>
-      <button
-        type="button"
-        onClick={onToday}
-        disabled={isToday}
-        className={[
-          "inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium tracking-wide transition-colors",
-          isToday
-            ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
-            : "text-stone-600 hover:bg-stone-100",
-        ].join(" ")}
-      >
-        <CalendarDays className="w-3.5 h-3.5" aria-hidden="true" />
-        Today
-      </button>
-      <button
-        type="button"
-        onClick={onNext}
-        aria-label="Next day"
-        className="p-2 rounded-xl text-stone-500 hover:bg-stone-100 transition-colors"
-      >
-        <ChevronRight className="w-4 h-4" aria-hidden="true" />
-      </button>
-    </div>
-  );
-}
-
-function LoadingShell() {
-  return (
-    <div
-      role="status"
-      aria-label="Loading plan"
-      className="flex gap-6 items-start"
-    >
-      <div className="flex-1 rounded-[1.8rem] bg-stone-100/60 h-[40rem] animate-pulse" />
-      <div className="w-72 rounded-[2rem] bg-stone-100/60 h-[20rem] animate-pulse" />
-    </div>
-  );
-}
-
-function FailureNotice({ title, body }: { title: string; body: string }) {
-  return (
-    <div
-      role="alert"
-      className="rounded-[1.8rem] border border-stone-200 bg-white/60 px-6 py-5 max-w-md"
-    >
-      <p className="text-sm text-stone-800 font-medium">{title}</p>
-      <p className="mt-1 text-xs text-stone-500">{body}</p>
-    </div>
   );
 }

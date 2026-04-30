@@ -1,6 +1,6 @@
 import type Database from "better-sqlite3";
 import { describe, expect, it } from "vitest";
-import { listForDay, scheduleTask, unscheduleTask } from "../store";
+import { listForDay, scheduleTask, unscheduleTask, updateTask } from "../store";
 
 interface PreparedCall {
   sql: string;
@@ -216,5 +216,51 @@ describe("unscheduleTask", () => {
     fake.pushGetResult(undefined);
     const r = unscheduleTask(fake.db, USER, TASK, 1_000);
     expect(r).toEqual({ ok: false, error: "NotFound" });
+  });
+});
+
+describe("updateTask", () => {
+  it("returns NotFound when task is missing", () => {
+    const fake = makeFakeDb();
+    fake.pushGetResult(undefined);
+    const r = updateTask(fake.db, USER, TASK, { title: "New title" }, 1_000);
+    expect(r).toEqual({ ok: false, error: "NotFound" });
+  });
+
+  it("returns InvalidArgs when title is empty string", () => {
+    const fake = makeFakeDb();
+    const r = updateTask(fake.db, USER, TASK, { title: "  " }, 1_000);
+    expect(r).toEqual({ ok: false, error: "InvalidArgs" });
+    expect(fake.prepared).toHaveLength(0);
+  });
+
+  it("patches title and enqueues snapshot", () => {
+    const fake = makeFakeDb();
+    fake.pushGetResult({ ...seededTask, version: 2 });
+    const r = updateTask(fake.db, USER, TASK, { title: "Updated title" }, 5_000);
+    expect(r).toEqual({ ok: true });
+
+    const update = fake.prepared.find((p) => p.sql.startsWith("update tasks"));
+    // (title, notes, dueAt, schedStart, schedEnd, updatedAt, version, id, userId)
+    expect(update?.args[0]).toBe("Updated title");
+    expect(update?.args[6]).toBe(3); // version bumped
+
+    const op = findOpPayload(fake.prepared, "tasks");
+    expect(op).toMatchObject({ id: TASK, title: "Updated title", version: 3, updated_at: 5_000 });
+  });
+
+  it("clearing scheduledStart also clears scheduledEnd", () => {
+    const fake = makeFakeDb();
+    fake.pushGetResult({ ...seededTask, scheduled_start: 9_000, scheduled_end: 10_000, version: 1 });
+    const r = updateTask(fake.db, USER, TASK, { scheduledStart: null }, 2_000);
+    expect(r).toEqual({ ok: true });
+
+    const update = fake.prepared.find((p) => p.sql.startsWith("update tasks"));
+    // scheduled_start is arg[3], scheduled_end is arg[4]
+    expect(update?.args[3]).toBeNull();
+    expect(update?.args[4]).toBeNull();
+
+    const op = findOpPayload(fake.prepared, "tasks");
+    expect(op).toMatchObject({ scheduled_start: null, scheduled_end: null });
   });
 });
