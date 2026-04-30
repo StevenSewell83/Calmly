@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import {
   currentFocus,
   endFocus,
@@ -87,4 +88,50 @@ export function registerFocusIpc(): void {
     }
     return startAdHocFocus(ctx.db, ctx.userId, raw, ctx.now);
   });
+
+  authedHandler<{ ok: true; stuckSessionId: string } | { ok: false; error: string }>(
+    "focus:startStuck",
+    (ctx) => {
+      const session = currentFocus(ctx.db, ctx.userId);
+      if (!session) return { ok: false, error: "NoActiveSession" };
+      const id = randomUUID();
+      ctx.db
+        .prepare(
+          `INSERT INTO stuck_sessions (id, focus_session_id, started_at, answers_json) VALUES (?, ?, ?, '[]')`,
+        )
+        .run(id, session.id, ctx.now);
+      return { ok: true, stuckSessionId: id };
+    },
+  );
+
+  authedHandler<{ ok: true } | { ok: false; error: string }>(
+    "focus:endStuck",
+    (ctx, raw) => {
+      if (!isObject(raw) || typeof raw.stuckSessionId !== "string") {
+        return { ok: false, error: "InvalidArgs" };
+      }
+      const { stuckSessionId, outcome, answers } = raw as {
+        stuckSessionId: string;
+        outcome: string;
+        answers: { question: string; answer: string }[];
+      };
+      ctx.db
+        .prepare(
+          `UPDATE stuck_sessions SET ended_at=?, outcome=?, answers_json=? WHERE id=?`,
+        )
+        .run(ctx.now, outcome, JSON.stringify(answers ?? []), stuckSessionId);
+      // Append answers to task notes if any were given.
+      if (answers && answers.length > 0) {
+        const session = currentFocus(ctx.db, ctx.userId);
+        if (session) {
+          const ts = new Date(ctx.now).toISOString();
+          const block = `\n\n--- Stuck rescue (${ts}) ---\n${answers.map((a) => `Q: ${a.question}\nA: ${a.answer}`).join("\n")}`;
+          ctx.db
+            .prepare(`UPDATE tasks SET notes = COALESCE(notes, '') || ? WHERE id = ? AND user_id = ?`)
+            .run(block, session.task_id, ctx.userId);
+        }
+      }
+      return { ok: true };
+    },
+  );
 }

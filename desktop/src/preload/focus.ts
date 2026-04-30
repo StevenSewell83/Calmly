@@ -40,4 +40,10 @@ export const focusBridge: FocusBridge = {
     ipcRenderer.on(ADHOC_FOCUS_CHANNEL, wrapped);
     return () => { ipcRenderer.off(ADHOC_FOCUS_CHANNEL, wrapped); };
   },
+  startStuck() {
+    return ipcRenderer.invoke("focus:startStuck") as ReturnType<FocusBridge["startStuck"]>;
+  },
+  endStuck(args) {
+    return ipcRenderer.invoke("focus:endStuck", args) as ReturnType<FocusBridge["endStuck"]>;
+  },
 };

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, ArrowLeftRight, Square, AlertCircle } from "lucide-react";
 import type { FocusSessionItem, PlanTaskItem } from "../../../preload/api-types";
 import { SwitchTaskPicker } from "./SwitchTaskPicker";
+import { StuckPrompts } from "./StuckPrompts";
 
 interface Props {
   session: FocusSessionItem;
@@ -26,6 +27,7 @@ function useElapsed(startedAt: number): string {
 
 export function ActiveSession({ session, task, todayTasks, onMarkDone, onEnd, onSwitch }: Props) {
   const [switchOpen, setSwitchOpen] = useState(false);
+  const [stuckSessionId, setStuckSessionId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const elapsed = useElapsed(session.started_at);
 
@@ -77,9 +79,13 @@ export function ActiveSession({ session, task, todayTasks, onMarkDone, onEnd, on
           Switch task
         </button>
         <button
-          disabled
-          aria-label="I'm stuck (coming soon)"
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl border border-stone-200 text-stone-400 opacity-50 cursor-not-allowed text-xs font-medium"
+          onClick={async () => {
+            const r = await window.calmly.focus.startStuck();
+            if (r.ok) setStuckSessionId(r.stuckSessionId);
+          }}
+          disabled={busy}
+          aria-label="I'm stuck"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl border border-stone-200 text-stone-600 hover:bg-stone-50 disabled:opacity-50 text-xs font-medium transition-colors"
         >
           <AlertCircle className="w-3.5 h-3.5" />
           I'm stuck
@@ -101,6 +107,16 @@ export function ActiveSession({ session, task, todayTasks, onMarkDone, onEnd, on
           currentTaskId={session.task_id}
           onPick={(taskId) => { setSwitchOpen(false); void run(() => onSwitch(taskId)); }}
           onClose={() => setSwitchOpen(false)}
+        />
+      )}
+
+      {stuckSessionId && (
+        <StuckPrompts
+          stuckSessionId={stuckSessionId}
+          onContinue={() => setStuckSessionId(null)}
+          onSwitch={() => { setStuckSessionId(null); setSwitchOpen(true); }}
+          onBreak={() => { setStuckSessionId(null); void run(onEnd); }}
+          onClose={() => setStuckSessionId(null)}
         />
       )}
     </section>

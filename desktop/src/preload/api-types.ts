@@ -429,6 +429,8 @@ export interface FocusBridge {
   searchOpenTasks(query: string): Promise<FocusSearchResult>;
   startAdHoc(title: string): Promise<FocusStartAdHocResult>;
   onAdHocRequest(handler: () => void): () => void;
+  startStuck(): Promise<{ ok: true; stuckSessionId: string } | { ok: false; error: string }>;
+  endStuck(args: { stuckSessionId: string; outcome: string; answers: { question: string; answer: string }[] }): Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
 export interface QuickPlanBridge {
