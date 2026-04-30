@@ -13,7 +13,7 @@ export async function pullSince(
   for (const tableName of Object.keys(TABLES) as SyncTable[]) {
     const spec = TABLES[tableName];
     const projection = [
-      ...(spec.name === "user_settings" ? [] : ["id"]),
+      "id",
       "user_id",
       ...spec.columns.filter((c) => c !== "id" && c !== "user_id"),
       "updated_at",

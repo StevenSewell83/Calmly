@@ -163,6 +163,31 @@ export function parseSqliteSql(sql: string): SourceTables {
     if (tbl && colName in tbl) delete tbl[colName];
   }
 
+  // DROP TABLE name; — the table is gone. Used by table-rebuild
+  // migrations (e.g. 0011_user_settings_id_pk.sql) that CREATE a
+  // staging table, copy rows in, then DROP + RENAME.
+  const dropTableRe =
+    /DROP\s+TABLE\s+(?:IF\s+EXISTS\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*;/gi;
+  for (const m of stripped.matchAll(dropTableRe)) {
+    const tableName = (m[1] ?? "") as string;
+    delete tables[tableName];
+  }
+
+  // ALTER TABLE old RENAME TO new; — relocate the column map. Same
+  // rebuild pattern: the staging table gets renamed onto the canonical
+  // name once its rows are loaded.
+  const renameRe =
+    /ALTER\s+TABLE\s+([A-Za-z_][A-Za-z0-9_]*)\s+RENAME\s+TO\s+([A-Za-z_][A-Za-z0-9_]*)\s*;/gi;
+  for (const m of stripped.matchAll(renameRe)) {
+    const oldName = (m[1] ?? "") as string;
+    const newName = (m[2] ?? "") as string;
+    const cols = tables[oldName];
+    if (cols) {
+      tables[newName] = cols;
+      delete tables[oldName];
+    }
+  }
+
   return tables;
 }
 

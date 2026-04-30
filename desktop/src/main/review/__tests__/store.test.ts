@@ -342,8 +342,9 @@ describe("completeShutdown", () => {
     const fake = makeFakeDb();
     // saveReflection lookup → none existing
     fake.pushGetResult(undefined);
-    // user_settings lookup → existing row, version 2
+    // user_settings lookup → existing row keyed by id (BUG-AUDIT-1)
     fake.pushGetResult({
+      id: "settings-id-1",
       settings_json: JSON.stringify({ theme: "warm" }),
       version: 2,
     });
@@ -372,7 +373,9 @@ describe("completeShutdown", () => {
       theme: "warm",
       last_shutdown_date: "2026-04-30",
     });
-    expect(settingsOp).toMatchObject({ version: 3 });
+    // Existing id is reused so the server's ON CONFLICT (id) path
+    // updates the row instead of crashing on a missing column.
+    expect(settingsOp).toMatchObject({ id: "settings-id-1", version: 3 });
   });
 
   it("treats whitespace-only reflection as 'no reflection'", () => {

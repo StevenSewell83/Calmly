@@ -312,15 +312,43 @@ describe.skipIf(!nodeSqlite)("F-05b · DB round-trip integration", () => {
     ).run(USER_ID, "alex@example.com", NOW);
     db.prepare(
       `INSERT INTO user_settings
-         (user_id, settings_json, updated_at, version, deleted_at)
-       VALUES (?, ?, ?, 0, NULL)`,
-    ).run(USER_ID, '{"theme":"warm"}', NOW);
+         (id, user_id, settings_json, updated_at, version, deleted_at)
+       VALUES (?, ?, ?, ?, 0, NULL)`,
+    ).run(OTHER_ID, USER_ID, '{"theme":"warm"}', NOW);
 
     const row = db
       .prepare(`SELECT * FROM user_settings WHERE user_id = ?`)
       .get(USER_ID) as Record<string, unknown>;
     const parsed = UserSettingsSchema.parse(row);
+    expect(parsed.id).toBe(OTHER_ID);
     expect(parsed.user_id).toBe(USER_ID);
+  });
+
+  it("user_settings UNIQUE(user_id) prevents two settings rows per user", () => {
+    const db = freshDb();
+    db.prepare(
+      `INSERT INTO users (id, email, created_at) VALUES (?, ?, ?)`,
+    ).run(USER_ID, "alex@example.com", NOW);
+    db.prepare(
+      `INSERT INTO user_settings
+         (id, user_id, settings_json, updated_at, version)
+       VALUES (?, ?, ?, ?, 0)`,
+    ).run(OTHER_ID, USER_ID, '{"theme":"warm"}', NOW);
+
+    expect(() =>
+      db
+        .prepare(
+          `INSERT INTO user_settings
+             (id, user_id, settings_json, updated_at, version)
+           VALUES (?, ?, ?, ?, 1)`,
+        )
+        .run(
+          "33333333-3333-4333-8333-333333333333",
+          USER_ID,
+          '{"theme":"cool"}',
+          NOW + 1,
+        ),
+    ).toThrow();
   });
 
   it("round-trips a DailyReflection", () => {
