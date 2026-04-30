@@ -455,6 +455,61 @@ export interface QuickPlanBridge {
   setDate(date: string): Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
+export interface ReviewTaskItem {
+  id: string;
+  title: string;
+  notes: string | null;
+  status: string;
+  due_at: number | null;
+  scheduled_start: number | null;
+  scheduled_end: number | null;
+}
+
+export interface ReviewSummary {
+  completed: ReviewTaskItem[];
+  unfinished: ReviewTaskItem[];
+  focusedMs: number;
+  dateStr: string;
+}
+
+export type ReviewSummaryResult =
+  | { ok: true; summary: ReviewSummary }
+  | { ok: false; error: "NotSignedIn" };
+
+export type ReviewCarryForwardResult =
+  | { ok: true; count: number }
+  | { ok: false; error: "NotSignedIn" | "InvalidArgs" | "NotFound" | "InternalError" };
+
+export type ReviewDropResult =
+  | { ok: true; count: number }
+  | { ok: false; error: "NotSignedIn" | "InvalidArgs" | "InternalError" };
+
+export type ReviewMarkDoneResult =
+  | { ok: true; count: number }
+  | { ok: false; error: "NotSignedIn" | "InvalidArgs" | "InternalError" };
+
+export type ReviewMoveToResult =
+  | { ok: true }
+  | { ok: false; error: "NotSignedIn" | "InvalidArgs" | "NotFound" | "InternalError" };
+
+export type ReviewSaveReflectionResult =
+  | { ok: true }
+  | { ok: false; error: "NotSignedIn" | "InternalError" };
+
+export type ReviewCompleteShutdownResult =
+  | { ok: true }
+  | { ok: false; error: "NotSignedIn" | "InternalError" };
+
+export interface ReviewBridge {
+  summary(): Promise<ReviewSummaryResult>;
+  carryForward(taskIds: string[]): Promise<ReviewCarryForwardResult>;
+  drop(taskIds: string[]): Promise<ReviewDropResult>;
+  markDone(taskIds: string[]): Promise<ReviewMarkDoneResult>;
+  moveTo(taskId: string, targetDayMs: number): Promise<ReviewMoveToResult>;
+  saveReflection(text: string): Promise<ReviewSaveReflectionResult>;
+  completeShutdown(text: string | null): Promise<ReviewCompleteShutdownResult>;
+}
+
 export interface CalmlyApi {
   version: string;
   platform: string;
@@ -470,5 +525,6 @@ export interface CalmlyApi {
   focus: FocusBridge;
   quickplan: QuickPlanBridge;
   replan: ReplanBridge;
+  review: ReviewBridge;
   log: LogBridge;
 }

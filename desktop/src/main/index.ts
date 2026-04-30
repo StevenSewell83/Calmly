@@ -24,6 +24,7 @@ import { registerFocusIpc } from "./ipc/focus";
 import { registerPlanIpc } from "./ipc/plan";
 import { registerQuickPlanIpc } from "./ipc/quickplan";
 import { registerReplanIpc } from "./ipc/replan";
+import { registerReviewIpc } from "./ipc/review";
 import { registerSyncIpc } from "./ipc/sync";
 import { registerTodayIpc } from "./ipc/today";
 import { registerTriageIpc } from "./ipc/triage";
@@ -219,6 +220,7 @@ if (!gotInstanceLock) {
     registerPlanIpc();
     registerQuickPlanIpc();
     registerReplanIpc();
+    registerReviewIpc();
     registerFocusIpc();
 
     activeSyncLoop = createSyncLoop({
