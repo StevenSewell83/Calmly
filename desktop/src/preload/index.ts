@@ -13,6 +13,7 @@ import { reviewBridge } from "./review";
 import { eventsBridge, tasksBridge } from "./today";
 import { triageBridge } from "./triage";
 import { settingsBridge } from "./settings";
+import { searchBridge } from "./search";
 import type { CalmlyApi } from "./api-types";
 
 const calmlyApi: CalmlyApi = {
@@ -33,6 +34,7 @@ const calmlyApi: CalmlyApi = {
   review: reviewBridge,
   log: logBridge,
   settings: settingsBridge,
+  search: searchBridge,
 };
 
 if (process.contextIsolated) {

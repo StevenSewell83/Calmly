@@ -522,6 +522,14 @@ export interface ReviewBridge {
   completeShutdown(text: string | null): Promise<ReviewCompleteShutdownResult>;
 }
 
+export type SearchQueryResult =
+  | { ok: true; hits: import("@calmly/shared").SearchHit[] }
+  | { ok: false; error: "NotSignedIn" | "InternalError" };
+
+export interface SearchBridge {
+  query(q: string): Promise<SearchQueryResult>;
+}
+
 export interface SettingsBridge {
   getSyncServerUrl(): Promise<string>;
   setSyncServerUrl(url: string): Promise<void>;
@@ -547,4 +555,5 @@ export interface CalmlyApi {
   review: ReviewBridge;
   log: LogBridge;
   settings: SettingsBridge;
+  search: SearchBridge;
 }
