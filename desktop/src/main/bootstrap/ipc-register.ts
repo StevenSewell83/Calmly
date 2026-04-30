@@ -14,6 +14,7 @@ import { registerReviewIpc } from "../ipc/review";
 import { registerSyncIpc } from "../ipc/sync";
 import { registerTodayIpc } from "../ipc/today";
 import { registerTriageIpc } from "../ipc/triage";
+import { registerSettingsIpc } from "../ipc/settings";
 
 export function registerAllIpc(
   orchestrator: AuthOrchestrator,
@@ -33,4 +34,5 @@ export function registerAllIpc(
   registerReviewIpc();
   registerFocusIpc();
   registerSyncIpc(syncLoop);
+  registerSettingsIpc();
 }

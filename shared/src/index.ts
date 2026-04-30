@@ -6,3 +6,4 @@ export * from "./model";
 export * from "./sync";
 export * from "./log";
 export * from "./errors";
+export * from "./config/serverUrl";

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../../auth/AuthContext";
+import { SyncServerSection } from "./SyncServerSection";
 
 export function SettingsAccount() {
   const { state, signOut } = useAuth();
@@ -39,6 +40,8 @@ export function SettingsAccount() {
           expires.
         </p>
       </div>
+
+      <SyncServerSection />
 
       <div className="mt-8">
         <button

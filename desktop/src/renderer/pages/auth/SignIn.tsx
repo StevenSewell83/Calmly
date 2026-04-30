@@ -1,4 +1,5 @@
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
+import { DEFAULT_SERVER_URL } from "@calmly/shared";
 import { MountainClimberIcon } from "../../components/MountainClimberIcon";
 import { useAuth } from "../../auth/AuthContext";
 import type { RequestLinkResult } from "../../../preload/api-types";
@@ -70,6 +71,13 @@ export function SignIn() {
   const banner =
     auth.state.status === "signed_out" ? auth.state.banner : undefined;
 
+  const [activeServerUrl, setActiveServerUrl] = useState<string | null>(null);
+  useEffect(() => {
+    window.calmly.settings.getSyncServerUrl().then((url) => {
+      setActiveServerUrl(url !== DEFAULT_SERVER_URL ? url : null);
+    }).catch(() => { /* ignore */ });
+  }, []);
+
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (phase.kind === "sending") return;
@@ -104,6 +112,11 @@ export function SignIn() {
             Sign in with your email. We'll send you a link — no password to
             remember.
           </p>
+          {activeServerUrl && (
+            <p className="mt-2 text-[11px] text-stone-400 tracking-wide">
+              Connecting to: {activeServerUrl}
+            </p>
+          )}
         </header>
 
         {banner && banner.kind === "redeem-failed" ? (

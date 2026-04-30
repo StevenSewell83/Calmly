@@ -510,6 +510,12 @@ export interface ReviewBridge {
   completeShutdown(text: string | null): Promise<ReviewCompleteShutdownResult>;
 }
 
+export interface SettingsBridge {
+  getSyncServerUrl(): Promise<string>;
+  setSyncServerUrl(url: string): Promise<void>;
+  clearSyncServerUrl(): Promise<void>;
+}
+
 export interface CalmlyApi {
   version: string;
   platform: string;
@@ -527,4 +533,5 @@ export interface CalmlyApi {
   replan: ReplanBridge;
   review: ReviewBridge;
   log: LogBridge;
+  settings: SettingsBridge;
 }
