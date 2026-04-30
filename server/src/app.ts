@@ -8,6 +8,7 @@ import { selectEmailSender } from "./email/select";
 import { healthRoute } from "./routes/health";
 import { versionRoute } from "./routes/version";
 import { syncRoutes } from "./sync/routes";
+import { initBot, telegramPlugin, loadTelegramConfig } from "./telegram";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -43,10 +44,12 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
           "req.headers.authorization",
           "req.headers.cookie",
           'req.headers["x-api-key"]',
+          'req.headers["x-telegram-bot-api-secret-token"]',
           "*.password",
           "*.token",
           "*.refresh_token",
           "*.api_key",
+          "*.bot_token",
         ],
         remove: true,
       },
@@ -63,6 +66,14 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   const email = deps.email ?? selectEmailSender(deps.config, app.log);
   await app.register(authRoutesPlugin({ email }));
   await app.register(syncRoutes);
+
+  // Telegram integration — optional; only wired when TELEGRAM_BOT_TOKEN is set.
+  const tgConfig = loadTelegramConfig();
+  if (tgConfig) {
+    initBot(tgConfig);
+    await app.register(telegramPlugin(tgConfig));
+    app.log.info("[telegram] webhook registered");
+  }
 
   return app;
 }
