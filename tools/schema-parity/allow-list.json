@@ -237,18 +237,25 @@
       "reason": "F-11 sync tombstone."
     },
     {
-      "table": "users",
-      "column": "magic_link_token_hash",
-      "presentIn": ["shared", "desktop"],
-      "absentIn": ["server"],
-      "reason": "TODO(calmly-3py.4): pre-existing drift at PREVENT-3 landing — shared/UserSchema declares magic-link columns the server users table doesn't have. Audit bead will drop these from shared; remove this entry then."
+      "table": "daily_reflections",
+      "column": "version",
+      "presentIn": ["desktop", "server"],
+      "absentIn": ["shared"],
+      "reason": "F-11 sync metadata."
     },
     {
-      "table": "users",
-      "column": "magic_link_expires_at",
-      "presentIn": ["shared", "desktop"],
-      "absentIn": ["server"],
-      "reason": "TODO(calmly-3py.4): pre-existing drift at PREVENT-3 landing — see above. Remove with the calmly-3py.4 fix."
+      "table": "daily_reflections",
+      "column": "updated_at",
+      "presentIn": ["desktop", "server"],
+      "absentIn": ["shared"],
+      "reason": "F-11 sync mtime — desktop and server both track; the public DTO uses created_at as its single timestamp."
+    },
+    {
+      "table": "daily_reflections",
+      "column": "deleted_at",
+      "presentIn": ["desktop", "server"],
+      "absentIn": ["shared"],
+      "reason": "F-11 sync tombstone."
     }
   ]
 }

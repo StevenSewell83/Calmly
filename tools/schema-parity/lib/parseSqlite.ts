@@ -150,6 +150,19 @@ export function parseSqliteSql(sql: string): SourceTables {
     };
   }
 
+  // ALTER TABLE name DROP COLUMN col — remove the column from the
+  // accumulated schema. Without this, a follow-up DROP migration
+  // (e.g. 0010_drop_user_magic_link_cols.sql) would still surface
+  // the dropped column in the parity check.
+  const dropRe =
+    /ALTER\s+TABLE\s+([A-Za-z_][A-Za-z0-9_]*)\s+DROP\s+COLUMN\s+([A-Za-z_][A-Za-z0-9_]*)\s*;/gi;
+  for (const m of stripped.matchAll(dropRe)) {
+    const tableName = (m[1] ?? "") as string;
+    const colName = (m[2] ?? "") as string;
+    const tbl = tables[tableName];
+    if (tbl && colName in tbl) delete tbl[colName];
+  }
+
   return tables;
 }
 
