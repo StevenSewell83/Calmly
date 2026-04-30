@@ -4,8 +4,7 @@ import { SyncMetaSchema, SyncTableSchema } from "@calmly/shared";
 import { z } from "zod";
 import { decideDelete, decideUpsert, type ExistingRecord } from "./lww";
 import { TABLES, type TableSpec } from "./tables";
-
-const UpsertPayloadSchema = SyncMetaSchema.passthrough();
+import { TABLE_SCHEMAS } from "./tableSchemas";
 
 interface ApplyContext {
   client: pg.PoolClient;
@@ -39,8 +38,9 @@ async function applyUpsert(
   spec: TableSpec,
   payload: Record<string, unknown>,
 ): Promise<PushOpResult> {
-  const parsed = UpsertPayloadSchema.safeParse(payload);
-  if (!parsed.success) {
+  // Step 1: meta fields (id + updated_at required for LWW decision).
+  const metaParsed = SyncMetaSchema.safeParse(payload);
+  if (!metaParsed.success) {
     return {
       index,
       status: "invalid",
@@ -50,7 +50,26 @@ async function applyUpsert(
       reason: "payload_failed_meta_validation",
     };
   }
-  const { id, updated_at } = parsed.data;
+  // Step 2: per-table domain schema (catches bad enums, types, etc.).
+  const domainSchema = TABLE_SCHEMAS[spec.name];
+  if (domainSchema) {
+    const domainParsed = domainSchema.safeParse(payload);
+    if (!domainParsed.success) {
+      const firstIssue = domainParsed.error.issues[0];
+      const reason = firstIssue
+        ? `${firstIssue.path.join(".")}: ${firstIssue.message}`
+        : "payload_failed_domain_validation";
+      return {
+        index,
+        status: "invalid",
+        table: spec.name,
+        id: metaParsed.data.id,
+        version: null,
+        reason,
+      };
+    }
+  }
+  const { id, updated_at } = metaParsed.data;
   const existing = await fetchExisting(ctx, spec, id);
   const decision = decideUpsert(existing, updated_at);
   if (!decision.accept) {
@@ -189,6 +208,16 @@ export async function applyOp(
     };
   }
   const spec = TABLES[tableParse.data];
+  if (!spec) {
+    return {
+      index,
+      status: "invalid",
+      table: tableParse.data,
+      id: null,
+      version: null,
+      reason: "unknown_table",
+    };
+  }
   if (op.op === "upsert") return applyUpsert(ctx, index, spec, op.payload);
   return applyDelete(ctx, index, spec, op.payload);
 }
