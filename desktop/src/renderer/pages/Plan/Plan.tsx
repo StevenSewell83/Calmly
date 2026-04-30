@@ -176,12 +176,13 @@ export function Plan() {
   const heading = dayHeading(day, today);
 
   return (
-    <section className="flex-1 px-12 pt-10 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <section aria-labelledby="plan-page-title" className="flex-1 px-12 pt-10 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <h1 id="plan-page-title" className="sr-only">Plan</h1>
       <header className="mb-8 flex items-end justify-between gap-6 max-w-5xl">
         <div>
-          <h1 className="font-serif italic text-5xl tracking-tight text-stone-800">
+          <h2 className="font-serif italic text-5xl tracking-tight text-stone-800">
             {heading}
-          </h1>
+          </h2>
           <p className="mt-3 text-sm text-stone-400 tracking-wide">
             Drag from backlog to place a block. Drag blocks to reschedule.
           </p>
