@@ -17,11 +17,11 @@ interval rather than by however long it takes someone to notice.
 
 ## Cadence
 
-Recommended: **hybrid time + commit**. The schedule fires every Sunday at
-22:00 UTC (low worker activity), but the skill's first action is a pre-check —
-it counts commits since the last `audit-YYYY-MM-DD` git tag and skips if fewer
-than 30 commits have landed. This minimizes noise during quiet weeks while
-still catching busy ones promptly.
+**Hybrid daily + 50-commit gate**. The schedule fires every day at 22:00 UTC
+(low worker activity), and the skill's first action is a pre-check — it counts
+commits since the last `audit-YYYY-MM-DD` git tag and exits cleanly if fewer
+than 50 commits have landed. With current worker velocity (~12 commits / day
+at peak) audits land roughly every 4–5 days; quiet weeks skip silently.
 
 Cost per run: ~3 parallel sub-agent calls × ~100k tokens each = ~300k tokens
 every 1–2 weeks. Modest.

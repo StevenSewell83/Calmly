@@ -12,13 +12,13 @@ This skill replays the 2026-04-30 audit that produced `calmly-3py` (REFACTOR-EPI
 - User invokes `/calmly-audit`
 - A scheduled `/schedule` routine fires (see `docs/recurring-audit.md`)
 - User asks for a "drift audit", "compounding-debt audit", or "follow-up audit"
-- The merge loop has run uninterrupted for ≥ 30 commits since the last `audit-YYYY-MM-DD` git tag
+- The merge loop has run uninterrupted for ≥ 50 commits since the last `audit-YYYY-MM-DD` git tag
 
 Skip if there is already an open epic with label `audit-YYYY-MM-DD` for the current calendar month — otherwise this skill files duplicates.
 
 ## What it does
 
-1. **Pre-check**: run `git rev-list --count <last-audit-tag>..HEAD`. If < 30, ask the user whether to proceed anyway.
+1. **Pre-check**: run `git rev-list --count <last-audit-tag>..HEAD`. If < 50, exit cleanly without filing anything (recurring trigger; skip silently). If invoked manually, ask the user whether to proceed anyway.
 2. **Spawn three parallel sub-agents** with the prompts in § "Sub-agent prompts" below.
 3. **Synthesize** their findings: dedupe items, cross-reference against open `audit-*` labeled bd issues (use `bd list --status=open --label=audit-*`), drop anything already filed.
 4. **File** a new epic and children:
