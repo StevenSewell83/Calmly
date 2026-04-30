@@ -209,6 +209,85 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  e2e-core-loop:
+    name: E2E core-loop (Electron, Linux)
+    needs: [setup, e2e]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dorny/paths-filter@v3
+        id: filter
+        if: github.event_name == 'pull_request'
+        with:
+          filters: |
+            code:
+              - 'desktop/**'
+              - 'server/**'
+              - 'shared/**'
+              - 'tools/**'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'eslint.config.mjs'
+              - '.github/workflows/**'
+      - name: Skip e2e-core-loop (docs/beads-only PR)
+        if: github.event_name == 'pull_request' && steps.filter.outputs.code != 'true'
+        run: |
+          echo "::notice::Docs/beads-only PR — skipping core-loop e2e."
+          exit 0
+      - run: corepack enable
+        if: github.event_name != 'pull_request' || steps.filter.outputs.code == 'true'
+      - uses: actions/setup-node@v4
+        if: github.event_name != 'pull_request' || steps.filter.outputs.code == 'true'
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: actions/cache@v4
+        if: github.event_name != 'pull_request' || steps.filter.outputs.code == 'true'
+        with:
+          path: ~/.local/share/pnpm/store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+      - run: pnpm install --frozen-lockfile
+        if: github.event_name != 'pull_request' || steps.filter.outputs.code == 'true'
+      - name: Install Electron runtime libs
+        if: github.event_name != 'pull_request' || steps.filter.outputs.code == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libnss3 \
+            libatk1.0-0 \
+            libatk-bridge2.0-0 \
+            libcups2 \
+            libdrm2 \
+            libxkbcommon0 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxfixes3 \
+            libxrandr2 \
+            libgbm1 \
+            libpango-1.0-0 \
+            libcairo2 \
+            libasound2t64 \
+            xvfb
+      - name: Build desktop (electron-vite)
+        if: github.event_name != 'pull_request' || steps.filter.outputs.code == 'true'
+        run: pnpm --filter @calmly/desktop build
+      - name: Run core-loop Playwright E2E (Xvfb)
+        if: github.event_name != 'pull_request' || steps.filter.outputs.code == 'true'
+        run: xvfb-run -a pnpm --filter @calmly/desktop exec playwright test e2e/core-loop
+      - name: Upload Playwright trace on failure
+        if: failure() && (github.event_name != 'pull_request' || steps.filter.outputs.code == 'true')
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-trace-core-loop
+          path: |
+            desktop/e2e-results/**
+            desktop/playwright-report/**
+          if-no-files-found: ignore
+          retention-days: 7
+
   schema-parity:
     # PREVENT-3: column-level parity check across the three sources of
     # truth (zod schemas, sqlite migrations, pg-migrate migrations).
