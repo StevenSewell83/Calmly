@@ -130,10 +130,40 @@ test.describe("CL-03-e2e · Inbox list with seeded items + snooze/skip", () => {
           const nextFirstRow = rows.first();
           await nextFirstRow.getByRole("button", { name: "Skip" }).click();
 
-          // Now 1 row visible
+          // Now 1 row visible (gamma only)
           await expect(rows).toHaveCount(1, { timeout: 10_000 });
+          await expect(win.getByText("Inbox item gamma")).toBeVisible();
         } finally {
           await secondLaunch.dispose();
+        }
+
+        // ── Phase 4: reload — verify snooze/skip state persisted ──────────
+        const thirdLaunch = await launchElectronApp({
+          syncUrl: server!.url,
+          userDataDir,
+        });
+        try {
+          const win = thirdLaunch.window;
+
+          await expect(win.getByText("Peace, friend.")).toBeVisible({
+            timeout: 20_000,
+          });
+
+          await win.getByRole("link", { name: "Inbox" }).click();
+          await expect(
+            win.getByRole("heading", { name: "Inbox." }),
+          ).toBeVisible({ timeout: 10_000 });
+
+          const listbox = win.getByRole("listbox", { name: "Inbox items" });
+          const rows = listbox.getByRole("option");
+
+          // Only gamma survives — alpha was snoozed, beta was skipped
+          await expect(rows).toHaveCount(1, { timeout: 10_000 });
+          await expect(win.getByText("Inbox item gamma")).toBeVisible();
+          await expect(win.getByText("Inbox item alpha")).not.toBeVisible();
+          await expect(win.getByText("Inbox item beta")).not.toBeVisible();
+        } finally {
+          await thirdLaunch.dispose();
         }
       } finally {
         await rm(userDataDir, { recursive: true, force: true }).catch(() => {});
