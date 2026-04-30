@@ -74,6 +74,7 @@ logger.info("desktop boot", {
 });
 
 let mainWindow: BrowserWindow | null = null;
+let activeSyncLoop: SyncLoop | null = null;
 const pendingDeepLinks: string[] = [];
 
 function createMainWindow(): BrowserWindow {
@@ -216,7 +217,7 @@ if (!gotInstanceLock) {
     registerPlanIpc();
     registerFocusIpc();
 
-    const syncLoop: SyncLoop = createSyncLoop({
+    activeSyncLoop = createSyncLoop({
       getDb,
       client: createSyncClient({
         baseUrl: API_BASE_URL,
@@ -234,8 +235,8 @@ if (!gotInstanceLock) {
       }),
       log: (msg, fields) => console.log(`[calmly:sync] ${msg}`, fields ?? {}),
     });
-    registerSyncIpc(syncLoop);
-    syncLoop.start();
+    registerSyncIpc(activeSyncLoop);
+    activeSyncLoop.start();
 
     if (isDev) {
       const r = secretStoreSelfTest();
@@ -291,6 +292,7 @@ app.on("window-all-closed", () => {
 });
 
 app.on("before-quit", () => {
+  activeSyncLoop?.stop();
   unregisterAllShortcuts();
   closeDb();
 });

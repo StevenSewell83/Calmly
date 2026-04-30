@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { PullResponse, PushResponse, SyncOp } from "@calmly/shared";
 import type { SyncClient } from "../client";
-import { runSyncOnce } from "../loop";
+import { createSyncLoop, runSyncOnce } from "../loop";
 
 interface FakeRow {
   id: string;
@@ -273,5 +273,33 @@ describe("runSyncOnce — pull phase", () => {
 
     expect(r.ok).toBe(true);
     expect(db.state.last_pulled_version).toBe(50);
+  });
+});
+
+describe("createSyncLoop — start/stop", () => {
+  it("does not tick after stop()", async () => {
+    vi.useFakeTimers();
+    const tick = vi.fn(async () => ({ ok: true, pushed: 0, pulled: 0, pendingAfter: 0, lastPulledVersion: 0 }));
+    const db = makeFakeDb([], { last_pulled_version: 0, last_pushed_at: null });
+    const client = makeClient({
+      push: tick as never,
+      pull: vi.fn(async () => ({ records: {}, version: 0 })),
+    });
+    const loop = createSyncLoop({ getDb: () => db as never, client, intervalMs: 1_000 });
+    loop.start();
+    vi.advanceTimersByTime(2_500);
+    loop.stop();
+    const callsAfterStop = tick.mock.calls.length;
+    vi.advanceTimersByTime(5_000);
+    expect(tick.mock.calls.length).toBe(callsAfterStop);
+    vi.useRealTimers();
+  });
+
+  it("stop() is idempotent — calling twice does not throw", () => {
+    const db = makeFakeDb([], { last_pulled_version: 0, last_pushed_at: null });
+    const loop = createSyncLoop({ getDb: () => db as never, client: makeClient(), intervalMs: 10_000 });
+    loop.start();
+    loop.stop();
+    expect(() => loop.stop()).not.toThrow();
   });
 });
