@@ -3,7 +3,7 @@ import { AppShell } from "./layout/AppShell";
 import { Home } from "./pages/Home/Home";
 import { Inbox } from "./pages/Inbox/InboxList";
 import { Triage } from "./pages/Inbox/Triage";
-import { Plan } from "./pages/Plan";
+import { Plan } from "./pages/Plan/Plan";
 import { Focus } from "./pages/Focus";
 import { Review } from "./pages/Review";
 import { SettingsLayout } from "./pages/Settings/Layout";
