@@ -10,6 +10,9 @@ export interface SeedTaskArgs {
   // list for in_progress tasks; open tasks without due_at don't appear in Now/
   // Next/Today slots).
   dueAt?: number;
+  // When set, the task is pre-placed on the day grid (not in backlog).
+  scheduledStart?: number;
+  scheduledEnd?: number;
 }
 
 export interface SeedEventArgs {
@@ -41,6 +44,8 @@ export interface SeededTask {
   title: string;
   status: "open" | "in_progress";
   dueAt: number | null;
+  scheduledStart: number | null;
+  scheduledEnd: number | null;
 }
 
 export interface SeededEvent {
@@ -85,8 +90,8 @@ export function seedDesktopDb(
     const insertedInboxItems: SeededInboxItem[] = [];
 
     const insertTask = db.prepare(
-      `INSERT INTO tasks (id, user_id, title, status, due_at, created_at, updated_at, source)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'desktop')`,
+      `INSERT INTO tasks (id, user_id, title, status, due_at, scheduled_start, scheduled_end, created_at, updated_at, source)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'desktop')`,
     );
 
     const insertEvent = db.prepare(
@@ -104,8 +109,10 @@ export function seedDesktopDb(
         const id = randomUUID();
         const status = t.status ?? "open";
         const dueAt = t.dueAt ?? null;
-        insertTask.run(id, t.userId, t.title, status, dueAt, now, now);
-        insertedTasks.push({ id, title: t.title, status, dueAt });
+        const scheduledStart = t.scheduledStart ?? null;
+        const scheduledEnd = t.scheduledEnd ?? null;
+        insertTask.run(id, t.userId, t.title, status, dueAt, scheduledStart, scheduledEnd, now, now);
+        insertedTasks.push({ id, title: t.title, status, dueAt, scheduledStart, scheduledEnd });
       }
       for (const e of events ?? []) {
         const id = randomUUID();
