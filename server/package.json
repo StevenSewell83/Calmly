@@ -1,6 +1,17 @@
 {
-  "name": "@calmly/server",
-  "version": "0.0.0",
+  "name": "calmly-sync-server",
+  "version": "0.1.0",
+  "description": "Open-source sync server for the Calmly desktop app",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/calmly.git",
+    "directory": "server"
+  },
+  "homepage": "https://github.com/your-org/calmly/tree/main/server#readme",
+  "bugs": {
+    "url": "https://github.com/your-org/calmly/issues"
+  },
   "private": true,
   "type": "module",
   "scripts": {
