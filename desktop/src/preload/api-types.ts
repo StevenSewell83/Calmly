@@ -307,6 +307,69 @@ export interface PlanBridge {
   unschedule(taskId: string): Promise<PlanUnscheduleResult>;
 }
 
+// Focus mode — local-only sessions (see migration 0008). At most one
+// open session per user; start auto-ends any prior open one.
+export type FocusSourceWire = "scheduled" | "ad-hoc";
+
+export interface FocusSessionItem {
+  id: string;
+  user_id: string;
+  task_id: string;
+  started_at: number;
+  ended_at: number | null;
+  source: FocusSourceWire;
+}
+
+export type FocusCurrentResult =
+  | { ok: true; session: FocusSessionItem | null }
+  | { ok: false; error: "NotSignedIn" };
+
+export type FocusStartResult =
+  | { ok: true; sessionId: string }
+  | {
+      ok: false;
+      error: "NotSignedIn" | "NotFound" | "InvalidArgs" | "InternalError";
+    };
+
+export type FocusEndResult =
+  | { ok: true; ended: boolean }
+  | { ok: false; error: "NotSignedIn" | "InternalError" };
+
+export type FocusMarkDoneResult =
+  | { ok: true; taskId: string }
+  | {
+      ok: false;
+      error:
+        | "NotSignedIn"
+        | "NoActiveSession"
+        | "NotFound"
+        | "InternalError";
+    };
+
+export type FocusSwitchResult = FocusStartResult;
+
+export interface FocusStartArgs {
+  taskId: string;
+  source: FocusSourceWire;
+}
+
+export interface FocusBridge {
+  // Returns the user's open session or null. Renderer polls this on
+  // route mount + after every action.
+  current(): Promise<FocusCurrentResult>;
+  // Start a session. Auto-ends any prior open session.
+  start(args: FocusStartArgs): Promise<FocusStartResult>;
+  // End the open session. Idempotent — `ended:false` when there was
+  // nothing to close.
+  end(): Promise<FocusEndResult>;
+  // Mark the active session's task as done AND end the session in
+  // one transaction.
+  markDone(): Promise<FocusMarkDoneResult>;
+  // End-and-start in one transaction; renderer never sees the brief
+  // 'no session' window.
+  switch(args: FocusStartArgs): Promise<FocusSwitchResult>;
+}
+
 export interface CalmlyApi {
   version: string;
   platform: string;
@@ -319,5 +382,6 @@ export interface CalmlyApi {
   events: EventsBridge;
   triage: TriageBridge;
   plan: PlanBridge;
+  focus: FocusBridge;
   log: LogBridge;
 }

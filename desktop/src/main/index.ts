@@ -20,6 +20,7 @@ import { registerDbIpc } from "./ipc/db";
 import { registerInboxIpc } from "./ipc/inbox";
 import { registerLogIpc } from "./ipc/log";
 import { registerSecretsIpc } from "./ipc/secrets";
+import { registerFocusIpc } from "./ipc/focus";
 import { registerPlanIpc } from "./ipc/plan";
 import { registerSyncIpc } from "./ipc/sync";
 import { registerTodayIpc } from "./ipc/today";
@@ -213,6 +214,7 @@ if (!gotInstanceLock) {
     registerTodayIpc();
     registerTriageIpc();
     registerPlanIpc();
+    registerFocusIpc();
 
     const syncLoop: SyncLoop = createSyncLoop({
       getDb,
