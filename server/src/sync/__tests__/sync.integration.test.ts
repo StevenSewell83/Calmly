@@ -8,7 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildApp } from "../../app";
 import { loadConfig } from "../../config";
 import { generateToken, hashToken } from "../../auth/tokens";
-import type { PullResponse, PushResponse } from "@calmly/shared";
+import type { PullResponse, PushResponse, WirePullResponse } from "@calmly/shared";
 
 // F-11c: Multi-client sync protocol integration test.
 //
@@ -156,7 +156,16 @@ describe.skipIf(!dockerAvailable)(
         payload: { since },
       });
       expect(res.statusCode, `pull failed: ${res.body}`).toBe(200);
-      return res.json() as PullResponse;
+      // Server returns WirePullResponse ({rows, hasMore} per table).
+      // Normalize to flat PullResponse for test assertions.
+      const wire = res.json() as WirePullResponse;
+      const records: PullResponse["records"] = {};
+      for (const [table, entry] of Object.entries(wire.records) as [string, { rows: Record<string, unknown>[]; hasMore: boolean } | undefined][]) {
+        if (entry && entry.rows.length > 0) {
+          records[table as keyof typeof records] = entry.rows;
+        }
+      }
+      return { records, version: wire.version };
     }
 
     // ── Tests ──────────────────────────────────────────────────────────────
@@ -276,6 +285,91 @@ describe.skipIf(!dockerAvailable)(
         Object.values(second.records) as (Record<string, unknown>[] | undefined)[]
       ).reduce((n, rows) => n + (rows?.length ?? 0), 0);
       expect(totalRecords).toBe(0);
+    });
+
+    it("invalid payload: bad task status → per-op invalid, not 500", async () => {
+      const taskId = randomUUID();
+      const now = Date.now();
+
+      const pushRes = await push(cookieA, [
+        {
+          table: "tasks",
+          op: "upsert",
+          payload: {
+            id: taskId,
+            title: "Bad task",
+            notes: null,
+            type: "task",
+            status: "banana", // invalid enum
+            due_at: null,
+            parent_task_id: null,
+            source: "desktop",
+            created_at: now,
+            scheduled_start: null,
+            scheduled_end: null,
+            updated_at: now,
+            deleted_at: null,
+            version: 0,
+          },
+        },
+      ]);
+
+      expect(pushRes.results).toHaveLength(1);
+      expect(pushRes.results[0]!.status).toBe("invalid");
+      expect(pushRes.results[0]!.reason).toMatch(/status/);
+    });
+
+    it("cross-user isolation: user A's records never appear in user B's pull", async () => {
+      // Create a second user with their own session.
+      const emailB2 = "user-b2@calmly.test";
+      const userB2Row = await pool.query<{ id: string }>(
+        `INSERT INTO users (email) VALUES ($1) RETURNING id`,
+        [emailB2],
+      );
+      const rawB2 = generateToken();
+      await pool.query(
+        `INSERT INTO magic_link_tokens (token_hash, user_id, expires_at, requested_ip)
+         VALUES ($1, $2, now() + interval '5 minutes', '127.0.0.1')`,
+        [hashToken(rawB2), userB2Row.rows[0]!.id],
+      );
+      const redeemB2 = await app.inject({
+        method: "POST",
+        url: "/auth/magic-link/redeem",
+        payload: { token: rawB2 },
+      });
+      const cookieB2 = extractSessionCookie(redeemB2.headers["set-cookie"]);
+
+      // User A pushes a task.
+      const taskId = randomUUID();
+      const now = Date.now();
+      await push(cookieA, [
+        {
+          table: "tasks",
+          op: "upsert",
+          payload: {
+            id: taskId,
+            title: "User A private task",
+            notes: null,
+            type: "task",
+            status: "open",
+            due_at: null,
+            parent_task_id: null,
+            source: "desktop",
+            created_at: now,
+            scheduled_start: null,
+            scheduled_end: null,
+            updated_at: now,
+            deleted_at: null,
+            version: 0,
+          },
+        },
+      ]);
+
+      // User B2 pulls from version 0 — must never see user A's task.
+      const pullRes = await pull(cookieB2, 0);
+      const tasks = (pullRes.records.tasks ?? []) as Record<string, unknown>[];
+      const leaked = tasks.find((t: Record<string, unknown>) => t["id"] === taskId);
+      expect(leaked).toBeUndefined();
     });
 
     it("user_settings push + pull round-trip (BUG-AUDIT-1)", async () => {
