@@ -17,6 +17,7 @@ import { createMainWindow } from "./bootstrap/window";
 import { createDeepLinkBootstrap } from "./bootstrap/deeplinks";
 import { registerAllIpc } from "./bootstrap/ipc-register";
 import { createSyncBootstrap } from "./bootstrap/sync-bootstrap";
+import { runSearchBackfill } from "./search/backfill";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -78,6 +79,9 @@ if (!gotInstanceLock) {
     activeSyncLoop = createSyncBootstrap({ getDb, apiBaseUrl: API_BASE_URL });
     registerAllIpc(orchestrator, activeSyncLoop, logger);
     activeSyncLoop.start();
+
+    // Kick off FTS backfill asynchronously after boot — no-op if already done.
+    runSearchBackfill(getDb(), logger);
 
     if (isDev) {
       const r = secretStoreSelfTest();

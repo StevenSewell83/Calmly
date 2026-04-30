@@ -11,4 +11,7 @@ export const settingsBridge: SettingsBridge = {
   clearSyncServerUrl(): Promise<void> {
     return ipcRenderer.invoke("settings:clearSyncServerUrl") as Promise<void>;
   },
+  reindexSearch(): Promise<void> {
+    return ipcRenderer.invoke("settings:reindexSearch") as Promise<void>;
+  },
 };

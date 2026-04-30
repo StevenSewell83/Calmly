@@ -526,6 +526,7 @@ export interface SettingsBridge {
   getSyncServerUrl(): Promise<string>;
   setSyncServerUrl(url: string): Promise<void>;
   clearSyncServerUrl(): Promise<void>;
+  reindexSearch(): Promise<void>;
 }
 
 export interface CalmlyApi {

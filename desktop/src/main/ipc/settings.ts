@@ -5,6 +5,7 @@ import {
   saveServerUrl,
   clearServerUrl,
 } from "../sync/serverConfig";
+import { reindexSearch } from "../search/backfill";
 
 export function registerSettingsIpc(): void {
   ipcMain.handle("settings:getSyncServerUrl", () => {
@@ -17,5 +18,9 @@ export function registerSettingsIpc(): void {
 
   ipcMain.handle("settings:clearSyncServerUrl", () => {
     clearServerUrl(getDb());
+  });
+
+  ipcMain.handle("settings:reindexSearch", () => {
+    reindexSearch(getDb(), console);
   });
 }
