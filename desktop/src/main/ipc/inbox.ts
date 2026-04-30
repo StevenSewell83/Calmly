@@ -1,6 +1,3 @@
-import { ipcMain } from "electron";
-import { getCurrentUser } from "../auth/currentUser";
-import { getDb } from "../db";
 import {
   addInboxItem,
   listInbox,
@@ -11,8 +8,7 @@ import {
   type SkipInboxResult,
   type SnoozeInboxResult,
 } from "../inbox/store";
-
-let registered = false;
+import { authedHandler, isStringId } from "./handler";
 
 export type InboxAddResult =
   | AddInboxItemResult
@@ -31,66 +27,28 @@ export type InboxSkipResult =
   | { ok: false; error: "NotSignedIn" };
 
 export function registerInboxIpc(): void {
-  if (registered) return;
-  registered = true;
-
-  ipcMain.handle(
-    "inbox:add",
-    async (_e, rawText: unknown): Promise<InboxAddResult> => {
-      // Source is hardcoded server-side: the renderer can only originate
-      // 'desktop' captures. Telegram captures hit a separate ingestion path.
-      if (typeof rawText !== "string") {
-        return { ok: false, error: "EmptyInput" };
-      }
-      const user = getCurrentUser();
-      if (!user) {
-        // Should be unreachable when AuthGate is doing its job, but the IPC
-        // boundary is the right place to fail closed regardless.
-        return { ok: false, error: "NotSignedIn" };
-      }
-      return addInboxItem({
-        db: getDb(),
-        userId: user.id,
-        rawText,
-        source: "desktop",
-      });
-    },
-  );
-
-  ipcMain.handle("inbox:list", async (): Promise<InboxListResult> => {
-    const user = getCurrentUser();
-    if (!user) return { ok: false, error: "NotSignedIn" };
-    return {
-      ok: true,
-      items: listInbox(getDb(), user.id, Date.now()),
-    };
+  authedHandler<InboxAddResult>("inbox:add", (ctx, raw) => {
+    if (typeof raw !== "string") return { ok: false, error: "EmptyInput" };
+    return addInboxItem({ db: ctx.db, userId: ctx.userId, rawText: raw, source: "desktop" });
   });
 
-  ipcMain.handle(
-    "inbox:snooze",
-    async (
-      _e,
-      id: unknown,
-      untilMs: unknown,
-    ): Promise<InboxSnoozeResult> => {
-      if (typeof id !== "string" || typeof untilMs !== "number") {
-        return { ok: false, error: "InvalidUntil" };
-      }
-      const user = getCurrentUser();
-      if (!user) return { ok: false, error: "NotSignedIn" };
-      return snoozeInboxItem(getDb(), user.id, id, untilMs, Date.now());
-    },
-  );
+  authedHandler<InboxListResult>("inbox:list", (ctx) => ({
+    ok: true,
+    items: listInbox(ctx.db, ctx.userId, ctx.now),
+  }));
 
-  ipcMain.handle(
-    "inbox:skip",
-    async (_e, id: unknown): Promise<InboxSkipResult> => {
-      if (typeof id !== "string") {
-        return { ok: false, error: "NotFound" };
-      }
-      const user = getCurrentUser();
-      if (!user) return { ok: false, error: "NotSignedIn" };
-      return skipInboxItem(getDb(), user.id, id, Date.now());
-    },
-  );
+  // The renderer calls invoke("inbox:snooze", id, untilMs) — two separate
+  // args. authedHandler bundles multi-arg calls into an array.
+  authedHandler<InboxSnoozeResult>("inbox:snooze", (ctx, raw) => {
+    const args = raw as unknown[];
+    if (!Array.isArray(args) || !isStringId(args[0]) || typeof args[1] !== "number") {
+      return { ok: false, error: "InvalidUntil" };
+    }
+    return snoozeInboxItem(ctx.db, ctx.userId, args[0], args[1] as number, ctx.now);
+  });
+
+  authedHandler<InboxSkipResult>("inbox:skip", (ctx, raw) => {
+    if (!isStringId(raw)) return { ok: false, error: "NotFound" };
+    return skipInboxItem(ctx.db, ctx.userId, raw, ctx.now);
+  });
 }

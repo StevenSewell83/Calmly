@@ -1,6 +1,3 @@
-import { ipcMain } from "electron";
-import { getCurrentUser } from "../auth/currentUser";
-import { getDb } from "../db";
 import {
   discardInboxItem,
   resolveAsEvent,
@@ -8,8 +5,7 @@ import {
   type DiscardResult,
   type ResolveResult,
 } from "../triage/store";
-
-let registered = false;
+import { authedHandler, isObject, isStringId } from "./handler";
 
 export type TriageResolveTaskResult =
   | ResolveResult
@@ -23,103 +19,47 @@ export type TriageDiscardResult =
   | DiscardResult
   | { ok: false; error: "NotSignedIn" };
 
-interface ResolveAsTaskInvoke {
-  inboxId: unknown;
-  title: unknown;
-  dueAt: unknown;
-}
-
-interface ResolveAsEventInvoke {
-  inboxId: unknown;
-  title: unknown;
-  startAt: unknown;
-  endAt: unknown;
-}
-
-function isStringId(v: unknown): v is string {
-  return typeof v === "string" && v.length > 0;
-}
-
 export function registerTriageIpc(): void {
-  if (registered) return;
-  registered = true;
+  authedHandler<TriageResolveTaskResult>("triage:resolveAsTask", (ctx, raw) => {
+    if (!isObject(raw) || !isStringId(raw.inboxId) || typeof raw.title !== "string") {
+      return { ok: false, error: "InvalidArgs" };
+    }
+    if (raw.dueAt !== null && (typeof raw.dueAt !== "number" || !Number.isFinite(raw.dueAt as number))) {
+      return { ok: false, error: "InvalidArgs" };
+    }
+    return resolveAsTask({
+      db: ctx.db,
+      userId: ctx.userId,
+      inboxId: raw.inboxId,
+      title: raw.title,
+      dueAt: raw.dueAt as number | null,
+      now: ctx.now,
+    });
+  });
 
-  ipcMain.handle(
-    "triage:resolveAsTask",
-    async (
-      _e,
-      payload: ResolveAsTaskInvoke,
-    ): Promise<TriageResolveTaskResult> => {
-      if (!payload || typeof payload !== "object") {
-        return { ok: false, error: "InvalidArgs" };
-      }
-      if (!isStringId(payload.inboxId) || typeof payload.title !== "string") {
-        return { ok: false, error: "InvalidArgs" };
-      }
-      // dueAt is optional null for the 'Later' chip; reject anything else
-      // that isn't a finite number so a bogus renderer can't sneak NaN in.
-      if (
-        payload.dueAt !== null &&
-        (typeof payload.dueAt !== "number" || !Number.isFinite(payload.dueAt))
-      ) {
-        return { ok: false, error: "InvalidArgs" };
-      }
-      const user = getCurrentUser();
-      if (!user) return { ok: false, error: "NotSignedIn" };
-      return resolveAsTask({
-        db: getDb(),
-        userId: user.id,
-        inboxId: payload.inboxId,
-        title: payload.title,
-        dueAt: payload.dueAt,
-        now: Date.now(),
-      });
-    },
-  );
+  authedHandler<TriageResolveEventResult>("triage:resolveAsEvent", (ctx, raw) => {
+    if (
+      !isObject(raw) ||
+      !isStringId(raw.inboxId) ||
+      typeof raw.title !== "string" ||
+      typeof raw.startAt !== "number" ||
+      typeof raw.endAt !== "number"
+    ) {
+      return { ok: false, error: "InvalidArgs" };
+    }
+    return resolveAsEvent({
+      db: ctx.db,
+      userId: ctx.userId,
+      inboxId: raw.inboxId,
+      title: raw.title,
+      startAt: raw.startAt as number,
+      endAt: raw.endAt as number,
+      now: ctx.now,
+    });
+  });
 
-  ipcMain.handle(
-    "triage:resolveAsEvent",
-    async (
-      _e,
-      payload: ResolveAsEventInvoke,
-    ): Promise<TriageResolveEventResult> => {
-      if (!payload || typeof payload !== "object") {
-        return { ok: false, error: "InvalidArgs" };
-      }
-      if (
-        !isStringId(payload.inboxId) ||
-        typeof payload.title !== "string" ||
-        typeof payload.startAt !== "number" ||
-        typeof payload.endAt !== "number"
-      ) {
-        return { ok: false, error: "InvalidArgs" };
-      }
-      const user = getCurrentUser();
-      if (!user) return { ok: false, error: "NotSignedIn" };
-      return resolveAsEvent({
-        db: getDb(),
-        userId: user.id,
-        inboxId: payload.inboxId,
-        title: payload.title,
-        startAt: payload.startAt,
-        endAt: payload.endAt,
-        now: Date.now(),
-      });
-    },
-  );
-
-  ipcMain.handle(
-    "triage:discard",
-    async (_e, inboxId: unknown): Promise<TriageDiscardResult> => {
-      if (!isStringId(inboxId)) return { ok: false, error: "NotFound" };
-      const user = getCurrentUser();
-      if (!user) return { ok: false, error: "NotSignedIn" };
-      return discardInboxItem({
-        db: getDb(),
-        userId: user.id,
-        inboxId,
-        now: Date.now(),
-      });
-    },
-  );
+  authedHandler<TriageDiscardResult>("triage:discard", (ctx, raw) => {
+    if (!isStringId(raw)) return { ok: false, error: "NotFound" };
+    return discardInboxItem({ db: ctx.db, userId: ctx.userId, inboxId: raw, now: ctx.now });
+  });
 }

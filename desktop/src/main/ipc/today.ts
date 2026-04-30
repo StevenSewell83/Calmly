@@ -1,6 +1,3 @@
-import { ipcMain } from "electron";
-import { getCurrentUser } from "../auth/currentUser";
-import { getDb } from "../db";
 import {
   countUnresolvedInbox,
   listTodayEvents,
@@ -8,8 +5,7 @@ import {
   type EventTodayRow,
   type TaskTodayRow,
 } from "../today/store";
-
-let registered = false;
+import { authedHandler } from "./handler";
 
 export type ListTodayTasksResult =
   | { ok: true; tasks: TaskTodayRow[] }
@@ -24,40 +20,18 @@ export type UnresolvedInboxCountResult =
   | { ok: false; error: "NotSignedIn" };
 
 export function registerTodayIpc(): void {
-  if (registered) return;
-  registered = true;
+  authedHandler<ListTodayTasksResult>("tasks:listToday", (ctx) => ({
+    ok: true,
+    tasks: listTodayTasks(ctx.db, ctx.userId, ctx.now, ctx.tz),
+  }));
 
-  ipcMain.handle("tasks:listToday", (): ListTodayTasksResult => {
-    const user = getCurrentUser();
-    if (!user) return { ok: false, error: "NotSignedIn" };
-    // Pull the local TZ offset from the OS at fetch time. Once the
-    // settings UI ships (Epic 9) this will read user_settings.timezone
-    // and pass an explicit offset for cross-device consistency.
-    const now = Date.now();
-    const tz = new Date().getTimezoneOffset();
-    return {
-      ok: true,
-      tasks: listTodayTasks(getDb(), user.id, now, tz),
-    };
-  });
+  authedHandler<ListTodayEventsResult>("events:listToday", (ctx) => ({
+    ok: true,
+    events: listTodayEvents(ctx.db, ctx.userId, ctx.now, ctx.tz),
+  }));
 
-  ipcMain.handle("events:listToday", (): ListTodayEventsResult => {
-    const user = getCurrentUser();
-    if (!user) return { ok: false, error: "NotSignedIn" };
-    const now = Date.now();
-    const tz = new Date().getTimezoneOffset();
-    return {
-      ok: true,
-      events: listTodayEvents(getDb(), user.id, now, tz),
-    };
-  });
-
-  ipcMain.handle("inbox:unresolvedCount", (): UnresolvedInboxCountResult => {
-    const user = getCurrentUser();
-    if (!user) return { ok: false, error: "NotSignedIn" };
-    return {
-      ok: true,
-      count: countUnresolvedInbox(getDb(), user.id, Date.now()),
-    };
-  });
+  authedHandler<UnresolvedInboxCountResult>("inbox:unresolvedCount", (ctx) => ({
+    ok: true,
+    count: countUnresolvedInbox(ctx.db, ctx.userId, ctx.now),
+  }));
 }
