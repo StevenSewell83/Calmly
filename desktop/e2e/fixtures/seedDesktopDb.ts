@@ -19,6 +19,23 @@ export interface SeedEventArgs {
   endAt: number;
 }
 
+export interface SeedInboxItemArgs {
+  userId: string;
+  rawText: string;
+  source?: "desktop" | "telegram-text" | "telegram-voice" | "ai-split";
+  // Non-null means the item is snoozed until this unix-ms timestamp.
+  snoozedUntil?: number;
+  // Non-null means the item has been resolved (skipped/triaged).
+  resolvedAt?: number;
+}
+
+export interface SeededInboxItem {
+  id: string;
+  rawText: string;
+  snoozedUntil: number | null;
+  resolvedAt: number | null;
+}
+
 export interface SeededTask {
   id: string;
   title: string;
@@ -48,11 +65,13 @@ export function seedDesktopDb(
   {
     tasks,
     events,
+    inboxItems,
   }: {
     tasks?: SeedTaskArgs[];
     events?: SeedEventArgs[];
+    inboxItems?: SeedInboxItemArgs[];
   },
-): { tasks: SeededTask[]; events: SeededEvent[] } {
+): { tasks: SeededTask[]; events: SeededEvent[]; inboxItems: SeededInboxItem[] } {
   const dbPath = join(userDataDir, "calmly.db");
   const db = new Database(dbPath, { readonly: false });
 
@@ -63,6 +82,7 @@ export function seedDesktopDb(
     const now = Date.now();
     const insertedTasks: SeededTask[] = [];
     const insertedEvents: SeededEvent[] = [];
+    const insertedInboxItems: SeededInboxItem[] = [];
 
     const insertTask = db.prepare(
       `INSERT INTO tasks (id, user_id, title, status, due_at, created_at, updated_at, source)
@@ -72,6 +92,11 @@ export function seedDesktopDb(
     const insertEvent = db.prepare(
       `INSERT INTO events (id, user_id, title, start_at, end_at, created_at, source)
        VALUES (?, ?, ?, ?, ?, ?, 'manual')`,
+    );
+
+    const insertInboxItem = db.prepare(
+      `INSERT INTO inbox_items (id, user_id, raw_text, source, created_at, snoozed_until, resolved_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
     );
 
     const run = db.transaction(() => {
@@ -87,10 +112,18 @@ export function seedDesktopDb(
         insertEvent.run(id, e.userId, e.title, e.startAt, e.endAt, now);
         insertedEvents.push({ id, title: e.title, startAt: e.startAt, endAt: e.endAt });
       }
+      for (const i of inboxItems ?? []) {
+        const id = randomUUID();
+        const source = i.source ?? "desktop";
+        const snoozedUntil = i.snoozedUntil ?? null;
+        const resolvedAt = i.resolvedAt ?? null;
+        insertInboxItem.run(id, i.userId, i.rawText, source, now, snoozedUntil, resolvedAt);
+        insertedInboxItems.push({ id, rawText: i.rawText, snoozedUntil, resolvedAt });
+      }
     });
     run();
 
-    return { tasks: insertedTasks, events: insertedEvents };
+    return { tasks: insertedTasks, events: insertedEvents, inboxItems: insertedInboxItems };
   } finally {
     db.close();
   }
