@@ -37,6 +37,7 @@ function msToDatetimeLocal(ms: number | null): string {
 function dateStrToMs(s: string): number | null {
   if (!s) return null;
   const [y, mo, da] = s.split("-").map(Number);
+  if (y === undefined || mo === undefined || da === undefined) return null;
   const d = new Date(y, mo - 1, da, 12, 0, 0, 0);
   return Number.isNaN(d.getTime()) ? null : d.getTime();
 }

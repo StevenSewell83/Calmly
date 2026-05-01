@@ -78,6 +78,7 @@ export function Focus() {
   }
 
   return (
+    <>
     <section
       aria-label="Focus chooser"
       className="flex-1 px-12 pt-10 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-500"
@@ -151,6 +152,7 @@ export function Focus() {
         onReject={handleReject}
       />
     )}
+    </>
   );
 }
 

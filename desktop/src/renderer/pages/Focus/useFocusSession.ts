@@ -36,7 +36,7 @@ export function useFocusSession() {
   }, [refresh]);
 
   const startFocus = async (taskId: string) => {
-    const source = state.todayTasks.find((t) => t.id === taskId)?.scheduledStart !== null
+    const source = state.todayTasks.find((t) => t.id === taskId)?.scheduled_start !== null
       ? ("scheduled" as const)
       : ("ad-hoc" as const);
     await window.calmly.focus.start({ taskId, source });
@@ -54,7 +54,7 @@ export function useFocusSession() {
   };
 
   const switchTask = async (taskId: string) => {
-    const source = state.todayTasks.find((t) => t.id === taskId)?.scheduledStart !== null
+    const source = state.todayTasks.find((t) => t.id === taskId)?.scheduled_start !== null
       ? ("scheduled" as const)
       : ("ad-hoc" as const);
     await window.calmly.focus.switch({ taskId, source });

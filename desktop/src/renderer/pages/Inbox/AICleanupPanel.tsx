@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import type { TriageCleanupResult } from "../../state/aiTriage";
 import { AIFailureBanner } from "../../components/ai/AIFailureBanner";
-import type { AIError } from "../../../../preload/api-types";
+import type { AIError } from "../../../preload/api-types";
 
 interface AICleanupPanelProps {
   rawText: string;

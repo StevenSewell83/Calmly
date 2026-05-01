@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Sparkles, X, Check, Pencil, CheckCircle2, Loader2 } from "lucide-react";
 import { AIFailureBanner } from "./AIFailureBanner";
-import type { AIError } from "../../../../preload/api-types";
+import type { AIError } from "../../../preload/api-types";
 
 export type MakeStartableResult = {
   firstStep: string;

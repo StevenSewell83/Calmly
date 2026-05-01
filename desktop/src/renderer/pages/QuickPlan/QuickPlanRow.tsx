@@ -19,8 +19,8 @@ interface Props {
 }
 
 export function QuickPlanRow({ task, index, total, onMove, onDrop, onShrink, busy }: Props) {
-  const start = task.scheduledStart;
-  const end = task.scheduledEnd;
+  const start = task.scheduled_start;
+  const end = task.scheduled_end;
   const durationMs = start !== null && end !== null ? end - start : null;
   const durationMins = durationMs !== null ? Math.round(durationMs / 60_000) : null;
 

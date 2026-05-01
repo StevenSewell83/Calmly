@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import type { AIError } from "../../../preload/api-types";
+import type { AIError } from "../../preload/api-types";
 
 export type TriageCleanupResult = {
   type: "task" | "event" | "someday";

@@ -8,7 +8,7 @@ vi.mock("react-router-dom", () => ({
 }));
 
 import { AIFailureBanner } from "../AIFailureBanner";
-import type { AIError } from "../../../../../preload/api-types";
+import type { AIError } from "../../../../preload/api-types";
 
 describe("AIFailureBanner", () => {
   it("shows auth message and Settings link", () => {

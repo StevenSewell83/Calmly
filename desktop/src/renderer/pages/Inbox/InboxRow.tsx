@@ -34,6 +34,7 @@ const SOURCE_LABEL: Record<InboxItemSource, string> = {
   "telegram-text": "Telegram",
   "telegram-voice": "Voice",
   "ai-split": "AI split",
+  "manual-split": "Manual split",
 };
 
 const SOURCE_ICON: Record<
@@ -44,6 +45,7 @@ const SOURCE_ICON: Record<
   "telegram-text": MessageSquare,
   "telegram-voice": Mic,
   "ai-split": Sparkles,
+  "manual-split": Sparkles,
 };
 
 // Single inbox row. forwardRef so the parent can imperatively scroll

@@ -15,7 +15,7 @@ function fmtFocused(ms: number): string {
 
 function fmtDateHeader(dateStr: string): string {
   const [y, m, d] = dateStr.split("-").map(Number);
-  return new Date(y, (m as number) - 1, d as number).toLocaleDateString(undefined, {
+  return new Date(y as number, (m as number) - 1, d as number).toLocaleDateString(undefined, {
     weekday: "long", month: "long", day: "numeric",
   });
 }

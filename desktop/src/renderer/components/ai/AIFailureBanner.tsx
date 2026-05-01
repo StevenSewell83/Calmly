@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { AlertCircle, RefreshCw, ExternalLink, X } from "lucide-react";
-import type { AIError } from "../../../../preload/api-types";
+import type { AIError } from "../../../preload/api-types";
 
 interface AIFailureBannerProps {
   error: AIError;

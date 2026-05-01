@@ -51,10 +51,13 @@ function BacklogRow({ task, onTaskClick }: BacklogRowProps) {
       {/* Drag handle — only this gets listeners so keyboard activation is separate */}
       <button
         type="button"
-        tabIndex={-1}
         aria-label={`Drag ${task.title}`}
         {...attributes}
         {...listeners}
+        // tabIndex placed AFTER the spread so dnd-kit's attributes don't override
+        // the deliberate -1: keyboard navigation should skip the grip and land on
+        // the parent <li>, where Enter activates onTaskClick.
+        tabIndex={-1}
         className="mt-0.5 shrink-0 cursor-grab active:cursor-grabbing focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >

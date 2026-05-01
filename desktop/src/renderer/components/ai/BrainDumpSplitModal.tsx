@@ -3,7 +3,7 @@ import {
   Sparkles, X, CheckCircle2, Loader2, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { AIFailureBanner } from "./AIFailureBanner";
-import type { AIError } from "../../../../preload/api-types";
+import type { AIError } from "../../../preload/api-types";
 
 export type SplitItem = {
   title: string;

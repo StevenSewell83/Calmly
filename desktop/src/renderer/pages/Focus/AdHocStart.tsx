@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, ListSearch } from "lucide-react";
+import { ArrowRight, Search } from "lucide-react";
 import { TaskSearchPicker } from "./TaskSearchPicker";
 
 interface Props {
@@ -77,7 +77,7 @@ export function AdHocStart({ onStarted, open }: Props) {
         disabled={busy}
         className="w-full flex items-center justify-center gap-1.5 text-xs text-stone-500 hover:text-stone-700 py-1 disabled:opacity-40"
       >
-        <ListSearch className="w-3.5 h-3.5" />
+        <Search className="w-3.5 h-3.5" />
         Pick from existing tasks
       </button>
 

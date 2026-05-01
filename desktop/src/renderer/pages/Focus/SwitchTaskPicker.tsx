@@ -38,8 +38,8 @@ export function SwitchTaskPicker({ tasks, currentTaskId, onPick, onClose }: Prop
                 className="w-full text-left px-4 py-3 rounded-2xl hover:bg-stone-50 transition-colors group"
               >
                 <p className="text-sm font-medium text-stone-800 group-hover:text-emerald-700 truncate">{t.title}</p>
-                {t.scheduledStart !== null && (
-                  <p className="text-xs text-stone-400 mt-0.5">{formatClock(t.scheduledStart)}</p>
+                {t.scheduled_start !== null && (
+                  <p className="text-xs text-stone-400 mt-0.5">{formatClock(t.scheduled_start)}</p>
                 )}
               </button>
             </li>

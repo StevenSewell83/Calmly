@@ -72,7 +72,7 @@ export function Triage() {
 
   // Flat list of unresolved items (newest first matches list view).
   const queue = useMemo(
-    () => (state.kind === "ready" ? state.items : []),
+    () => (state.kind === "ready" ? state.data.items : []),
     [state],
   );
 
@@ -928,6 +928,8 @@ function sourceLabel(source: InboxItem["source"]): string {
       return "Voice";
     case "ai-split":
       return "AI split";
+    case "manual-split":
+      return "Manual split";
   }
 }
 

@@ -59,7 +59,7 @@ export function RescheduleControls({ task, onSaved }: Props) {
       </div>
 
       {/* Push by presets */}
-      {task.scheduledStart !== null && (
+      {task.scheduled_start !== null && (
         <div className="flex gap-1.5 flex-wrap items-center">
           <MoveRight className="w-4 h-4 text-stone-400 shrink-0" />
           {PUSH_PRESETS.map(({ label, ms }) => (

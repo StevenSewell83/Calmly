@@ -16,8 +16,8 @@ function todayLocalStr(): string {
 
 function totalScheduledMins(tasks: PlanTaskItem[]): number {
   return tasks.reduce((acc, t) => {
-    if (t.scheduledStart !== null && t.scheduledEnd !== null) {
-      return acc + Math.round((t.scheduledEnd - t.scheduledStart) / 60_000);
+    if (t.scheduled_start !== null && t.scheduled_end !== null) {
+      return acc + Math.round((t.scheduled_end - t.scheduled_start) / 60_000);
     }
     return acc;
   }, 0);
@@ -60,31 +60,31 @@ export function QuickPlan({ open, onClose }: Props) {
     [copy[index], copy[swap]] = [copy[swap]!, copy[index]!];
     // Reassign scheduled_start/end preserving durations in new order
     const anchors = copy.map((t) =>
-      t.scheduledStart !== null && t.scheduledEnd !== null
-        ? t.scheduledEnd - t.scheduledStart
+      t.scheduled_start !== null && t.scheduled_end !== null
+        ? t.scheduled_end - t.scheduled_start
         : 0,
     );
     const sortedStarts = tasks
-      .filter((t) => t.scheduledStart !== null)
-      .map((t) => t.scheduledStart!)
+      .filter((t) => t.scheduled_start !== null)
+      .map((t) => t.scheduled_start!)
       .sort((a, b) => a - b);
     const reordered = copy.map((t, i) => ({
       ...t,
-      scheduledStart: sortedStarts[i] ?? t.scheduledStart,
-      scheduledEnd:
+      scheduled_start: sortedStarts[i] ?? t.scheduled_start,
+      scheduled_end:
         sortedStarts[i] !== undefined && anchors[i] !== undefined
           ? sortedStarts[i]! + anchors[i]!
-          : t.scheduledEnd,
+          : t.scheduled_end,
     }));
     setTasks(reordered);
     void withBusy(async () => {
       const t = reordered[index];
       const t2 = reordered[swap];
-      if (t && t.scheduledStart !== null && t.scheduledEnd !== null) {
-        await window.calmly.plan.schedule({ taskId: t.id, startAt: t.scheduledStart, endAt: t.scheduledEnd });
+      if (t && t.scheduled_start !== null && t.scheduled_end !== null) {
+        await window.calmly.plan.schedule({ taskId: t.id, startAt: t.scheduled_start, endAt: t.scheduled_end });
       }
-      if (t2 && t2.scheduledStart !== null && t2.scheduledEnd !== null) {
-        await window.calmly.plan.schedule({ taskId: t2.id, startAt: t2.scheduledStart, endAt: t2.scheduledEnd });
+      if (t2 && t2.scheduled_start !== null && t2.scheduled_end !== null) {
+        await window.calmly.plan.schedule({ taskId: t2.id, startAt: t2.scheduled_start, endAt: t2.scheduled_end });
       }
     });
   };
@@ -95,11 +95,11 @@ export function QuickPlan({ open, onClose }: Props) {
   };
 
   const handleShrink = (task: PlanTaskItem, mins: number) => {
-    if (task.scheduledStart === null) return;
-    const newEnd = task.scheduledStart + mins * 60_000;
-    setTasks((prev) => prev.map((t) => t.id === task.id ? { ...t, scheduledEnd: newEnd } : t));
+    if (task.scheduled_start === null) return;
+    const newEnd = task.scheduled_start + mins * 60_000;
+    setTasks((prev) => prev.map((t) => t.id === task.id ? { ...t, scheduled_end: newEnd } : t));
     void withBusy(async () => {
-      await window.calmly.plan.schedule({ taskId: task.id, startAt: task.scheduledStart!, endAt: newEnd });
+      await window.calmly.plan.schedule({ taskId: task.id, startAt: task.scheduled_start!, endAt: newEnd });
     });
   };
 
