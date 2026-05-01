@@ -27,6 +27,7 @@ import { MountainClimberIcon } from "../../components/MountainClimberIcon";
 import type { InboxItem } from "../../../preload/api-types";
 import { useInboxList } from "./useInboxList";
 import { BreakdownPanel } from "./BreakdownPanel";
+import { PageStateView } from "../../components/PageStateView";
 import {
   snoozeNextWeek,
   snoozeOneHour,
@@ -368,18 +369,15 @@ export function Triage() {
           Back to Inbox
         </Link>
 
-        {state.kind === "loading" ? (
-          <LoadingShell />
-        ) : state.kind === "signed-out" ? (
-          <FailureNotice
-            title="You're signed out."
-            body="Sign in to start triaging."
-          />
-        ) : state.kind === "error" ? (
-          <FailureNotice title="Something hiccuped." body={state.message} />
-        ) : queue.length === 0 ? (
-          <InboxClear onHome={() => navigate("/")} />
-        ) : current ? (
+        <PageStateView
+          state={state}
+          loadingFallback={<LoadingShell />}
+          signedOutBody="Sign in to start triaging."
+          loadingLabel="Loading triage"
+          ready={() =>
+            queue.length === 0 ? (
+              <InboxClear onHome={() => navigate("/")} />
+            ) : current ? (
           <>
             <header className="mb-6 flex items-center justify-between">
               <h1 className="font-serif italic text-4xl tracking-tight text-stone-800">
@@ -582,7 +580,9 @@ export function Triage() {
               · S Snooze · X Skip · Enter Confirm
             </p>
           </>
-        ) : null}
+            ) : null
+          }
+        />
       </div>
     </section>
   );
@@ -902,18 +902,6 @@ function LoadingShell() {
       <div className="rounded-[2.5rem] bg-stone-100/60 h-32 animate-pulse" />
       <div className="rounded-2xl bg-stone-100/60 h-12 animate-pulse" />
       <div className="rounded-2xl bg-stone-100/60 h-12 animate-pulse" />
-    </div>
-  );
-}
-
-function FailureNotice({ title, body }: { title: string; body: string }) {
-  return (
-    <div
-      role="alert"
-      className="rounded-[1.8rem] border border-stone-200 bg-white/60 px-6 py-5 max-w-md"
-    >
-      <p className="text-sm text-stone-800 font-medium">{title}</p>
-      <p className="mt-1 text-xs text-stone-500">{body}</p>
     </div>
   );
 }
