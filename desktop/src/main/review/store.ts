@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type Database from "better-sqlite3";
+import type { ReviewTaskRow } from "../wireTypes";
 import { localDayWindow } from "../today/store";
 import { loadTask, enqueueTaskUpsert } from "../tasks/repo";
 
@@ -13,6 +14,12 @@ import { loadTask, enqueueTaskUpsert } from "../tasks/repo";
 // saveReflection()   — upserts daily_reflections row for today
 // completeShutdown() — writes last_shutdown_date into settings_json
 
+// Re-export the canonical wire row from ../wireTypes. Note:
+// wireTypes tightens `status` to TaskStatus (was `string` here);
+// the SELECT below only fetches rows whose status comes from the
+// shared union, so the narrowing is safe at runtime.
+export type { ReviewTaskRow };
+
 const TASK_COLS =
   "id, title, notes, status, due_at, scheduled_start, scheduled_end, source, created_at, updated_at, version, type, parent_task_id";
 
@@ -25,16 +32,6 @@ function todayLocalStr(now: number, tzOffsetMinutes: number): string {
   const m = String(local.getUTCMonth() + 1).padStart(2, "0");
   const d = String(local.getUTCDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
-}
-
-export interface ReviewTaskRow {
-  id: string;
-  title: string;
-  notes: string | null;
-  status: string;
-  due_at: number | null;
-  scheduled_start: number | null;
-  scheduled_end: number | null;
 }
 
 export interface ReviewSummary {

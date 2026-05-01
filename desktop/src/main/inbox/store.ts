@@ -1,7 +1,13 @@
 import { randomUUID } from "node:crypto";
 import type Database from "better-sqlite3";
 import type { InboxSource } from "@calmly/shared";
+import type { InboxListRow } from "../wireTypes";
 import { enqueueOp } from "../sync/queue";
+
+// Re-export the canonical wire row from ../wireTypes so existing
+// `import { InboxListRow } from "../inbox/store"` callers (ipc/inbox.ts)
+// keep working after REFACTOR-AUDIT-2b.
+export type { InboxListRow };
 
 export const MAX_RAW_TEXT_CHARS = 4000;
 
@@ -73,18 +79,6 @@ export function addInboxItem(args: AddInboxItemArgs): AddInboxItemResult {
   } catch {
     return { ok: false, error: "InternalError" };
   }
-}
-
-// Wire shape for the inbox list IPC. Mirrors the columns the renderer
-// actually shows; resolved_at + snoozed_until come along so future
-// sort modes (e.g. 'recently snoozed') can derive without a re-fetch.
-export interface InboxListRow {
-  id: string;
-  raw_text: string;
-  source: InboxSource;
-  created_at: number;
-  resolved_at: number | null;
-  snoozed_until: number | null;
 }
 
 // Lists the user's visible inbox: unresolved, not currently snoozed,

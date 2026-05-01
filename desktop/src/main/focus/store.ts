@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type Database from "better-sqlite3";
 import type { FocusSource, TaskStatus } from "@calmly/shared";
+import type { FocusSessionRow } from "../wireTypes";
 import {
   SCHEDULABLE_STATUSES,
   type TaskRow,
@@ -19,14 +20,10 @@ import {
 // Invariant: at most one open session per user. Every startFocus /
 // switchFocus auto-ends the prior open session in the same tx.
 
-export interface FocusSessionRow {
-  id: string;
-  user_id: string;
-  task_id: string;
-  started_at: number;
-  ended_at: number | null;
-  source: FocusSource;
-}
+// Re-export the canonical wire row from ../wireTypes so existing
+// `import { FocusSessionRow } from "../focus/store"` callers
+// (ipc/focus.ts) keep working after REFACTOR-AUDIT-2b.
+export type { FocusSessionRow };
 
 // Returns the currently-open focus session for the user, or null.
 export function currentFocus(

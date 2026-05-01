@@ -1,5 +1,5 @@
 import type Database from "better-sqlite3";
-import type { TaskStatus } from "@calmly/shared";
+import type { PlanTaskRow } from "../wireTypes";
 import { localDayWindow } from "../today/store";
 import {
   SCHEDULABLE_STATUSES,
@@ -17,21 +17,12 @@ import {
 // pair as a unit and enqueue full-snapshot upserts so the server's
 // EXCLUDED-based ON CONFLICT can't null out unrelated columns.
 
-export interface PlanTaskRow {
-  id: string;
-  title: string;
-  notes: string | null;
-  status: TaskStatus;
-  due_at: number | null;
-  scheduled_start: number | null;
-  scheduled_end: number | null;
-  source: InboxSource;
-  created_at: number;
-  updated_at: number;
-  version: number;
-  type: string;
-  parent_task_id: string | null;
-}
+// Re-export the canonical wire row from ../wireTypes so existing
+// callers and IPC handlers keep their import paths after
+// REFACTOR-AUDIT-2b. The previous inline definition referenced
+// InboxSource without importing it; routing through wireTypes also
+// fixes that latent typecheck issue.
+export type { PlanTaskRow };
 
 export interface PlanForDay {
   scheduled: PlanTaskRow[];
