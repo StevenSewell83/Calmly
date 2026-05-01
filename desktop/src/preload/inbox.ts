@@ -30,6 +30,9 @@ export const inboxBridge: InboxBridge = {
       UnresolvedInboxCountResult
     >;
   },
+  bulkAdd(texts: string[]): Promise<{ ok: boolean; count: number; error?: string }> {
+    return ipcRenderer.invoke("inbox:bulkAdd", texts) as Promise<{ ok: boolean; count: number; error?: string }>;
+  },
   onFocusRequest(handler: () => void): () => void {
     const wrapped = (): void => handler();
     ipcRenderer.on(FOCUS_CHANNEL, wrapped);

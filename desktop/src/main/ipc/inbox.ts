@@ -51,4 +51,15 @@ export function registerInboxIpc(): void {
     if (!isStringId(raw)) return { ok: false, error: "InvalidArgs" };
     return skipInboxItem(ctx.db, ctx.userId, raw, ctx.now);
   });
+
+  authedHandler<{ ok: boolean; count: number; error?: string }>("inbox:bulkAdd", (ctx, raw) => {
+    if (!Array.isArray(raw)) return { ok: false, count: 0, error: "InvalidArgs" };
+    let count = 0;
+    for (const item of raw) {
+      if (typeof item !== "string" || item.trim().length === 0) continue;
+      const r = addInboxItem({ db: ctx.db, userId: ctx.userId, rawText: item.trim(), source: "ai-split" });
+      if (r.ok) count++;
+    }
+    return { ok: true, count };
+  });
 }

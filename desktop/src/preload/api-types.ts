@@ -151,6 +151,8 @@ export interface InboxBridge {
   // Number of inbox_items still awaiting triage. Drives Home's conditional
   // InboxTriageCard (hide at 0, show count + CTA otherwise).
   unresolvedCount(): Promise<UnresolvedInboxCountResult>;
+  // Bulk-insert multiple items with source='ai-split'. Used by Brain-dump split.
+  bulkAdd(texts: string[]): Promise<{ ok: boolean; count: number; error?: string }>;
   // Subscribe to global-hotkey focus pings from main. Returns an unsubscribe
   // so React effects can clean up across strict-mode double-mounts.
   onFocusRequest(handler: () => void): () => void;

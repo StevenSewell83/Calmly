@@ -5,17 +5,27 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Sparkles } from "lucide-react";
 import { MAX_RAW_TEXT_CHARS } from "../utils/constants";
+import { BrainDumpSplitModal, type SplitItem } from "./ai/BrainDumpSplitModal";
 
 // Hide the inline confirmation after this many ms.
 const CONFIRMATION_TIMEOUT_MS = 1800;
+
+// Threshold to show "Split with AI" affordance.
+const SPLIT_CHAR_THRESHOLD = 200;
 
 type Status =
   | { kind: "idle" }
   | { kind: "submitting" }
   | { kind: "captured"; truncated: boolean }
   | { kind: "error"; message: string };
+
+type SplitModalState =
+  | { kind: "loading" }
+  | { kind: "done"; suggestionId: string; items: SplitItem[] }
+  | { kind: "error"; message: string }
+  | null;
 
 // Persistent quick-capture input. Renders inside AppShell at the top of
 // every page so a thought can be jotted without context-switching out of
@@ -26,8 +36,14 @@ type Status =
 export function CaptureBar() {
   const [text, setText] = useState("");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
+  const [splitModal, setSplitModal] = useState<SplitModalState>(null);
+  const [aiEnabled, setAiEnabled] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const confirmationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    void window.calmly.ai.getSettings().then((s) => setAiEnabled(s.enabled)).catch(() => {});
+  }, []);
 
   // Wire the main-process focus event to the input. Each callback returns
   // an unsubscribe so React's strict-mode double-mount doesn't accumulate
@@ -85,9 +101,41 @@ export function CaptureBar() {
     [text, status.kind, flashCaptured],
   );
 
+  const handleSplit = useCallback(async () => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    setSplitModal({ kind: "loading" });
+    try {
+      const r = await window.calmly.ai.run("brain_dump_split", { text: trimmed });
+      if (!r.ok) {
+        const msg = r.error.kind === "auth" ? "API key missing. Check Settings → AI."
+          : r.error.kind === "quota" ? "Rate limit. Try again shortly."
+          : r.error.kind === "network" ? "Network error."
+          : "AI returned unexpected response.";
+        setSplitModal({ kind: "error", message: msg });
+        return;
+      }
+      const result = r.value.result as { tasks: SplitItem[] };
+      setSplitModal({ kind: "done", suggestionId: r.value.suggestionId, items: result.tasks });
+    } catch {
+      setSplitModal({ kind: "error", message: "Something went wrong. Try again." });
+    }
+  }, [text]);
+
+  const handleSplitConfirm = useCallback(async (items: SplitItem[], suggestionId: string) => {
+    const texts = items.map((i) => i.title);
+    await window.calmly.inbox.bulkAdd(texts);
+    await window.calmly.ai.recordOutcome(suggestionId, "accepted");
+    setText("");
+    setSplitModal(null);
+    flashCaptured(false);
+  }, [flashCaptured]);
+
+  const showSplitButton = aiEnabled && text.trim().length >= SPLIT_CHAR_THRESHOLD;
   const disabled = status.kind === "submitting" || text.trim().length === 0;
 
   return (
+    <>
     <form
       onSubmit={onSubmit}
       className="w-full bg-white/40 backdrop-blur-md border-b border-stone-200/60 px-8 py-5 flex items-center gap-4 z-30"
@@ -115,6 +163,17 @@ export function CaptureBar() {
         // hotkey + click are the only intentional focus paths.
       />
       <ConfirmationSlot status={status} />
+      {showSplitButton && (
+        <button
+          type="button"
+          onClick={() => void handleSplit()}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-medium tracking-wide text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors shrink-0"
+          title="Split into multiple inbox items with AI"
+        >
+          <Sparkles size={12} />
+          Split with AI
+        </button>
+      )}
       <button
         type="submit"
         disabled={disabled}
@@ -128,6 +187,15 @@ export function CaptureBar() {
         {status.kind === "submitting" ? "Adding…" : "Add"}
       </button>
     </form>
+
+    {splitModal && (
+      <BrainDumpSplitModal
+        state={splitModal}
+        onClose={() => setSplitModal(null)}
+        onConfirm={handleSplitConfirm}
+      />
+    )}
+    </>
   );
 }
 
