@@ -18,6 +18,7 @@ import { registerTodayIpc } from "../ipc/today";
 import { registerTriageIpc } from "../ipc/triage";
 import { registerSettingsIpc } from "../ipc/settings";
 import { registerSearchIpc } from "../ipc/search";
+import { registerAiSettingsIpc } from "../ipc/aiSettings";
 
 export interface RegisterAllIpcDeps {
   apiClient: ApiClient;
@@ -51,4 +52,5 @@ export function registerAllIpc(
     connectGoogle: deps.connectGoogle,
     connectMicrosoft: deps.connectMicrosoft,
   });
+  registerAiSettingsIpc();
 }

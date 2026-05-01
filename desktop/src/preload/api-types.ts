@@ -576,6 +576,27 @@ export interface CalendarBridge {
   ): () => void;
 }
 
+// AI v1 BYO-key bridge (AI1-01). Toggle + Cloud-only mode + Anthropic key
+// stored in the F-12 encrypted secret store. testConnection performs a
+// minimal probe call; plaintext keys never cross the IPC boundary.
+export interface AiSettings {
+  enabled: boolean;
+  mode: "off" | "cloud";
+}
+
+export type AiTestResult =
+  | { ok: true }
+  | { ok: false; error: "NoKey" | "InvalidKey" | "NetworkError" | "InternalError"; message?: string };
+
+export interface AiBridge {
+  getSettings(): Promise<AiSettings>;
+  setSettings(patch: Partial<AiSettings>): Promise<{ ok: boolean; error?: string }>;
+  hasKey(): Promise<boolean>;
+  setKey(value: string): Promise<{ ok: boolean; error?: string }>;
+  clearKey(): Promise<boolean>;
+  testConnection(): Promise<AiTestResult>;
+}
+
 export interface CalmlyApi {
   version: string;
   platform: string;
@@ -596,4 +617,5 @@ export interface CalmlyApi {
   settings: SettingsBridge;
   search: SearchBridge;
   calendar: CalendarBridge;
+  ai: AiBridge;
 }
