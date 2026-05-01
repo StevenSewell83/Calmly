@@ -59,6 +59,7 @@ describe("InboxItemSchema", () => {
         created_at: now,
         resolved_at: null,
         snoozed_until: null,
+        external_ref: null,
       }).source,
     ).toBe("telegram-voice");
   });
@@ -73,6 +74,7 @@ describe("InboxItemSchema", () => {
         created_at: now,
         resolved_at: null,
         snoozed_until: null,
+        external_ref: null,
       }),
     ).toThrow();
   });
@@ -87,8 +89,24 @@ describe("InboxItemSchema", () => {
         created_at: now,
         resolved_at: null,
         snoozed_until: now + 3_600_000,
+        external_ref: null,
       }).snoozed_until,
     ).toBe(now + 3_600_000);
+  });
+
+  it("accepts external_ref for server-ingested rows (TG-03a)", () => {
+    expect(
+      InboxItemSchema.parse({
+        id: otherId,
+        user_id: userId,
+        raw_text: "from telegram",
+        source: "telegram-text",
+        created_at: now,
+        resolved_at: null,
+        snoozed_until: null,
+        external_ref: "tg:42:101",
+      }).external_ref,
+    ).toBe("tg:42:101");
   });
 });
 

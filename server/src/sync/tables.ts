@@ -20,6 +20,7 @@ export const TABLES: Record<SyncTable, TableSpec> = {
       "created_at",
       "resolved_at",
       "snoozed_until",
+      "external_ref",
     ],
   },
   tasks: {

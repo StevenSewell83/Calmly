@@ -131,8 +131,9 @@ describe.skipIf(!nodeSqlite)("F-05b · DB round-trip integration", () => {
     ).run(USER_ID, "alex@example.com", NOW);
     db.prepare(
       `INSERT INTO inbox_items
-         (id, user_id, raw_text, source, created_at, resolved_at, version, deleted_at, snoozed_until)
-       VALUES (?, ?, ?, ?, ?, NULL, 0, NULL, NULL)`,
+         (id, user_id, raw_text, source, external_ref, created_at,
+          resolved_at, version, deleted_at, snoozed_until)
+       VALUES (?, ?, ?, ?, NULL, ?, NULL, 0, NULL, NULL)`,
     ).run(OTHER_ID, USER_ID, "buy milk", "desktop", NOW);
 
     const row = db
@@ -141,6 +142,27 @@ describe.skipIf(!nodeSqlite)("F-05b · DB round-trip integration", () => {
     const parsed = InboxItemSchema.parse(row);
     expect(parsed.raw_text).toBe("buy milk");
     expect(parsed.source).toBe("desktop");
+    expect(parsed.external_ref).toBeNull();
+  });
+
+  it("round-trips an InboxItem with external_ref (TG-03a)", () => {
+    const db = freshDb();
+    const otherTwo = "55555555-5555-4555-8555-555555555555";
+    db.prepare(
+      `INSERT INTO users (id, email, created_at) VALUES (?, ?, ?)`,
+    ).run(USER_ID, "alex@example.com", NOW);
+    db.prepare(
+      `INSERT INTO inbox_items
+         (id, user_id, raw_text, source, external_ref, created_at,
+          resolved_at, version, deleted_at, snoozed_until)
+       VALUES (?, ?, ?, ?, ?, ?, NULL, 0, NULL, NULL)`,
+    ).run(otherTwo, USER_ID, "ping", "telegram-text", "tg:42:101", NOW);
+
+    const row = db
+      .prepare(`SELECT * FROM inbox_items WHERE id = ?`)
+      .get(otherTwo) as Record<string, unknown>;
+    const parsed = InboxItemSchema.parse(row);
+    expect(parsed.external_ref).toBe("tg:42:101");
   });
 
   it("round-trips a Task with the schedule pair", () => {
