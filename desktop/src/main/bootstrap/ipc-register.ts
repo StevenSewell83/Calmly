@@ -20,6 +20,7 @@ import { registerSearchIpc } from "../ipc/search";
 
 export interface RegisterAllIpcDeps {
   connectGoogle: () => Promise<CalendarConnectResult>;
+  connectMicrosoft: () => Promise<CalendarConnectResult>;
 }
 
 export function registerAllIpc(
@@ -43,5 +44,8 @@ export function registerAllIpc(
   registerSyncIpc(syncLoop);
   registerSettingsIpc();
   registerSearchIpc();
-  registerCalendarIpc({ connectGoogle: deps.connectGoogle });
+  registerCalendarIpc({
+    connectGoogle: deps.connectGoogle,
+    connectMicrosoft: deps.connectMicrosoft,
+  });
 }

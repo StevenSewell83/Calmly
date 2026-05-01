@@ -11,6 +11,7 @@ let registered = false;
 
 export interface CalendarIpcDeps {
   connectGoogle: () => Promise<CalendarConnectResult>;
+  connectMicrosoft: () => Promise<CalendarConnectResult>;
 }
 
 export function registerCalendarIpc(deps: CalendarIpcDeps): void {
@@ -23,6 +24,15 @@ export function registerCalendarIpc(deps: CalendarIpcDeps): void {
       const user = getCurrentUser();
       if (!user) return { ok: false, error: "not_signed_in" };
       return deps.connectGoogle();
+    },
+  );
+
+  ipcMain.handle(
+    "calendar:connectMicrosoft",
+    async (): Promise<CalendarConnectResult> => {
+      const user = getCurrentUser();
+      if (!user) return { ok: false, error: "not_signed_in" };
+      return deps.connectMicrosoft();
     },
   );
 

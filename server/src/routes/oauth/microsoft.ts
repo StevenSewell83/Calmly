@@ -1,16 +1,16 @@
 import type { FastifyPluginAsync } from "fastify";
 import {
-  buildGoogleAuthUrl,
-  exchangeGoogleCode,
-  fetchGoogleUserInfo,
-  GOOGLE_SCOPES,
-} from "../../oauth/googleProvider";
+  buildMicrosoftAuthUrl,
+  exchangeMicrosoftCode,
+  fetchMicrosoftUserInfo,
+  MICROSOFT_SCOPES,
+} from "../../oauth/microsoftProvider";
 import {
   oauthProviderPlugin,
   type OAuthProviderConfig,
 } from "./plugin";
 
-export interface GoogleOAuthDeps {
+export interface MicrosoftOAuthDeps {
   clientId: string;
   clientSecret: string;
   redirectBaseUrl: string;
@@ -20,23 +20,23 @@ export interface GoogleOAuthDeps {
   fetchImpl?: typeof fetch;
 }
 
-const googleProviderConfig: OAuthProviderConfig = {
-  provider: "google",
-  buildAuthUrl: buildGoogleAuthUrl,
-  exchangeCode: exchangeGoogleCode,
+const microsoftProviderConfig: OAuthProviderConfig = {
+  provider: "microsoft",
+  buildAuthUrl: buildMicrosoftAuthUrl,
+  exchangeCode: exchangeMicrosoftCode,
   fetchUserInfo: async (args) => {
-    const r = await fetchGoogleUserInfo(args);
-    return { externalAccountId: r.sub, email: r.email };
+    const r = await fetchMicrosoftUserInfo(args);
+    return { externalAccountId: r.id, email: r.email };
   },
 };
 
-// Re-exported so tests + docs that want the canonical scope list can import
-// it from one place.
-export { GOOGLE_SCOPES };
+export { MICROSOFT_SCOPES };
 
-export function googleOAuthPlugin(deps: GoogleOAuthDeps): FastifyPluginAsync {
+export function microsoftOAuthPlugin(
+  deps: MicrosoftOAuthDeps,
+): FastifyPluginAsync {
   return oauthProviderPlugin({
-    config: googleProviderConfig,
+    config: microsoftProviderConfig,
     clientId: deps.clientId,
     clientSecret: deps.clientSecret,
     redirectBaseUrl: deps.redirectBaseUrl,

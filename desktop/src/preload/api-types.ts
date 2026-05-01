@@ -550,6 +550,7 @@ export type ListCalendarAccountsResult =
 
 export interface CalendarBridge {
   connectGoogle(): Promise<import("@calmly/shared").CalendarConnectResult>;
+  connectMicrosoft(): Promise<import("@calmly/shared").CalendarConnectResult>;
   listAccounts(): Promise<ListCalendarAccountsResult>;
 }
 

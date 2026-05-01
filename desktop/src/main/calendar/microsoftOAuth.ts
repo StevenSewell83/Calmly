@@ -6,14 +6,11 @@ import {
 } from "./connectProvider";
 import type { ApiClient } from "../net/client";
 
-// Backward-compat naming so existing callers don't churn. CAL-02 added the
-// generic createConnectProvider; this is the Google-flavoured factory.
-
 export { DEEPLINK_TIMEOUT_MS };
 
 export type { CalendarDeepLinkSubscription };
 
-export interface ConnectGoogleDeps {
+export interface ConnectMicrosoftDeps {
   apiBaseUrl: string;
   apiClient: ApiClient;
   openExternal: (url: string) => Promise<void>;
@@ -23,8 +20,10 @@ export interface ConnectGoogleDeps {
   log?: (msg: string, fields?: Record<string, unknown>) => void;
 }
 
-export type ConnectGoogleStarter = ConnectStarter;
+export type ConnectMicrosoftStarter = ConnectStarter;
 
-export function createConnectGoogle(deps: ConnectGoogleDeps): ConnectGoogleStarter {
-  return createConnectProvider({ provider: "google", ...deps });
+export function createConnectMicrosoft(
+  deps: ConnectMicrosoftDeps,
+): ConnectMicrosoftStarter {
+  return createConnectProvider({ provider: "microsoft", ...deps });
 }

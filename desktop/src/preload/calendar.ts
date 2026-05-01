@@ -6,6 +6,9 @@ export const calendarBridge: CalendarBridge = {
   connectGoogle(): Promise<CalendarConnectResult> {
     return ipcRenderer.invoke("calendar:connectGoogle") as Promise<CalendarConnectResult>;
   },
+  connectMicrosoft(): Promise<CalendarConnectResult> {
+    return ipcRenderer.invoke("calendar:connectMicrosoft") as Promise<CalendarConnectResult>;
+  },
   listAccounts(): Promise<ListCalendarAccountsResult> {
     return ipcRenderer.invoke("calendar:listAccounts") as Promise<ListCalendarAccountsResult>;
   },
