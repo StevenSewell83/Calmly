@@ -20,6 +20,8 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { AICleanupPanel } from "./AICleanupPanel";
+import { useAiTriage, type TriageCleanupResult } from "../../state/aiTriage";
 import { formatRelativePast } from "../../utils/time";
 import { MountainClimberIcon } from "../../components/MountainClimberIcon";
 import type { InboxItem } from "../../../preload/api-types";
@@ -106,7 +108,17 @@ export function Triage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [snoozeOpen, setSnoozeOpen] = useState(false);
   const [breakdownOpen, setBreakdownOpen] = useState(false);
+  const [aiPanelOpen, setAiPanelOpen] = useState(false);
   const titleInputRef = useRef<HTMLInputElement | null>(null);
+  const aiTriage = useAiTriage();
+  const [aiEnabled, setAiEnabled] = useState(false);
+
+  // Load AI enabled state once on mount
+  useEffect(() => {
+    void window.calmly.ai.getSettings().then((s) => {
+      setAiEnabled(s.enabled);
+    }).catch(() => {});
+  }, []);
 
   // Each new item resets form defaults. Title defaults to raw_text,
   // event times default to next round-hour / +1h. The reset is keyed
@@ -123,6 +135,8 @@ export function Triage() {
     setErrorMsg(null);
     setSnoozeOpen(false);
     setBreakdownOpen(false);
+    setAiPanelOpen(false);
+    aiTriage.reset();
     const start = nextRoundHour(Date.now());
     setEventStart(toLocalInputValue(start));
     setEventEnd(toLocalInputValue(start + 60 * 60 * 1000));
@@ -220,6 +234,28 @@ export function Triage() {
     const r = await window.calmly.inbox.skip(current.id);
     if (r.ok) await refresh();
   }, [current, refresh]);
+
+  const handleAiApplyAll = useCallback(
+    async (suggestion: TriageCleanupResult, suggestionId: string) => {
+      // Apply title from suggestion, then record outcome
+      setTitle(suggestion.title);
+      if (suggestion.type === "task") setType("task");
+      else if (suggestion.type === "event") setType("event");
+      await window.calmly.ai.recordOutcome(suggestionId, "accepted");
+      setAiPanelOpen(false);
+      aiTriage.reset();
+    },
+    [aiTriage],
+  );
+
+  const handleAiDiscard = useCallback(
+    async (suggestionId: string) => {
+      await window.calmly.ai.recordOutcome(suggestionId, "rejected");
+      setAiPanelOpen(false);
+      aiTriage.reset();
+    },
+    [aiTriage],
+  );
 
   const handleBreakdown = useCallback(
     async (parentTitle: string, subtasks: string[]) => {
@@ -494,6 +530,18 @@ export function Triage() {
                   icon={ListTree}
                   onClick={() => { setBreakdownOpen((v) => !v); setSnoozeOpen(false); }}
                 />
+                {aiEnabled && (
+                  <SecondaryAction
+                    label="AI cleanup"
+                    hint=""
+                    icon={Sparkles}
+                    onClick={() => {
+                      setAiPanelOpen((v) => !v);
+                      setSnoozeOpen(false);
+                      setBreakdownOpen(false);
+                    }}
+                  />
+                )}
               </span>
             </div>
 
@@ -501,6 +549,19 @@ export function Triage() {
               <SnoozeMenu
                 onPick={(untilMs) => void snooze(untilMs)}
                 onClose={() => setSnoozeOpen(false)}
+              />
+            ) : null}
+
+            {aiPanelOpen && current ? (
+              <AICleanupPanel
+                rawText={current.raw_text}
+                state={aiTriage.state}
+                onRun={() => void aiTriage.run(current.raw_text)}
+                onCancel={aiTriage.cancel}
+                onApplyAll={handleAiApplyAll}
+                onDiscard={handleAiDiscard}
+                onClose={() => { setAiPanelOpen(false); aiTriage.reset(); }}
+                aiEnabled={aiEnabled}
               />
             ) : null}
 

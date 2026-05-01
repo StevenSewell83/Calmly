@@ -2,13 +2,14 @@ import { SYSTEM_PREAMBLE } from "./system";
 import { z } from "zod";
 
 export const TriageCleanupInputSchema = z.object({
-  title: z.string(),
-  notes: z.string().optional(),
+  rawText: z.string(),
 });
 
 export const TriageCleanupOutputSchema = z.object({
+  type: z.enum(["task", "event", "someday"]),
   title: z.string(),
-  notes: z.string().optional(),
+  dueDate: z.string().optional(),
+  nextAction: z.string().optional(),
 });
 
 export type TriageCleanupInput = z.infer<typeof TriageCleanupInputSchema>;
@@ -21,12 +22,14 @@ export function buildTriageCleanupPrompts(input: TriageCleanupInput): {
   return {
     system: `${SYSTEM_PREAMBLE}
 
-Respond with JSON: { "title": string, "notes"?: string }
-- title: clean, action-oriented task title (max 80 chars)
-- notes: clarifying context if useful (optional)
-Do not add tasks that weren't implied. Do not be preachy.`,
-    user: `Clean up this task title so it's clear and actionable:
+Respond with JSON: { "type": "task"|"event"|"someday", "title": string, "dueDate"?: string, "nextAction"?: string }
+- type: "task" for actionable to-dos, "event" for scheduled calendar items, "someday" for vague future ideas
+- title: clean, action-oriented (max 80 chars)
+- dueDate: human-readable date string if implied (e.g. "Tomorrow", "Friday", "May 5"), omit if unclear
+- nextAction: single concrete physical next step (max 60 chars, starts with verb), omit for events
+No extra commentary. JSON only.`,
+    user: `Classify and clean up this inbox item:
 
-Title: ${input.title}${input.notes ? `\nNotes: ${input.notes}` : ""}`,
+"${input.rawText}"`,
   };
 }
