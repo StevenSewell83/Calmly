@@ -1,15 +1,58 @@
-import { useEffect, useState } from "react";
-import { Target } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Target, Sparkles } from "lucide-react";
 import type { PlanTaskItem } from "../../../preload/api-types";
 import { formatClock } from "../../utils/time";
 import { ActiveSession } from "./ActiveSession";
 import { AdHocStart } from "./AdHocStart";
 import { useFocusSession } from "./useFocusSession";
 import { EmptyState } from "../../components/EmptyState";
+import { MakeStartableModal, type MakeStartableResult } from "../../components/ai/MakeStartableModal";
+
+type MakeStartableModalState =
+  | { kind: "loading"; task: PlanTaskItem }
+  | { kind: "done"; task: PlanTaskItem; suggestionId: string; suggestion: MakeStartableResult }
+  | { kind: "error"; task: PlanTaskItem; message: string }
+  | null;
 
 export function Focus() {
   const { state, startFocus, endFocus, markDone, switchTask, refresh } = useFocusSession();
   const [adHocOpen, setAdHocOpen] = useState(false);
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const [makeStartable, setMakeStartable] = useState<MakeStartableModalState>(null);
+
+  useEffect(() => {
+    void window.calmly.ai.getSettings().then((s) => setAiEnabled(s.enabled)).catch(() => {});
+  }, []);
+
+  const handleMakeStartable = useCallback(async (task: PlanTaskItem) => {
+    setMakeStartable({ kind: "loading", task });
+    try {
+      const r = await window.calmly.ai.run("make_startable", { title: task.title, notes: task.notes ?? "" }, "task", task.id);
+      if (!r.ok) {
+        const msg = r.error.kind === "auth" ? "API key missing. Check Settings → AI."
+          : r.error.kind === "quota" ? "Rate limit. Try again shortly."
+          : r.error.kind === "network" ? "Network error."
+          : r.error.kind === "timeout" ? "Request timed out."
+          : "Unexpected response.";
+        setMakeStartable({ kind: "error", task, message: msg });
+        return;
+      }
+      const suggestion = r.value.result as MakeStartableResult;
+      setMakeStartable({ kind: "done", task, suggestionId: r.value.suggestionId, suggestion });
+    } catch {
+      setMakeStartable((s) => s ? { kind: "error", task: s.task, message: "Something went wrong." } : null);
+    }
+  }, []);
+
+  const handleApply = useCallback(async (result: MakeStartableResult, suggestionId: string, edited: boolean) => {
+    await window.calmly.ai.recordOutcome(suggestionId, edited ? "edited" : "accepted", edited ? result : undefined);
+    setMakeStartable(null);
+  }, []);
+
+  const handleReject = useCallback(async (suggestionId: string) => {
+    await window.calmly.ai.recordOutcome(suggestionId, "rejected");
+    setMakeStartable(null);
+  }, []);
 
   // Open ad-hoc input when hotkey fires from main process.
   useEffect(() => {
@@ -55,7 +98,13 @@ export function Focus() {
         {state.todayTasks.length > 0 && (
           <ul aria-label="Today's tasks" className="space-y-2">
             {state.todayTasks.map((t) => (
-              <TaskChooserRow key={t.id} task={t} onStart={() => void startFocus(t.id)} />
+              <TaskChooserRow
+                key={t.id}
+                task={t}
+                onStart={() => void startFocus(t.id)}
+                aiEnabled={aiEnabled}
+                onMakeStartable={() => void handleMakeStartable(t)}
+              />
             ))}
           </ul>
         )}
@@ -88,34 +137,65 @@ export function Focus() {
         </div>
       </div>
     </section>
+
+    {/* Make Startable modal */}
+    {makeStartable && (
+      <MakeStartableModal
+        taskId={makeStartable.task.id}
+        taskTitle={makeStartable.task.title}
+        taskNotes={makeStartable.task.notes}
+        state={makeStartable.kind === "loading"
+          ? { kind: "loading" }
+          : makeStartable.kind === "error"
+            ? { kind: "error", message: makeStartable.message }
+            : { kind: "done", suggestionId: makeStartable.suggestionId, suggestion: makeStartable.suggestion }}
+        onClose={() => setMakeStartable(null)}
+        onApply={handleApply}
+        onReject={handleReject}
+      />
+    )}
   );
 }
 
 interface RowProps {
   task: PlanTaskItem;
   onStart(): void;
+  aiEnabled: boolean;
+  onMakeStartable(): void;
 }
 
-function TaskChooserRow({ task, onStart }: RowProps) {
+function TaskChooserRow({ task, onStart, aiEnabled, onMakeStartable }: RowProps) {
   return (
     <li>
-      <button
-        onClick={onStart}
-        className="w-full text-left px-5 py-4 rounded-[1.8rem] bg-white border border-stone-100 shadow-sm hover:border-emerald-200 hover:shadow-md transition-all group"
-      >
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-stone-800 group-hover:text-emerald-700 truncate">{task.title}</p>
-            {task.scheduledStart !== null && (
-              <p className="text-xs text-stone-400 mt-0.5">{formatClock(task.scheduledStart)}</p>
-            )}
+      <div className="group flex items-center gap-2 px-5 py-4 rounded-[1.8rem] bg-white border border-stone-100 shadow-sm hover:border-emerald-200 hover:shadow-md transition-all">
+        <button
+          onClick={onStart}
+          className="flex-1 text-left min-w-0"
+        >
+          <div className="flex items-center gap-4">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-stone-800 group-hover:text-emerald-700 truncate">{task.title}</p>
+              {task.scheduled_start !== null && (
+                <p className="text-xs text-stone-400 mt-0.5">{formatClock(task.scheduled_start)}</p>
+              )}
+            </div>
+            <span className="shrink-0 inline-flex items-center gap-1 text-xs text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Target className="w-3.5 h-3.5" />
+              Start
+            </span>
           </div>
-          <span className="shrink-0 inline-flex items-center gap-1 text-xs text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Target className="w-3.5 h-3.5" />
-            Start
-          </span>
-        </div>
-      </button>
+        </button>
+        {aiEnabled && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onMakeStartable(); }}
+            title="Make Startable"
+            className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 w-7 h-7 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-600 flex items-center justify-center"
+          >
+            <Sparkles size={13} />
+          </button>
+        )}
+      </div>
     </li>
   );
 }

@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
-import { CheckCircle2, ArrowLeftRight, Square, AlertCircle, RefreshCw } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { CheckCircle2, ArrowLeftRight, Square, AlertCircle, RefreshCw, Sparkles } from "lucide-react";
 import type { FocusSessionItem, PlanTaskItem } from "../../../preload/api-types";
 import { SwitchTaskPicker } from "./SwitchTaskPicker";
 import { StuckPrompts } from "./StuckPrompts";
 import { ReplanModal } from "../../components/Replan/ReplanModal";
+import { MakeStartableModal, type MakeStartableResult } from "../../components/ai/MakeStartableModal";
 
 interface Props {
   session: FocusSessionItem;
@@ -26,12 +27,49 @@ function useElapsed(startedAt: number): string {
   return `${Math.floor(mins / 60)}h ${mins % 60}m`;
 }
 
+type MakeStartableState =
+  | { kind: "loading" }
+  | { kind: "done"; suggestionId: string; suggestion: MakeStartableResult }
+  | { kind: "error"; message: string }
+  | null;
+
 export function ActiveSession({ session, task, todayTasks, onMarkDone, onEnd, onSwitch }: Props) {
   const [switchOpen, setSwitchOpen] = useState(false);
   const [stuckSessionId, setStuckSessionId] = useState<string | null>(null);
   const [replanOpen, setReplanOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const [msState, setMsState] = useState<MakeStartableState>(null);
   const elapsed = useElapsed(session.started_at);
+
+  useEffect(() => {
+    void window.calmly.ai.getSettings().then((s) => setAiEnabled(s.enabled)).catch(() => {});
+  }, []);
+
+  const handleMakeStartable = useCallback(async () => {
+    if (!task) return;
+    setMsState({ kind: "loading" });
+    try {
+      const r = await window.calmly.ai.run("make_startable", { title: task.title, notes: task.notes ?? "" }, "task", task.id);
+      if (!r.ok) {
+        setMsState({ kind: "error", message: r.error.kind === "auth" ? "API key missing." : "AI error — try again." });
+        return;
+      }
+      setMsState({ kind: "done", suggestionId: r.value.suggestionId, suggestion: r.value.result as MakeStartableResult });
+    } catch {
+      setMsState({ kind: "error", message: "Something went wrong." });
+    }
+  }, [task]);
+
+  const handleApply = useCallback(async (result: MakeStartableResult, suggestionId: string, edited: boolean) => {
+    await window.calmly.ai.recordOutcome(suggestionId, edited ? "edited" : "accepted", edited ? result : undefined);
+    setMsState(null);
+  }, []);
+
+  const handleReject = useCallback(async (suggestionId: string) => {
+    await window.calmly.ai.recordOutcome(suggestionId, "rejected");
+    setMsState(null);
+  }, []);
 
   const run = async (fn: () => Promise<void>) => {
     setBusy(true);
@@ -110,6 +148,17 @@ export function ActiveSession({ session, task, todayTasks, onMarkDone, onEnd, on
           <RefreshCw className="w-3.5 h-3.5" />
           Replan
         </button>
+        {aiEnabled && task && (
+          <button
+            onClick={() => void handleMakeStartable()}
+            disabled={busy || msState?.kind === "loading"}
+            aria-label="Make Startable"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl border border-emerald-200 text-emerald-700 hover:bg-emerald-50 disabled:opacity-50 text-xs font-medium transition-colors"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            Make Startable
+          </button>
+        )}
       </div>
 
       {switchOpen && (
@@ -122,6 +171,18 @@ export function ActiveSession({ session, task, todayTasks, onMarkDone, onEnd, on
       )}
 
       <ReplanModal open={replanOpen} onClose={() => setReplanOpen(false)} />
+
+      {msState && task && (
+        <MakeStartableModal
+          taskId={task.id}
+          taskTitle={task.title}
+          taskNotes={task.notes}
+          state={msState}
+          onClose={() => setMsState(null)}
+          onApply={handleApply}
+          onReject={handleReject}
+        />
+      )}
 
       {stuckSessionId && (
         <StuckPrompts
