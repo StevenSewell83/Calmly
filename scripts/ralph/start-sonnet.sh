@@ -19,4 +19,7 @@ echo "[sonnet] worktree: $WT"
 echo "[sonnet] model:    claude-sonnet-4-6"
 echo "[sonnet] starting ralph loop (Ctrl+C to stop)"
 # --no-continue: see start-opus.sh for rationale (shared ~/.claude/).
-exec ralph --no-continue --calls 60 --timeout 30 --backup --live
+# --timeout 15: lowered from 30 to mitigate ralph's productive-timeout-handler
+# crash that killed sonnet twice on big iterations (see beads bug, 2026-05-01).
+# Smaller timeouts force decomposition before iterations get big enough to trip it.
+exec ralph --no-continue --calls 60 --timeout 15 --backup --live
