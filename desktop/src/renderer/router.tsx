@@ -15,6 +15,7 @@ import { SettingsAi } from "./pages/Settings/Ai";
 import { SettingsAppearance } from "./pages/Settings/Appearance";
 import { SettingsShortcuts } from "./pages/Settings/Shortcuts";
 import { SettingsData } from "./pages/Settings/Data";
+import { SettingsPrivacy } from "./pages/Settings/Privacy";
 
 const routes: RouteObject[] = [
   {
@@ -39,6 +40,7 @@ const routes: RouteObject[] = [
           { path: "ai", element: <SettingsAi /> },
           { path: "appearance", element: <SettingsAppearance /> },
           { path: "shortcuts", element: <SettingsShortcuts /> },
+          { path: "privacy", element: <SettingsPrivacy /> },
           { path: "data", element: <SettingsData /> },
         ],
       },

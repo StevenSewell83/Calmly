@@ -20,6 +20,7 @@ import { registerSettingsIpc } from "../ipc/settings";
 import { registerSearchIpc } from "../ipc/search";
 import { registerAiSettingsIpc } from "../ipc/aiSettings";
 import { registerAiIpc } from "../ipc/ai";
+import { registerCrashIpc } from "../ipc/crash";
 
 export interface RegisterAllIpcDeps {
   apiClient: ApiClient;
@@ -55,4 +56,5 @@ export function registerAllIpc(
   });
   registerAiSettingsIpc();
   registerAiIpc();
+  registerCrashIpc();
 }

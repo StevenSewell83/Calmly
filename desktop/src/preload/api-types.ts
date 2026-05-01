@@ -511,6 +511,23 @@ export interface SettingsBridge {
   reindexSearch(): Promise<void>;
 }
 
+export interface CrashReportMeta {
+  path: string;
+  sizeBytes: number;
+  modifiedAt: number;
+}
+
+export interface CrashStatus {
+  enabled: boolean;
+  restartRequired: boolean;
+  lastReportMeta: CrashReportMeta | null;
+}
+
+export interface CrashBridge {
+  getStatus(): Promise<CrashStatus>;
+  setEnabled(enabled: boolean): Promise<void>;
+}
+
 // Calendar OAuth bridge (CAL-01 / CAL-02 / CAL-03). connectGoogle and
 // connectMicrosoft open the user's browser, wait for the calmly://
 // deep-link, and persist the refresh token in the F-12 secret store. The
@@ -633,4 +650,5 @@ export interface CalmlyApi {
   search: SearchBridge;
   calendar: CalendarBridge;
   ai: AiBridge;
+  crash: CrashBridge;
 }

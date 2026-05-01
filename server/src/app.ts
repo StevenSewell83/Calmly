@@ -10,6 +10,7 @@ import { microsoftOAuthPlugin } from "./routes/oauth/microsoft";
 import { healthRoute } from "./routes/health";
 import { versionRoute } from "./routes/version";
 import { telemetryRoute } from "./routes/telemetry";
+import { crashRoute } from "./routes/crash";
 import { syncRoutes } from "./sync/routes";
 import { initBot, telegramPlugin, loadTelegramConfig } from "./telegram";
 import { telegramLinkingRoutes } from "./telegram/linkingRoutes";
@@ -72,6 +73,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(healthRoute);
   await app.register(versionRoute);
   await app.register(telemetryRoute);
+  await app.register(crashRoute);
   const email = deps.email ?? selectEmailSender(deps.config, app.log);
   await app.register(authRoutesPlugin({ email }));
   await app.register(syncRoutes);

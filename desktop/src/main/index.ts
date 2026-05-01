@@ -23,6 +23,7 @@ import { runSearchBackfill } from "./search/backfill";
 import { createCalendarRefresh } from "./calendar/refresh";
 import { startCalendarImportWorker, stopCalendarImportWorker } from "./calendar/importWorker";
 import { startTelemetryWorker, stopTelemetryWorker } from "./telemetry";
+import { initCrashReporting } from "./crash";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -60,6 +61,7 @@ if (!gotInstanceLock) {
 
   app.whenReady().then(() => {
     const dbInfo = initDb();
+    initCrashReporting();
     console.log(
       `[calmly:db] open path=${dbInfo.path} version=${dbInfo.version} appliedNow=[${dbInfo.appliedNow.join(",")}]`,
     );

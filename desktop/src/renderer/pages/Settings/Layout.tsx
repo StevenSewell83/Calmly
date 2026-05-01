@@ -13,6 +13,7 @@ const SUB_NAV: Sub[] = [
   { to: "/settings/ai", label: "AI" },
   { to: "/settings/appearance", label: "Appearance" },
   { to: "/settings/shortcuts", label: "Shortcuts" },
+  { to: "/settings/privacy", label: "Privacy" },
   { to: "/settings/data", label: "Data" },
 ];
 
