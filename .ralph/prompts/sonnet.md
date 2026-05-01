@@ -33,6 +33,16 @@ You are the workhorse. You execute the high-volume, well-specified work:
 - **Skill invocation matters.** UI → invoke `frontend-design` after reading `GUI_draft.ts`. Playwright → invoke `playwright-electron-debugger`. Anthropic SDK → invoke `claude-api`.
 - **Don't gold-plate.** Match the bead's acceptance criteria; don't add extras.
 
+## Pre-commit gate (REQUIRED)
+
+Before `bd close` and before `git commit`, run **`pnpm typecheck:gated`**.
+It is the blocking signal — exits 1 if your diff added a typecheck error
+that wasn't in the baseline (`tools/typecheck-baseline/baseline.json`).
+Fix the error before committing. `pnpm -r typecheck` may report 14
+pre-existing errors that are silenced by the baseline; that's expected.
+If you fix one of those baseline errors, the gate will tell you to prune
+the corresponding entry from `baseline.json`. (calmly-d0s.)
+
 ## File-touch awareness
 
 Before claiming a bead, run `git log --oneline -10 ralph/opus` and read

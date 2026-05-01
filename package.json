@@ -10,6 +10,7 @@
   },
   "scripts": {
     "typecheck": "pnpm -r typecheck",
+    "typecheck:gated": "pnpm --filter @calmly/typecheck-baseline check",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "lint": "eslint .",

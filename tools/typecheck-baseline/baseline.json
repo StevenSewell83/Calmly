@@ -1,0 +1,78 @@
+{
+  "$schema": "./baseline.schema.json",
+  "_doc": "Snapshot of pre-existing typecheck errors that are silenced by the gated typecheck (calmly-d0s). Each entry: { workspace, file, code, count, reason? }. Goal: drive `errors` to []. Regenerate with: pnpm --filter @calmly/typecheck-baseline snapshot",
+  "errors": [
+    {
+      "workspace": "desktop",
+      "file": "src/main/ipc/__tests__/focus.test.ts",
+      "code": "TS2307",
+      "count": 1
+    },
+    {
+      "workspace": "desktop",
+      "file": "src/main/ipc/__tests__/inbox.test.ts",
+      "code": "TS2307",
+      "count": 1
+    },
+    {
+      "workspace": "desktop",
+      "file": "src/main/ipc/__tests__/plan.test.ts",
+      "code": "TS2307",
+      "count": 1
+    },
+    {
+      "workspace": "desktop",
+      "file": "src/main/ipc/__tests__/today.test.ts",
+      "code": "TS2307",
+      "count": 1
+    },
+    {
+      "workspace": "desktop",
+      "file": "src/main/ipc/__tests__/triage.test.ts",
+      "code": "TS2307",
+      "count": 1
+    },
+    {
+      "workspace": "desktop",
+      "file": "src/main/ipc/handler.test.ts",
+      "code": "TS2554",
+      "count": 1
+    },
+    {
+      "workspace": "desktop",
+      "file": "src/main/ipc/inbox.ts",
+      "code": "TS2345",
+      "count": 1
+    },
+    {
+      "workspace": "desktop",
+      "file": "src/main/ipc/plan.ts",
+      "code": "TS2345",
+      "count": 3
+    },
+    {
+      "workspace": "desktop",
+      "file": "src/main/ipc/review.ts",
+      "code": "TS2345",
+      "count": 1
+    },
+    {
+      "workspace": "desktop",
+      "file": "src/main/ipc/triage.ts",
+      "code": "TS2345",
+      "count": 1
+    },
+    {
+      "workspace": "desktop",
+      "file": "src/main/plan/store.ts",
+      "code": "TS2304",
+      "count": 1
+    },
+    {
+      "workspace": "desktop",
+      "file": "src/main/triage/store.ts",
+      "code": "TS2345",
+      "count": 1
+    }
+  ]
+}

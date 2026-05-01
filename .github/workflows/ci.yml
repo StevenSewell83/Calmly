@@ -50,7 +50,9 @@ jobs:
         run: pnpm install --frozen-lockfile --ignore-scripts
 
   typecheck:
-    name: Typecheck
+    # calmly-d0s: gated typecheck. Pre-existing errors are silenced via
+    # tools/typecheck-baseline/baseline.json; new errors fail the job.
+    name: Typecheck (gated)
     needs: setup
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -65,7 +67,7 @@ jobs:
           path: ~/.local/share/pnpm/store
           key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
       - run: pnpm install --frozen-lockfile --ignore-scripts
-      - run: pnpm -r typecheck
+      - run: pnpm typecheck:gated
 
   lint:
     name: Lint

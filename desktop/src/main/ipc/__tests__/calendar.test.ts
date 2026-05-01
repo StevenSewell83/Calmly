@@ -109,7 +109,7 @@ function setup(args: {
 }
 
 const noopClient: ApiClient = {
-  request: vi.fn(async () => ({ status: 200, body: {} })),
+  request: vi.fn(async () => ({ status: 200, body: {} })) as unknown as ApiClient["request"],
 };
 
 describe("calendar:disconnect", () => {

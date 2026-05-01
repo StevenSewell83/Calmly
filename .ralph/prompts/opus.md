@@ -29,6 +29,11 @@ You handle the work where getting the design right matters more than throughput:
 - **Decompose aggressively.** If a P0 bead has more than ~3 hours of work in it, split into sub-beads with `bd create` + `bd dep add`. The sonnet worker will pick up implementation children.
 - **Don't write throwaway code.** Other beads will build on yours.
 - **Audit your own diff before closing.** Before `bd close`, run:
+  - `pnpm typecheck:gated` — this is the BLOCKING gate. It fails on any
+    new typecheck error vs the baseline. Do NOT commit if it exits non-zero;
+    fix the error first. (calmly-d0s — `pnpm -r typecheck` reports
+    pre-existing errors that are silenced by the baseline; the gated form
+    is what counts.)
   - `wc -l <files-you-touched>` — any > 300 LOC? File a split issue and
     leave the bead in_progress until the split lands.
   - `Grep` for any new helper / hook / row-type name you introduced — 2+
