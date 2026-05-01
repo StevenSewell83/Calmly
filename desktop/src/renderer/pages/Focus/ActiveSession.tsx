@@ -27,10 +27,12 @@ function useElapsed(startedAt: number): string {
   return `${Math.floor(mins / 60)}h ${mins % 60}m`;
 }
 
+import type { AIError } from "../../../preload/api-types";
+
 type MakeStartableState =
   | { kind: "loading" }
   | { kind: "done"; suggestionId: string; suggestion: MakeStartableResult }
-  | { kind: "error"; message: string }
+  | { kind: "error"; error: AIError }
   | null;
 
 export function ActiveSession({ session, task, todayTasks, onMarkDone, onEnd, onSwitch }: Props) {
@@ -52,12 +54,12 @@ export function ActiveSession({ session, task, todayTasks, onMarkDone, onEnd, on
     try {
       const r = await window.calmly.ai.run("make_startable", { title: task.title, notes: task.notes ?? "" }, "task", task.id);
       if (!r.ok) {
-        setMsState({ kind: "error", message: r.error.kind === "auth" ? "API key missing." : "AI error — try again." });
+        setMsState({ kind: "error", error: r.error });
         return;
       }
       setMsState({ kind: "done", suggestionId: r.value.suggestionId, suggestion: r.value.result as MakeStartableResult });
     } catch {
-      setMsState({ kind: "error", message: "Something went wrong." });
+      setMsState({ kind: "error", error: { kind: "unknown" } });
     }
   }, [task]);
 

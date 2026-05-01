@@ -21,10 +21,12 @@ type Status =
   | { kind: "captured"; truncated: boolean }
   | { kind: "error"; message: string };
 
+import type { AIError } from "../../preload/api-types";
+
 type SplitModalState =
   | { kind: "loading" }
   | { kind: "done"; suggestionId: string; items: SplitItem[] }
-  | { kind: "error"; message: string }
+  | { kind: "error"; error: AIError }
   | null;
 
 // Persistent quick-capture input. Renders inside AppShell at the top of
@@ -108,17 +110,13 @@ export function CaptureBar() {
     try {
       const r = await window.calmly.ai.run("brain_dump_split", { text: trimmed });
       if (!r.ok) {
-        const msg = r.error.kind === "auth" ? "API key missing. Check Settings → AI."
-          : r.error.kind === "quota" ? "Rate limit. Try again shortly."
-          : r.error.kind === "network" ? "Network error."
-          : "AI returned unexpected response.";
-        setSplitModal({ kind: "error", message: msg });
+        setSplitModal({ kind: "error", error: r.error });
         return;
       }
       const result = r.value.result as { tasks: SplitItem[] };
       setSplitModal({ kind: "done", suggestionId: r.value.suggestionId, items: result.tasks });
     } catch {
-      setSplitModal({ kind: "error", message: "Something went wrong. Try again." });
+      setSplitModal({ kind: "error", error: { kind: "unknown" } });
     }
   }, [text]);
 

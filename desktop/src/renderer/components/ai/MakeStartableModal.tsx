@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import { Sparkles, X, Check, Pencil, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
+import { Sparkles, X, Check, Pencil, CheckCircle2, Loader2 } from "lucide-react";
+import { AIFailureBanner } from "./AIFailureBanner";
+import type { AIError } from "../../../../preload/api-types";
 
 export type MakeStartableResult = {
   firstStep: string;
@@ -9,7 +11,7 @@ export type MakeStartableResult = {
 type ModalState =
   | { kind: "loading" }
   | { kind: "done"; suggestionId: string; suggestion: MakeStartableResult }
-  | { kind: "error"; message: string };
+  | { kind: "error"; error: AIError };
 
 interface MakeStartableModalProps {
   taskId: string;
@@ -111,10 +113,10 @@ export function MakeStartableModal({
 
         {/* Error */}
         {state.kind === "error" && (
-          <div className="flex items-start gap-2 py-2">
-            <AlertCircle size={14} className="text-rose-500 mt-0.5 shrink-0" />
-            <p className="text-sm text-rose-600">{state.message}</p>
-          </div>
+          <AIFailureBanner
+            error={state.error}
+            onDismiss={onClose}
+          />
         )}
 
         {/* Result */}

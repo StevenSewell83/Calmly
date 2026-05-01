@@ -4,11 +4,12 @@ import {
   CheckCircle2,
   X,
   Loader2,
-  AlertCircle,
   Check,
   Pencil,
 } from "lucide-react";
 import type { TriageCleanupResult } from "../../state/aiTriage";
+import { AIFailureBanner } from "../../components/ai/AIFailureBanner";
+import type { AIError } from "../../../../preload/api-types";
 
 interface AICleanupPanelProps {
   rawText: string;
@@ -16,7 +17,7 @@ interface AICleanupPanelProps {
     | { kind: "idle" }
     | { kind: "loading" }
     | { kind: "done"; suggestionId: string; suggestion: TriageCleanupResult }
-    | { kind: "error"; message: string };
+    | { kind: "error"; error: AIError };
   onRun: () => void;
   onCancel: () => void;
   onApplyAll: (suggestion: TriageCleanupResult, suggestionId: string) => Promise<void>;
@@ -149,19 +150,11 @@ export function AICleanupPanel({
       )}
 
       {state.kind === "error" && (
-        <div className="flex items-start gap-2">
-          <AlertCircle size={14} className="text-rose-500 mt-0.5 shrink-0" />
-          <div className="flex-1">
-            <p className="text-xs text-rose-600">{state.message}</p>
-            <button
-              type="button"
-              onClick={onRun}
-              className="mt-2 text-xs text-stone-500 hover:text-stone-700 underline underline-offset-2"
-            >
-              Try again
-            </button>
-          </div>
-        </div>
+        <AIFailureBanner
+          error={state.error}
+          onRetry={onRun}
+          onDismiss={onClose}
+        />
       )}
 
       {state.kind === "done" && merged && (

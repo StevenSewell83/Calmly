@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-  Sparkles, X, CheckCircle2, Loader2, AlertCircle, ChevronDown, ChevronUp,
+  Sparkles, X, CheckCircle2, Loader2, ChevronDown, ChevronUp,
 } from "lucide-react";
+import { AIFailureBanner } from "./AIFailureBanner";
+import type { AIError } from "../../../../preload/api-types";
 
 export type SplitItem = {
   title: string;
@@ -11,7 +13,7 @@ export type SplitItem = {
 type ModalState =
   | { kind: "loading" }
   | { kind: "done"; suggestionId: string; items: SplitItem[] }
-  | { kind: "error"; message: string };
+  | { kind: "error"; error: AIError };
 
 interface BrainDumpSplitModalProps {
   state: ModalState;
@@ -110,9 +112,8 @@ export function BrainDumpSplitModal({ state, onClose, onConfirm }: BrainDumpSpli
           )}
 
           {state.kind === "error" && (
-            <div className="flex items-start gap-2 py-4">
-              <AlertCircle size={14} className="text-rose-500 mt-0.5 shrink-0" />
-              <p className="text-sm text-rose-600">{state.message}</p>
+            <div className="py-2">
+              <AIFailureBanner error={state.error} onDismiss={onClose} />
             </div>
           )}
 

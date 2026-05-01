@@ -8,10 +8,12 @@ import { useFocusSession } from "./useFocusSession";
 import { EmptyState } from "../../components/EmptyState";
 import { MakeStartableModal, type MakeStartableResult } from "../../components/ai/MakeStartableModal";
 
+import type { AIError } from "../../../preload/api-types";
+
 type MakeStartableModalState =
   | { kind: "loading"; task: PlanTaskItem }
   | { kind: "done"; task: PlanTaskItem; suggestionId: string; suggestion: MakeStartableResult }
-  | { kind: "error"; task: PlanTaskItem; message: string }
+  | { kind: "error"; task: PlanTaskItem; error: AIError }
   | null;
 
 export function Focus() {
@@ -29,18 +31,13 @@ export function Focus() {
     try {
       const r = await window.calmly.ai.run("make_startable", { title: task.title, notes: task.notes ?? "" }, "task", task.id);
       if (!r.ok) {
-        const msg = r.error.kind === "auth" ? "API key missing. Check Settings → AI."
-          : r.error.kind === "quota" ? "Rate limit. Try again shortly."
-          : r.error.kind === "network" ? "Network error."
-          : r.error.kind === "timeout" ? "Request timed out."
-          : "Unexpected response.";
-        setMakeStartable({ kind: "error", task, message: msg });
+        setMakeStartable({ kind: "error", task, error: r.error });
         return;
       }
       const suggestion = r.value.result as MakeStartableResult;
       setMakeStartable({ kind: "done", task, suggestionId: r.value.suggestionId, suggestion });
     } catch {
-      setMakeStartable((s) => s ? { kind: "error", task: s.task, message: "Something went wrong." } : null);
+      setMakeStartable((s) => s ? { kind: "error", task: s.task, error: { kind: "unknown" } } : null);
     }
   }, []);
 
@@ -147,7 +144,7 @@ export function Focus() {
         state={makeStartable.kind === "loading"
           ? { kind: "loading" }
           : makeStartable.kind === "error"
-            ? { kind: "error", message: makeStartable.message }
+            ? { kind: "error", error: makeStartable.error }
             : { kind: "done", suggestionId: makeStartable.suggestionId, suggestion: makeStartable.suggestion }}
         onClose={() => setMakeStartable(null)}
         onApply={handleApply}

@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from "react";
+import type { AIError } from "../../../preload/api-types";
 
 export type TriageCleanupResult = {
   type: "task" | "event" | "someday";
@@ -11,7 +12,7 @@ export type AITriageState =
   | { kind: "idle" }
   | { kind: "loading" }
   | { kind: "done"; suggestionId: string; suggestion: TriageCleanupResult }
-  | { kind: "error"; message: string };
+  | { kind: "error"; error: AIError };
 
 export function useAiTriage() {
   const [state, setState] = useState<AITriageState>({ kind: "idle" });
@@ -29,8 +30,7 @@ export function useAiTriage() {
       if (ctrl.signal.aborted) return;
 
       if (!result.ok) {
-        const msg = errorMessage(result.error.kind);
-        setState({ kind: "error", message: msg });
+        setState({ kind: "error", error: result.error });
         return;
       }
 
@@ -41,7 +41,7 @@ export function useAiTriage() {
       });
     } catch {
       if (!ctrl.signal.aborted) {
-        setState({ kind: "error", message: "Something went wrong. Try again." });
+        setState({ kind: "error", error: { kind: "unknown" } });
       }
     }
   }, []);
@@ -57,14 +57,4 @@ export function useAiTriage() {
   }, []);
 
   return { state, run, cancel, reset };
-}
-
-function errorMessage(kind: string): string {
-  switch (kind) {
-    case "auth": return "API key is missing or invalid. Check Settings → AI.";
-    case "quota": return "Rate limit reached. Try again in a moment.";
-    case "network": return "Network error. Check your connection.";
-    case "timeout": return "Request timed out. Try again.";
-    default: return "AI returned an unexpected response. Try again.";
-  }
 }
