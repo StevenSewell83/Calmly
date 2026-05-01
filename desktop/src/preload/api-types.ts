@@ -599,8 +599,10 @@ export type AIError =
   | { kind: "unknown"; cause?: unknown };
 
 export type AIRunResult =
-  | { ok: true; value: { action: AIAction; result: unknown } }
+  | { ok: true; value: { action: AIAction; result: unknown; suggestionId: string } }
   | { ok: false; error: AIError };
+
+export type SuggestionOutcome = "accepted" | "rejected" | "edited";
 
 export interface AiBridge {
   getSettings(): Promise<AiSettings>;
@@ -609,7 +611,8 @@ export interface AiBridge {
   setKey(value: string): Promise<{ ok: boolean; error?: string }>;
   clearKey(): Promise<boolean>;
   testConnection(): Promise<AiTestResult>;
-  run(action: AIAction, payload: Record<string, unknown>): Promise<AIRunResult>;
+  run(action: AIAction, payload: Record<string, unknown>, ownerType?: string, ownerId?: string): Promise<AIRunResult>;
+  recordOutcome(suggestionId: string, outcome: SuggestionOutcome, editedJson?: unknown): Promise<{ ok: boolean; error?: string }>;
 }
 
 export interface CalmlyApi {

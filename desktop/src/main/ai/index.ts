@@ -1,12 +1,14 @@
 import { z } from "zod";
 import { secretStore } from "../security/secretStore";
 import { AnthropicProvider } from "./providers/anthropic";
-import type { AIAction, AIRequest, AIResponse, AIError, Result } from "./types";
+import type { AIAction, AIRequest, AIError, Result } from "./types";
 import { buildTriageCleanupPrompts, TriageCleanupOutputSchema } from "./prompts/triageCleanup";
 import { buildMakeStartablePrompts, MakeStartableOutputSchema } from "./prompts/makeStartable";
 import { buildBrainDumpSplitPrompts, BrainDumpSplitOutputSchema } from "./prompts/brainDumpSplit";
+import { recordPending, type OwnerType } from "./persistence";
 
 const ANTHROPIC_KEY = "ai.anthropic.key";
+const MODEL_ID = "claude-haiku-4-5-20251001";
 
 const ACTION_SCHEMAS: Record<AIAction, z.ZodTypeAny> = {
   triage_cleanup: TriageCleanupOutputSchema,
@@ -14,7 +16,18 @@ const ACTION_SCHEMAS: Record<AIAction, z.ZodTypeAny> = {
   brain_dump_split: BrainDumpSplitOutputSchema,
 };
 
-export async function runAI(req: AIRequest): Promise<Result<AIResponse>> {
+export interface AIRunOptions {
+  ownerType?: OwnerType;
+  ownerId?: string;
+}
+
+export interface AIRunResponse {
+  action: AIAction;
+  result: unknown;
+  suggestionId: string;
+}
+
+export async function runAI(req: AIRequest, opts?: AIRunOptions): Promise<Result<AIRunResponse>> {
   const key = secretStore.get(ANTHROPIC_KEY);
   if (!key) return { ok: false, error: { kind: "auth" } };
 
@@ -47,7 +60,15 @@ export async function runAI(req: AIRequest): Promise<Result<AIResponse>> {
     return { ok: false, error: { kind: "invalid_response", raw: raw.value } };
   }
 
-  return { ok: true, value: { action: req.action, result: validation.data } };
+  const suggestionId = recordPending({
+    ownerType: opts?.ownerType,
+    ownerId: opts?.ownerId,
+    model: MODEL_ID,
+    promptClass: req.action,
+    suggestionJson: validation.data,
+  });
+
+  return { ok: true, value: { action: req.action, result: validation.data, suggestionId } };
 }
 
-export type { AIAction, AIRequest, AIResponse, AIError, Result };
+export type { AIAction, AIRequest, AIError, Result };

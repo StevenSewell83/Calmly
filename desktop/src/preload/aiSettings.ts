@@ -20,7 +20,10 @@ export const aiSettingsBridge: AiBridge = {
   testConnection() {
     return ipcRenderer.invoke("ai:testConnection") as ReturnType<AiBridge["testConnection"]>;
   },
-  run(action, payload) {
-    return ipcRenderer.invoke("ai:run", action, payload) as ReturnType<AiBridge["run"]>;
+  run(action, payload, ownerType?, ownerId?) {
+    return ipcRenderer.invoke("ai:run", action, payload, ownerType, ownerId) as ReturnType<AiBridge["run"]>;
+  },
+  recordOutcome(suggestionId, outcome, editedJson?) {
+    return ipcRenderer.invoke("ai:recordOutcome", suggestionId, outcome, editedJson) as ReturnType<AiBridge["recordOutcome"]>;
   },
 };
