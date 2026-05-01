@@ -26,4 +26,7 @@ export const aiSettingsBridge: AiBridge = {
   recordOutcome(suggestionId, outcome, editedJson?) {
     return ipcRenderer.invoke("ai:recordOutcome", suggestionId, outcome, editedJson) as ReturnType<AiBridge["recordOutcome"]>;
   },
+  getUsage() {
+    return ipcRenderer.invoke("ai:getUsage") as ReturnType<AiBridge["getUsage"]>;
+  },
 };

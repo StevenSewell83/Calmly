@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Brain, Eye, EyeOff, CheckCircle, XCircle, Loader2, Info } from "lucide-react";
 import type { AiSettings, AiTestResult } from "../../../preload/api-types";
+import { AIUsagePanel } from "./AIUsagePanel";
 
 type KeyState =
   | { kind: "unknown" }
@@ -229,6 +230,9 @@ export function SettingsAi() {
           </div>
         </div>
       </div>
+
+      {/* Usage panel */}
+      <AIUsagePanel />
 
       {/* API key management */}
       <div className="bg-white border border-stone-100 rounded-[1.8rem] p-6 shadow-sm">

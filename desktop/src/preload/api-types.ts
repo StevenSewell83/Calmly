@@ -615,6 +615,16 @@ export interface AiBridge {
   testConnection(): Promise<AiTestResult>;
   run(action: AIAction, payload: Record<string, unknown>, ownerType?: string, ownerId?: string): Promise<AIRunResult>;
   recordOutcome(suggestionId: string, outcome: SuggestionOutcome, editedJson?: unknown): Promise<{ ok: boolean; error?: string }>;
+  getUsage(): Promise<{
+    ok: boolean;
+    usage?: {
+      totalRequests: number;
+      totalInputTokens: number;
+      totalOutputTokens: number;
+      byPromptClass: Record<string, { requests: number; inputTokens: number; outputTokens: number }>;
+    };
+    rateLimiter?: { suspended: boolean; suspendedUntilMs: number };
+  }>;
 }
 
 export interface CalmlyApi {
