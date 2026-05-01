@@ -38,6 +38,7 @@ import { usePlanForDay, type PlanData } from "./usePlanForDay";
 import { ReplanModal } from "../../components/Replan/ReplanModal";
 import { usePlanShortcuts } from "../../hooks/usePlanShortcuts";
 import { EmptyState } from "../../components/EmptyState";
+import { CalendarReauthBanner } from "../../components/CalendarReauthBanner";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -251,6 +252,8 @@ export function Plan() {
           />
         </div>
       </header>
+
+      <CalendarReauthBanner />
 
       <PageStateView<PlanData>
         state={state}
