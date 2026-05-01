@@ -2,10 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { EmptyState } from "../../components/EmptyState";
+import { PageStateView } from "../../components/PageStateView";
 import { InboxRow } from "./InboxRow";
 import {
   sortInboxItems,
   useInboxList,
+  type InboxListData,
   type InboxSortMode,
 } from "./useInboxList";
 
@@ -25,7 +27,8 @@ export function Inbox() {
   const rowRefs = useRef<Map<string, HTMLLIElement>>(new Map());
 
   const items = useMemo(
-    () => (state.kind === "ready" ? sortInboxItems(state.items, sortMode) : []),
+    () =>
+      state.kind === "ready" ? sortInboxItems(state.data.items, sortMode) : [],
     [state, sortMode],
   );
 
@@ -135,48 +138,52 @@ export function Inbox() {
         <SortToggle value={sortMode} onChange={setSortMode} />
 
         <div className="mt-5">
-          {state.kind === "loading" ? (
-            <LoadingShell />
-          ) : state.kind === "signed-out" ? (
-            <FailureNotice
-              title="You're signed out."
-              body="Sign in to see your inbox."
-            />
-          ) : state.kind === "error" ? (
-            <FailureNotice title="Something hiccuped." body={state.message} />
-          ) : items.length === 0 ? (
-            <EmptyState
-                name="inbox-clear"
-                title="Inbox clear."
-                body="Anything you capture will land here."
-                primaryAction={{ label: "Back to Home", onClick: () => navigate("/") }}
-              />
-          ) : (
-            <ul role="listbox" aria-label="Inbox items" className="flex flex-col gap-2">
-              {items.map((it) => (
-                <InboxRow
-                  key={it.id}
-                  ref={(el) => {
-                    if (el) rowRefs.current.set(it.id, el);
-                    else rowRefs.current.delete(it.id);
+          <PageStateView<InboxListData>
+            state={state}
+            signedOutBody="Sign in to see your inbox."
+            ready={() =>
+              items.length === 0 ? (
+                <EmptyState
+                  name="inbox-clear"
+                  title="Inbox clear."
+                  body="Anything you capture will land here."
+                  primaryAction={{
+                    label: "Back to Home",
+                    onClick: () => navigate("/"),
                   }}
-                  item={it}
-                  selected={it.id === selectedId}
-                  snoozePopoverOpen={snoozeOpenId === it.id}
-                  onSelect={() => setSelectedId(it.id)}
-                  onTriage={() => triage(it.id)}
-                  onSnooze={(untilMs) => {
-                    setSnoozeOpenId(null);
-                    void snooze(it.id, untilMs);
-                  }}
-                  onSnoozePopoverChange={(open) =>
-                    setSnoozeOpenId(open ? it.id : null)
-                  }
-                  onSkip={() => void skip(it.id)}
                 />
-              ))}
-            </ul>
-          )}
+              ) : (
+                <ul
+                  role="listbox"
+                  aria-label="Inbox items"
+                  className="flex flex-col gap-2"
+                >
+                  {items.map((it) => (
+                    <InboxRow
+                      key={it.id}
+                      ref={(el) => {
+                        if (el) rowRefs.current.set(it.id, el);
+                        else rowRefs.current.delete(it.id);
+                      }}
+                      item={it}
+                      selected={it.id === selectedId}
+                      snoozePopoverOpen={snoozeOpenId === it.id}
+                      onSelect={() => setSelectedId(it.id)}
+                      onTriage={() => triage(it.id)}
+                      onSnooze={(untilMs) => {
+                        setSnoozeOpenId(null);
+                        void snooze(it.id, untilMs);
+                      }}
+                      onSnoozePopoverChange={(open) =>
+                        setSnoozeOpenId(open ? it.id : null)
+                      }
+                      onSkip={() => void skip(it.id)}
+                    />
+                  ))}
+                </ul>
+              )
+            }
+          />
         </div>
 
         {state.kind === "ready" && items.length > 0 ? (
@@ -228,25 +235,3 @@ function SortToggle({ value, onChange }: SortToggleProps) {
   );
 }
 
-function LoadingShell() {
-  return (
-    <div role="status" aria-label="Loading inbox" className="flex flex-col gap-2">
-      <div className="rounded-[1.8rem] bg-stone-100/60 h-20 animate-pulse" />
-      <div className="rounded-[1.8rem] bg-stone-100/60 h-20 animate-pulse" />
-      <div className="rounded-[1.8rem] bg-stone-100/60 h-20 animate-pulse" />
-    </div>
-  );
-}
-
-
-function FailureNotice({ title, body }: { title: string; body: string }) {
-  return (
-    <div
-      role="alert"
-      className="rounded-[1.8rem] border border-stone-200 bg-white/60 px-6 py-5 max-w-md"
-    >
-      <p className="text-sm text-stone-800 font-medium">{title}</p>
-      <p className="mt-1 text-xs text-stone-500">{body}</p>
-    </div>
-  );
-}

@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
 import type {
   EventTodayItem,
   TaskTodayItem,
 } from "../../../preload/api-types";
+import { useResource, type UseResourceReturn } from "../../hooks/useResource";
 
 // Single hook that fans out to the three Home reads in parallel and
 // surfaces a typed summary. Splitting Now/Next derivation into the
@@ -14,70 +14,33 @@ export interface TodaySummary {
   unresolvedInboxCount: number;
 }
 
-export type TodaySummaryState =
-  | { kind: "loading" }
-  | { kind: "ready"; summary: TodaySummary }
-  | { kind: "signed-out" }
-  | { kind: "error"; message: string };
-
 // Returns the current summary state plus a `refresh` thunk so the
 // CaptureBar's add can opportunistically refetch the count after a
-// successful capture without waiting for a route change.
-export function useTodaySummary(): {
-  state: TodaySummaryState;
-  refresh: () => void;
-} {
-  const [state, setState] = useState<TodaySummaryState>({ kind: "loading" });
-  const [tick, setTick] = useState(0);
-
-  const refresh = useCallback(() => setTick((t) => t + 1), []);
-
-  useEffect(() => {
-    let cancelled = false;
-    setState((prev) =>
-      prev.kind === "ready" ? prev : { kind: "loading" },
-    );
-
-    void (async () => {
-      try {
-        const [tasksR, eventsR, countR] = await Promise.all([
-          window.calmly.tasks.listToday(),
-          window.calmly.events.listToday(),
-          window.calmly.inbox.unresolvedCount(),
-        ]);
-        if (cancelled) return;
-
-        // Any one of the three returning NotSignedIn means the renderer
-        // raced ahead of AuthGate; treat the whole summary as
-        // signed-out so the UI shows the sign-in nudge rather than
-        // partial data.
-        if (!tasksR.ok || !eventsR.ok || !countR.ok) {
-          setState({ kind: "signed-out" });
-          return;
-        }
-        setState({
-          kind: "ready",
-          summary: {
-            tasks: tasksR.tasks,
-            events: eventsR.events,
-            unresolvedInboxCount: countR.count,
-          },
-        });
-      } catch (e) {
-        if (cancelled) return;
-        setState({
-          kind: "error",
-          message: e instanceof Error ? e.message : String(e),
-        });
+// successful capture without waiting for a route change. Any one of
+// the three reads returning NotSignedIn means the renderer raced
+// ahead of AuthGate; treat the whole summary as signed-out.
+export function useTodaySummary(): UseResourceReturn<TodaySummary> {
+  return useResource<TodaySummary>(
+    async () => {
+      const [tasksR, eventsR, countR] = await Promise.all([
+        window.calmly.tasks.listToday(),
+        window.calmly.events.listToday(),
+        window.calmly.inbox.unresolvedCount(),
+      ]);
+      if (!tasksR.ok || !eventsR.ok || !countR.ok) {
+        return { kind: "signed-out" };
       }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [tick]);
-
-  return { state, refresh };
+      return {
+        kind: "ok",
+        data: {
+          tasks: tasksR.tasks,
+          events: eventsR.events,
+          unresolvedInboxCount: countR.count,
+        },
+      };
+    },
+    [],
+  );
 }
 
 // Picks the "Now" task — first in_progress entry, falling back to null

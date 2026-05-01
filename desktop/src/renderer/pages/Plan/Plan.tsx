@@ -19,7 +19,8 @@ function isPlaced(t: PlanTaskItem): t is PlacedTask {
 }
 import { Backlog } from "./Backlog";
 import { DayGrid } from "./DayGrid";
-import { DayPicker, FailureNotice, LoadingShell } from "./PlanShells";
+import { DayPicker, LoadingShell } from "./PlanShells";
+import { PageStateView } from "../../components/PageStateView";
 import { TaskSidePanel } from "./TaskSidePanel";
 import {
   clampDurationMinutes,
@@ -33,7 +34,7 @@ import {
   snapAndClampStartForDuration,
   snapMinutes,
 } from "./planMath";
-import { usePlanForDay } from "./usePlanForDay";
+import { usePlanForDay, type PlanData } from "./usePlanForDay";
 import { ReplanModal } from "../../components/Replan/ReplanModal";
 import { usePlanShortcuts } from "../../hooks/usePlanShortcuts";
 import { EmptyState } from "../../components/EmptyState";
@@ -136,7 +137,7 @@ export function Plan() {
   const onBlockResize = useCallback(
     (taskId: string, newEndMinutes: number) => {
       if (state.kind !== "ready") return;
-      const block = state.plan.scheduled.find((t) => t.id === taskId);
+      const block = state.data.plan.scheduled.find((t) => t.id === taskId);
       if (!block || block.scheduled_start === null) return;
       void persistSchedule(taskId, block.scheduled_start, gridMinutesToMs(newEndMinutes, day));
     },
@@ -157,7 +158,7 @@ export function Plan() {
 
   const blocks = useMemo(() => {
     if (state.kind !== "ready") return [];
-    const placed = state.plan.scheduled.filter(isPlaced);
+    const placed = state.data.plan.scheduled.filter(isPlaced);
     const overlaps = detectOverlaps(
       placed.map((t) => ({ id: t.id, startMs: t.scheduled_start, endMs: t.scheduled_end })),
     );
@@ -211,31 +212,41 @@ export function Plan() {
         </div>
       </header>
 
-      {state.kind === "loading" ? (
-        <LoadingShell />
-      ) : state.kind === "signed-out" ? (
-        <FailureNotice title="You're signed out." body="Sign in to plan your day." />
-      ) : state.kind === "error" ? (
-        <FailureNotice title="Something hiccuped." body={state.message} />
-      ) : (
-        {blocks.length === 0 && state.plan.backlog.length === 0 ? (
-          <EmptyState
-            name="plan-nothing-scheduled"
-            title="Nothing on the schedule."
-            body="Pick something from your backlog or capture a new task."
-            primaryAction={{ label: "Go to Inbox", onClick: () => navigate("/inbox") }}
-          />
-        ) : (
-          <DndContext sensors={sensors} modifiers={[restrictToVerticalAxis]} onDragEnd={onDragEnd}>
-            <div className="flex gap-6 items-start">
-              <div className="flex-1 min-w-0 max-h-[calc(100vh-14rem)] overflow-y-auto pr-2 custom-scrollbar">
-                <DayGrid blocks={blocks} onBlockResize={onBlockResize} onBlockClick={onBlockClick} />
+      <PageStateView<PlanData>
+        state={state}
+        loadingFallback={<LoadingShell />}
+        signedOutBody="Sign in to plan your day."
+        ready={(data) =>
+          blocks.length === 0 && data.plan.backlog.length === 0 ? (
+            <EmptyState
+              name="plan-nothing-scheduled"
+              title="Nothing on the schedule."
+              body="Pick something from your backlog or capture a new task."
+              primaryAction={{
+                label: "Go to Inbox",
+                onClick: () => navigate("/inbox"),
+              }}
+            />
+          ) : (
+            <DndContext
+              sensors={sensors}
+              modifiers={[restrictToVerticalAxis]}
+              onDragEnd={onDragEnd}
+            >
+              <div className="flex gap-6 items-start">
+                <div className="flex-1 min-w-0 max-h-[calc(100vh-14rem)] overflow-y-auto pr-2 custom-scrollbar">
+                  <DayGrid
+                    blocks={blocks}
+                    onBlockResize={onBlockResize}
+                    onBlockClick={onBlockClick}
+                  />
+                </div>
+                <Backlog items={data.plan.backlog} onTaskClick={setActiveTask} />
               </div>
-              <Backlog items={state.plan.backlog} onTaskClick={setActiveTask} />
-            </div>
-          </DndContext>
-        )}
-      )}
+            </DndContext>
+          )
+        }
+      />
 
       <ReplanModal open={replanOpen} onClose={() => setReplanOpen(false)} />
       <TaskSidePanel
