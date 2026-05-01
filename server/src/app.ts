@@ -23,6 +23,10 @@ export interface AppDeps {
   config: Config;
   pool: pg.Pool;
   email?: EmailAdapter;
+  // Test seam (CAL-08a): when set, OAuth plugins call this instead of the
+  // global fetch when talking to provider token / userinfo endpoints.
+  // Production must omit this so the real network is used.
+  oauthFetchImpl?: typeof fetch;
 }
 
 export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
@@ -94,6 +98,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
         ticketSecret,
         stateTtlSec: deps.config.OAUTH_STATE_TTL_SEC,
         ticketTtlSec: deps.config.OAUTH_TICKET_TTL_SEC,
+        fetchImpl: deps.oauthFetchImpl,
       }),
     );
     app.log.info("[oauth] google calendar routes registered");
@@ -108,6 +113,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
         ticketSecret,
         stateTtlSec: deps.config.OAUTH_STATE_TTL_SEC,
         ticketTtlSec: deps.config.OAUTH_TICKET_TTL_SEC,
+        fetchImpl: deps.oauthFetchImpl,
       }),
     );
     app.log.info("[oauth] microsoft calendar routes registered");
