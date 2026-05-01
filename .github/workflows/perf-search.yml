@@ -1,0 +1,35 @@
+name: Search Performance
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  perf-search:
+    name: FTS search latency (10k rows)
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Rebuild native modules
+        run: pnpm --filter @calmly/desktop rebuild-native
+        continue-on-error: true
+
+      - name: Run search perf test
+        run: pnpm --filter @calmly/desktop test:perf
+        env:
+          PERF_TEST: "1"

@@ -11,6 +11,7 @@
     "rebuild-native": "electron-rebuild -f -w better-sqlite3",
     "postinstall": "electron-rebuild -f -w better-sqlite3 || echo \"electron-rebuild skipped (run pnpm --filter @calmly/desktop rebuild-native after deps install)\"",
     "test": "vitest run",
+    "test:perf": "PERF_TEST=1 vitest run --config vitest.perf.config.ts",
     "test:e2e": "playwright test",
     "test:e2e:build": "electron-vite build && playwright test",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json"
