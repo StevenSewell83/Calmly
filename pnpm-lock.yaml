@@ -49,7 +49,7 @@ importers:
     dependencies:
       '@anthropic-ai/sdk':
         specifier: ^0.92.0
-        version: 0.92.0
+        version: 0.92.0(zod@3.23.8)
       '@calmly/shared':
         specifier: workspace:*
         version: link:../shared
@@ -83,6 +83,9 @@ importers:
       react-router-dom:
         specifier: 6.27.0
         version: 6.27.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      zod:
+        specifier: 3.23.8
+        version: 3.23.8
     devDependencies:
       '@electron/rebuild':
         specifier: 3.7.1
@@ -3740,9 +3743,11 @@ snapshots:
 
   '@alloc/quick-lru@5.2.0': {}
 
-  '@anthropic-ai/sdk@0.92.0':
+  '@anthropic-ai/sdk@0.92.0(zod@3.23.8)':
     dependencies:
       json-schema-to-ts: 3.1.1
+    optionalDependencies:
+      zod: 3.23.8
 
   '@asamuzakjp/css-color@5.1.11':
     dependencies:

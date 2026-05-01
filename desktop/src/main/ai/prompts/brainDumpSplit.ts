@@ -11,7 +11,7 @@ export const BrainDumpSplitOutputSchema = z.object({
       title: z.string(),
       notes: z.string().optional(),
     }),
-  ),
+  ).max(20),
 });
 
 export type BrainDumpSplitInput = z.infer<typeof BrainDumpSplitInputSchema>;
