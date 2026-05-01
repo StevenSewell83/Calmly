@@ -1,6 +1,7 @@
 import { useDroppable } from "@dnd-kit/core";
-import type { PlanTaskItem } from "../../../preload/api-types";
+import type { CalendarDayEvent, PlanTaskItem } from "../../../preload/api-types";
 import { TimeBlock } from "./TimeBlock";
+import { CalendarEventBlock } from "./CalendarEventBlock";
 import {
   buildSlotGuides,
   GRID_HEIGHT_PX,
@@ -10,14 +11,16 @@ import {
 } from "./planMath";
 
 export interface DayGridProps {
-  // Scheduled blocks for the visible day, with grid-relative
-  // start/end minutes (clamped negative or beyond-grid values are
-  // already handled by the caller).
   blocks: Array<{
     task: PlanTaskItem;
     startMinutes: number;
     endMinutes: number;
     overlapped: boolean;
+  }>;
+  calendarEvents?: Array<{
+    event: CalendarDayEvent;
+    startMinutes: number;
+    endMinutes: number;
   }>;
   onBlockResize(taskId: string, newEndMinutes: number): void;
   onBlockClick(task: PlanTaskItem): void;
@@ -50,7 +53,7 @@ function Slot({ minutesFromStart }: { minutesFromStart: number }) {
   );
 }
 
-export function DayGrid({ blocks, onBlockResize, onBlockClick }: DayGridProps) {
+export function DayGrid({ blocks, calendarEvents = [], onBlockResize, onBlockClick }: DayGridProps) {
   const guides = buildSlotGuides();
   return (
     <div className="flex">
@@ -100,7 +103,24 @@ export function DayGrid({ blocks, onBlockResize, onBlockClick }: DayGridProps) {
           ),
         )}
 
-        {/* Placed blocks */}
+        {/* Calendar event blocks (read-only, behind task blocks) */}
+        <div className="absolute inset-0 pointer-events-none">
+          {calendarEvents.map((ce) => (
+            <div
+              key={ce.event.id}
+              className="absolute left-2 right-2 pointer-events-auto"
+              style={{ top: 0, height: GRID_HEIGHT_PX }}
+            >
+              <CalendarEventBlock
+                event={ce.event}
+                startMinutes={ce.startMinutes}
+                endMinutes={ce.endMinutes}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Placed task blocks */}
         <div className="absolute inset-0 pointer-events-none">
           {blocks.map((b) => (
             <div

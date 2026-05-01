@@ -537,12 +537,27 @@ export interface AccountStatusEventPayload {
   status: import("@calmly/shared").CalendarAccountStatus;
 }
 
+export interface CalendarDayEvent {
+  id: string;
+  provider: "google" | "microsoft";
+  title: string;
+  startMs: number;
+  endMs: number;
+  isAllDay: boolean;
+  location?: string;
+}
+
+export type ListCalendarDayEventsResult =
+  | { ok: true; events: CalendarDayEvent[] }
+  | { ok: false; error: "NotSignedIn" | "InvalidArgs" };
+
 export interface CalendarBridge {
   connectGoogle(): Promise<import("@calmly/shared").CalendarConnectResult>;
   connectMicrosoft(): Promise<import("@calmly/shared").CalendarConnectResult>;
   listAccounts(): Promise<ListCalendarAccountsResult>;
   disconnect(accountId: string): Promise<DisconnectCalendarResult>;
   refresh(accountId?: string): Promise<{ ok: boolean }>;
+  listEventsForDay(dayIso: string): Promise<ListCalendarDayEventsResult>;
   onAccountStatusChanged(
     handler: (event: AccountStatusEventPayload) => void,
   ): () => void;

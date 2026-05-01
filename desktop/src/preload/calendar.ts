@@ -4,6 +4,7 @@ import type {
   CalendarBridge,
   DisconnectCalendarResult,
   ListCalendarAccountsResult,
+  ListCalendarDayEventsResult,
 } from "./api-types";
 import type { CalendarConnectResult } from "@calmly/shared";
 
@@ -30,6 +31,12 @@ export const calendarBridge: CalendarBridge = {
       "calendar:refresh",
       accountId,
     ) as Promise<{ ok: boolean }>;
+  },
+  listEventsForDay(dayIso: string): Promise<ListCalendarDayEventsResult> {
+    return ipcRenderer.invoke(
+      "calendar:listEventsForDay",
+      dayIso,
+    ) as Promise<ListCalendarDayEventsResult>;
   },
   onAccountStatusChanged(
     handler: (event: AccountStatusEventPayload) => void,

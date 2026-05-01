@@ -7,6 +7,9 @@ import {
 import { calendarTokens } from "../calendar/tokens";
 import { calendarStatusEvents } from "../calendar/statusEvents";
 import { triggerImport } from "../calendar/importWorker";
+import { listCalendarEvents } from "../calendar/eventStore";
+import { getDb } from "../db";
+import type { CalendarDayEvent } from "../../preload/api-types";
 import type { ApiClient } from "../net/client";
 import { ApiHttpError } from "../net/client";
 import { getCurrentUser } from "../auth/currentUser";
@@ -123,6 +126,45 @@ export function registerCalendarIpc(deps: CalendarIpcDeps): void {
       const disconnected: CalendarAccountStatus = "disconnected";
       calendarStatusEvents.notify({ accountId, status: disconnected });
       return { ok: true };
+    },
+  );
+
+  ipcMain.handle(
+    "calendar:listEventsForDay",
+    async (_e, dayIso: unknown): Promise<{ ok: true; events: CalendarDayEvent[] } | { ok: false; error: "NotSignedIn" | "InvalidArgs" }> => {
+      const user = getCurrentUser();
+      if (!user) return { ok: false, error: "NotSignedIn" };
+      if (typeof dayIso !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(dayIso)) {
+        return { ok: false, error: "InvalidArgs" };
+      }
+      const fromMs = new Date(`${dayIso}T00:00:00`).getTime();
+      const toMs = fromMs + 24 * 60 * 60 * 1000;
+      const rows = listCalendarEvents(getDb(), user.id, fromMs, toMs);
+      const events: CalendarDayEvent[] = rows.map((row) => {
+        const raw = JSON.parse(row.raw_json) as Record<string, unknown>;
+        const title =
+          (row.provider === "google"
+            ? (raw["summary"] as string | undefined)
+            : (raw["subject"] as string | undefined)) ?? "(No title)";
+        const loc =
+          row.provider === "google"
+            ? (raw["location"] as string | undefined)
+            : ((raw["location"] as { displayName?: string } | undefined)?.displayName);
+        const isAllDay =
+          row.provider === "google"
+            ? !!(raw["start"] as { date?: string } | undefined)?.date
+            : !!(raw["isAllDay"] as boolean | undefined);
+        return {
+          id: row.id,
+          provider: row.provider,
+          title,
+          startMs: row.start_at,
+          endMs: row.end_at,
+          isAllDay,
+          location: loc,
+        };
+      });
+      return { ok: true, events };
     },
   );
 

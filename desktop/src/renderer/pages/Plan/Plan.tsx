@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { RefreshCw } from "lucide-react";
 import {
@@ -10,7 +10,7 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
-import type { PlanTaskItem } from "../../../preload/api-types";
+import type { CalendarDayEvent, PlanTaskItem } from "../../../preload/api-types";
 
 type PlacedTask = PlanTaskItem & { scheduled_start: number; scheduled_end: number };
 
@@ -83,6 +83,29 @@ export function Plan() {
   const navigate = useNavigate();
   const [activeTask, setActiveTask] = useState<PlanTaskItem | null>(null);
   const [replanOpen, setReplanOpen] = useState(false);
+  const [calendarEvents, setCalendarEvents] = useState<CalendarDayEvent[]>([]);
+
+  const dayIso = useMemo(() => {
+    const d = new Date(day);
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${d.getFullYear()}-${mm}-${dd}`;
+  }, [day]);
+
+  const fetchCalendarEvents = useCallback(async () => {
+    const r = await window.calmly.calendar.listEventsForDay(dayIso);
+    if (r.ok) setCalendarEvents(r.events);
+  }, [dayIso]);
+
+  useEffect(() => {
+    void fetchCalendarEvents();
+  }, [fetchCalendarEvents]);
+
+  useEffect(() => {
+    const onFocus = () => { void fetchCalendarEvents(); };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [fetchCalendarEvents]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -171,6 +194,23 @@ export function Plan() {
     });
   }, [state, day]);
 
+  const calendarBlocks = useMemo(() =>
+    calendarEvents
+      .filter((ev) => !ev.isAllDay)
+      .map((event) => {
+        const rawStart = msToGridMinutes(event.startMs, day);
+        const rawEnd = msToGridMinutes(event.endMs, day);
+        const startMinutes = Math.max(0, Math.min(GRID_HOURS * 60 - 5, rawStart));
+        const endMinutes = Math.max(startMinutes + 5, Math.min(GRID_HOURS * 60, rawEnd));
+        return { event, startMinutes, endMinutes };
+      }),
+  [calendarEvents, day]);
+
+  const allDayEvents = useMemo(
+    () => calendarEvents.filter((ev) => ev.isAllDay),
+    [calendarEvents],
+  );
+
   const heading = dayHeading(day, today);
 
   usePlanShortcuts({
@@ -235,8 +275,22 @@ export function Plan() {
             >
               <div className="flex gap-6 items-start">
                 <div className="flex-1 min-w-0 max-h-[calc(100vh-14rem)] overflow-y-auto pr-2 custom-scrollbar">
+                  {allDayEvents.length > 0 && (
+                    <div className="mb-2 flex flex-wrap gap-1.5" aria-label="All-day calendar events">
+                      {allDayEvents.map((ev) => (
+                        <span
+                          key={ev.id}
+                          title={`${ev.title} · ${ev.provider === "google" ? "Google" : "Microsoft"} Calendar`}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-stone-100 border border-stone-200 text-[10px] text-stone-500"
+                        >
+                          {ev.title}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   <DayGrid
                     blocks={blocks}
+                    calendarEvents={calendarBlocks}
                     onBlockResize={onBlockResize}
                     onBlockClick={onBlockClick}
                   />
