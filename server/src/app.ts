@@ -9,6 +9,7 @@ import { googleOAuthPlugin } from "./routes/oauth/google";
 import { microsoftOAuthPlugin } from "./routes/oauth/microsoft";
 import { healthRoute } from "./routes/health";
 import { versionRoute } from "./routes/version";
+import { telemetryRoute } from "./routes/telemetry";
 import { syncRoutes } from "./sync/routes";
 import { initBot, telegramPlugin, loadTelegramConfig } from "./telegram";
 
@@ -69,6 +70,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(fastifyCookie, { secret: deps.config.COOKIE_SECRET });
   await app.register(healthRoute);
   await app.register(versionRoute);
+  await app.register(telemetryRoute);
   const email = deps.email ?? selectEmailSender(deps.config, app.log);
   await app.register(authRoutesPlugin({ email }));
   await app.register(syncRoutes);

@@ -9,3 +9,4 @@ export * from "./errors";
 export * from "./config/serverUrl";
 export * from "./types/search";
 export * from "./types/calendar";
+export * from "./telemetry";

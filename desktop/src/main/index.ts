@@ -22,6 +22,7 @@ import { createSyncBootstrap } from "./bootstrap/sync-bootstrap";
 import { runSearchBackfill } from "./search/backfill";
 import { createCalendarRefresh } from "./calendar/refresh";
 import { startCalendarImportWorker, stopCalendarImportWorker } from "./calendar/importWorker";
+import { startTelemetryWorker, stopTelemetryWorker } from "./telemetry";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -111,6 +112,8 @@ if (!gotInstanceLock) {
       log: (msg, fields) => logger.info(`[calmly:calendar:import] ${msg}`, fields ?? {}),
     });
 
+    startTelemetryWorker(apiClient);
+
     // Kick off FTS backfill asynchronously after boot — no-op if already done.
     runSearchBackfill(getDb(), logger);
 
@@ -166,6 +169,7 @@ app.on("window-all-closed", () => {
 app.on("before-quit", () => {
   activeSyncLoop?.stop();
   stopCalendarImportWorker();
+  stopTelemetryWorker();
   unregisterAllShortcuts();
   closeDb();
 });

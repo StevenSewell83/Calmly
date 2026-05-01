@@ -9,7 +9,8 @@ import {
 export type StaticSecretKey =
   | "auth.session"
   | "ai.anthropic.key"
-  | "ai.openai.key";
+  | "ai.openai.key"
+  | "telemetry.anonymous_id";
 
 export type ParameterizedSecretKey =
   | `calendar.google.refresh_token:${string}`
@@ -21,6 +22,7 @@ const STATIC_KEYS: ReadonlySet<string> = new Set<StaticSecretKey>([
   "auth.session",
   "ai.anthropic.key",
   "ai.openai.key",
+  "telemetry.anonymous_id",
 ]);
 
 // Bounded suffix character set + length keeps the IPC surface tight; the
