@@ -299,11 +299,14 @@ describe("RecurrenceRuleSchema", () => {
 });
 
 describe("CalendarEventImportSchema", () => {
+  const accountId = "44444444-4444-4444-8444-444444444444";
+
   it("accepts a google import", () => {
     expect(
       CalendarEventImportSchema.parse({
         id: otherId,
         user_id: userId,
+        account_id: accountId,
         provider: "google",
         external_id: "abc123",
         raw_json: "{}",
@@ -319,7 +322,23 @@ describe("CalendarEventImportSchema", () => {
       CalendarEventImportSchema.parse({
         id: otherId,
         user_id: userId,
+        account_id: accountId,
         provider: "yahoo",
+        external_id: "abc",
+        raw_json: "{}",
+        start_at: now,
+        end_at: now + 1,
+        last_seen_at: now,
+      }),
+    ).toThrow();
+  });
+
+  it("rejects missing account_id (CAL-04a)", () => {
+    expect(() =>
+      CalendarEventImportSchema.parse({
+        id: otherId,
+        user_id: userId,
+        provider: "google",
         external_id: "abc",
         raw_json: "{}",
         start_at: now,

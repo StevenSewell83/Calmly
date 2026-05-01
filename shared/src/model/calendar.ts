@@ -10,6 +10,10 @@ export const CalendarEventImportSchema = z
   .object({
     id: uuid,
     user_id: uuid,
+    // CAL-04a: account_id ties the event to a specific connected
+    // calendar_account so events from two Google accounts under one
+    // user don't collide on (user_id, provider, external_id).
+    account_id: uuid,
     provider: CalendarProviderSchema,
     external_id: z.string().min(1),
     raw_json: JsonStringSchema,

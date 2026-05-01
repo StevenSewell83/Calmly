@@ -62,6 +62,7 @@ export const TABLES: Record<SyncTable, TableSpec> = {
     name: "calendar_event_imports",
     columns: [
       "id",
+      "account_id",
       "provider",
       "external_id",
       "raw_json",

@@ -241,14 +241,22 @@ describe.skipIf(!nodeSqlite)("F-05b · DB round-trip integration", () => {
     db.prepare(
       `INSERT INTO users (id, email, created_at) VALUES (?, ?, ?)`,
     ).run(USER_ID, "alex@example.com", NOW);
+    const accountId = "44444444-4444-4444-8444-444444444444";
+    db.prepare(
+      `INSERT INTO calendar_accounts
+         (id, user_id, provider, external_account_id, email, status,
+          created_at, updated_at)
+       VALUES (?, ?, 'google', ?, ?, 'connected', ?, ?)`,
+    ).run(accountId, USER_ID, "google-acc-1", "alex@example.com", NOW, NOW);
     db.prepare(
       `INSERT INTO calendar_event_imports
-         (id, user_id, provider, external_id, raw_json, start_at, end_at, last_seen_at,
-          version, deleted_at)
-       VALUES (?, ?, 'google', ?, ?, ?, ?, ?, 0, NULL)`,
+         (id, user_id, account_id, provider, external_id, raw_json,
+          start_at, end_at, last_seen_at, version, deleted_at)
+       VALUES (?, ?, ?, 'google', ?, ?, ?, ?, ?, 0, NULL)`,
     ).run(
       OTHER_ID,
       USER_ID,
+      accountId,
       "ext-1",
       '{"summary":"x"}',
       NOW,
@@ -261,6 +269,7 @@ describe.skipIf(!nodeSqlite)("F-05b · DB round-trip integration", () => {
       .get(OTHER_ID) as Record<string, unknown>;
     const parsed = CalendarEventImportSchema.parse(row);
     expect(parsed.provider).toBe("google");
+    expect(parsed.account_id).toBe(accountId);
   });
 
   it("round-trips an AiSuggestion", () => {
