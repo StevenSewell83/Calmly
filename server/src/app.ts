@@ -12,6 +12,7 @@ import { versionRoute } from "./routes/version";
 import { telemetryRoute } from "./routes/telemetry";
 import { syncRoutes } from "./sync/routes";
 import { initBot, telegramPlugin, loadTelegramConfig } from "./telegram";
+import { telegramLinkingRoutes } from "./telegram/linkingRoutes";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -74,6 +75,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   const email = deps.email ?? selectEmailSender(deps.config, app.log);
   await app.register(authRoutesPlugin({ email }));
   await app.register(syncRoutes);
+  await app.register(telegramLinkingRoutes);
 
   // Telegram integration — optional; only wired when TELEGRAM_BOT_TOKEN is set.
   const tgConfig = loadTelegramConfig();

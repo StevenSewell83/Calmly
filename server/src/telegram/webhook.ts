@@ -14,7 +14,7 @@ export function telegramPlugin(tgConfig: TelegramConfig): FastifyPluginAsync {
       }
 
       const update = req.body as Update;
-      dispatchUpdate(update, req.log);
+      dispatchUpdate(update, req.log, req.server.pool);
       return reply.status(200).send({ ok: true });
     });
 
