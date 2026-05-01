@@ -94,6 +94,7 @@ if (!gotInstanceLock) {
       log: (msg, fields) => logger.info(`[calmly:calendar:microsoft] ${msg}`, fields ?? {}),
     });
     registerAllIpc(orchestrator, activeSyncLoop, logger, {
+      apiClient,
       connectGoogle,
       connectMicrosoft,
     });

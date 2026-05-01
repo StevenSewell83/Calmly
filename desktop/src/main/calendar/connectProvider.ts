@@ -1,6 +1,6 @@
 import type { ApiClient } from "../net/client";
 import { ApiHttpError, ApiNetworkError } from "../net/client";
-import { secretStore } from "../security/secretStore";
+import { calendarTokens } from "./tokens";
 import {
   upsertLocalCalendarAccount,
   type LocalCalendarAccount,
@@ -111,10 +111,8 @@ export function createConnectProvider(deps: ConnectProviderDeps): ConnectStarter
       return { ok: false, error: "redeem_failed" };
     }
 
-    const secretKey: `calendar.${CalendarProvider}.refresh_token:${string}` =
-      `calendar.${provider}.refresh_token:${body.account.id}`;
     try {
-      secretStore.set(secretKey, body.refresh_token);
+      calendarTokens.set(provider, body.account.id, body.refresh_token);
     } catch (e) {
       log(`connect${cap(provider)} secret store failed`, { err: String(e) });
       return { ok: false, error: "secret_store_failed" };

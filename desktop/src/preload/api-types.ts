@@ -540,18 +540,40 @@ export interface SettingsBridge {
   reindexSearch(): Promise<void>;
 }
 
-// Calendar OAuth bridge (CAL-01 / CAL-02). connectGoogle opens the user's
-// browser, waits for the calmly:// deep-link to come back, and persists the
-// refresh token in the F-12 secret store. The renderer never sees the
-// refresh token — only the connection metadata.
+// Calendar OAuth bridge (CAL-01 / CAL-02 / CAL-03). connectGoogle and
+// connectMicrosoft open the user's browser, wait for the calmly://
+// deep-link, and persist the refresh token in the F-12 secret store. The
+// renderer never sees refresh or access tokens — only the connection
+// metadata. CAL-03 added disconnect + onAccountStatusChanged for the
+// reauth-required lifecycle.
 export type ListCalendarAccountsResult =
   | { ok: true; accounts: import("@calmly/shared").CalendarAccount[] }
   | { ok: false; error: "NotSignedIn" };
+
+export type DisconnectCalendarResult =
+  | { ok: true }
+  | {
+      ok: false;
+      error:
+        | "NotSignedIn"
+        | "NotFound"
+        | "InvalidArgs"
+        | "InternalError";
+    };
+
+export interface AccountStatusEventPayload {
+  accountId: string;
+  status: import("@calmly/shared").CalendarAccountStatus;
+}
 
 export interface CalendarBridge {
   connectGoogle(): Promise<import("@calmly/shared").CalendarConnectResult>;
   connectMicrosoft(): Promise<import("@calmly/shared").CalendarConnectResult>;
   listAccounts(): Promise<ListCalendarAccountsResult>;
+  disconnect(accountId: string): Promise<DisconnectCalendarResult>;
+  onAccountStatusChanged(
+    handler: (event: AccountStatusEventPayload) => void,
+  ): () => void;
 }
 
 export interface CalmlyApi {

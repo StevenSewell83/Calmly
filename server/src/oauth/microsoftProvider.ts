@@ -1,4 +1,9 @@
 import { OAuthExchangeError } from "./googleProvider";
+import {
+  OAuthRefreshError,
+  type RefreshArgs,
+  type RefreshResult,
+} from "./refresh";
 
 // Microsoft Identity Platform v2 — multi-tenant `/common` authority so the
 // same client app can sign in work, school, AND personal accounts. Mirror
@@ -123,6 +128,71 @@ export async function exchangeMicrosoftCode(
     expiresInSec: parsed.expires_in,
     scope: parsed.scope ?? "",
     idToken: parsed.id_token ?? null,
+  };
+}
+
+// Refresh-grant exchange. Microsoft DOES rotate refresh tokens — every
+// refresh response includes a fresh refresh_token; callers MUST persist it
+// because the previous one becomes invalid almost immediately.
+export async function refreshMicrosoftAccessToken(
+  args: RefreshArgs,
+): Promise<RefreshResult> {
+  const fetchFn = args.fetchImpl ?? fetch;
+  const body = new URLSearchParams({
+    grant_type: "refresh_token",
+    refresh_token: args.refreshToken,
+    client_id: args.clientId,
+    client_secret: args.clientSecret,
+    scope: MICROSOFT_SCOPES.join(" "),
+  });
+  let res: Response;
+  try {
+    res = await fetchFn(TOKEN_URL, {
+      method: "POST",
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+        accept: "application/json",
+      },
+      body,
+    });
+  } catch (e) {
+    throw new OAuthRefreshError(
+      `microsoft refresh network error: ${e instanceof Error ? e.message : String(e)}`,
+      "network_error",
+      0,
+    );
+  }
+  let parsed: TokenResponse | null = null;
+  try {
+    parsed = (await res.json()) as TokenResponse;
+  } catch {
+    parsed = null;
+  }
+  if (!res.ok) {
+    const errCode =
+      typeof (parsed as { error?: unknown } | null)?.error === "string" &&
+      (parsed as { error: string }).error === "invalid_grant"
+        ? "invalid_grant"
+        : "provider_error";
+    throw new OAuthRefreshError(
+      `microsoft refresh failed (${res.status})`,
+      errCode,
+      res.status,
+    );
+  }
+  if (!parsed?.access_token || !parsed.expires_in) {
+    throw new OAuthRefreshError(
+      "microsoft refresh response missing required fields",
+      "provider_error",
+      200,
+    );
+  }
+  return {
+    accessToken: parsed.access_token,
+    expiresInSec: parsed.expires_in,
+    scope: parsed.scope ?? "",
+    idToken: parsed.id_token ?? null,
+    refreshToken: parsed.refresh_token ?? null,
   };
 }
 

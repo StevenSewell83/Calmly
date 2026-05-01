@@ -1,6 +1,7 @@
 import type { AuthOrchestrator } from "../auth/session";
 import type { SyncLoop } from "../sync/loop";
 import type { Logger, CalendarConnectResult } from "@calmly/shared";
+import type { ApiClient } from "../net/client";
 import { registerAuthIpc } from "../ipc/auth";
 import { registerCalendarIpc } from "../ipc/calendar";
 import { registerDbIpc } from "../ipc/db";
@@ -19,6 +20,7 @@ import { registerSettingsIpc } from "../ipc/settings";
 import { registerSearchIpc } from "../ipc/search";
 
 export interface RegisterAllIpcDeps {
+  apiClient: ApiClient;
   connectGoogle: () => Promise<CalendarConnectResult>;
   connectMicrosoft: () => Promise<CalendarConnectResult>;
 }
@@ -45,6 +47,7 @@ export function registerAllIpc(
   registerSettingsIpc();
   registerSearchIpc();
   registerCalendarIpc({
+    apiClient: deps.apiClient,
     connectGoogle: deps.connectGoogle,
     connectMicrosoft: deps.connectMicrosoft,
   });

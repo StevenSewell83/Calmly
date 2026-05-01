@@ -34,6 +34,9 @@ export const calendarAccountStatuses = [
   "connected",
   "disconnected",
   "error",
+  // CAL-03: a refresh attempt returned invalid_grant (token revoked or
+  // explicitly de-authorized in the provider's UI). User must reconnect.
+  "reauth_required",
 ] as const;
 export const CalendarAccountStatusSchema = z.enum(calendarAccountStatuses);
 export type CalendarAccountStatus = z.infer<typeof CalendarAccountStatusSchema>;

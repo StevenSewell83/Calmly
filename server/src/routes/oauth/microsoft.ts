@@ -4,6 +4,7 @@ import {
   exchangeMicrosoftCode,
   fetchMicrosoftUserInfo,
   MICROSOFT_SCOPES,
+  refreshMicrosoftAccessToken,
 } from "../../oauth/microsoftProvider";
 import {
   oauthProviderPlugin,
@@ -28,6 +29,7 @@ const microsoftProviderConfig: OAuthProviderConfig = {
     const r = await fetchMicrosoftUserInfo(args);
     return { externalAccountId: r.id, email: r.email };
   },
+  refreshAccessToken: refreshMicrosoftAccessToken,
 };
 
 export { MICROSOFT_SCOPES };

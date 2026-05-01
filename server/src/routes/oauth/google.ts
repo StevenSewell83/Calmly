@@ -4,6 +4,7 @@ import {
   exchangeGoogleCode,
   fetchGoogleUserInfo,
   GOOGLE_SCOPES,
+  refreshGoogleAccessToken,
 } from "../../oauth/googleProvider";
 import {
   oauthProviderPlugin,
@@ -28,6 +29,7 @@ const googleProviderConfig: OAuthProviderConfig = {
     const r = await fetchGoogleUserInfo(args);
     return { externalAccountId: r.sub, email: r.email };
   },
+  refreshAccessToken: refreshGoogleAccessToken,
 };
 
 // Re-exported so tests + docs that want the canonical scope list can import

@@ -1,6 +1,6 @@
 import { getDb } from "../db";
 import { getCurrentUser } from "../auth/currentUser";
-import type { CalendarAccount } from "@calmly/shared";
+import type { CalendarAccount, CalendarAccountStatus } from "@calmly/shared";
 
 export type LocalCalendarAccount = CalendarAccount;
 
@@ -9,7 +9,7 @@ interface AccountRow {
   provider: "google" | "microsoft";
   external_account_id: string;
   email: string;
-  status: "connected" | "disconnected" | "error";
+  status: CalendarAccountStatus;
 }
 
 export interface UpsertLocalCalendarAccountArgs {
@@ -17,7 +17,7 @@ export interface UpsertLocalCalendarAccountArgs {
   provider: "google" | "microsoft";
   external_account_id: string;
   email: string;
-  status: "connected" | "disconnected" | "error";
+  status: CalendarAccountStatus;
 }
 
 // Mirrors a server-side calendar_accounts row into the local cache. Returns
@@ -72,4 +72,47 @@ export function listLocalCalendarAccounts(): LocalCalendarAccount[] {
     )
     .all(user.id) as AccountRow[];
   return rows;
+}
+
+export function getLocalCalendarAccount(
+  accountId: string,
+): LocalCalendarAccount | null {
+  const user = getCurrentUser();
+  if (!user) return null;
+  const row = getDb()
+    .prepare(
+      `SELECT id, provider, external_account_id, email, status
+         FROM calendar_accounts
+         WHERE id = ? AND user_id = ?`,
+    )
+    .get(accountId, user.id) as AccountRow | undefined;
+  return row ?? null;
+}
+
+// Updates local mirror status. Returns true when a row was actually
+// changed (the new status differed from the old). The renderer subscribes
+// to status changes via the IPC `calendar:account-status-changed` channel.
+export function markLocalCalendarAccountStatus(
+  accountId: string,
+  status: CalendarAccountStatus,
+): boolean {
+  const user = getCurrentUser();
+  if (!user) return false;
+  const result = getDb()
+    .prepare(
+      `UPDATE calendar_accounts
+          SET status = ?, updated_at = ?
+        WHERE id = ? AND user_id = ? AND status != ?`,
+    )
+    .run(status, Date.now(), accountId, user.id, status);
+  return result.changes > 0;
+}
+
+export function deleteLocalCalendarAccount(accountId: string): boolean {
+  const user = getCurrentUser();
+  if (!user) return false;
+  const result = getDb()
+    .prepare(`DELETE FROM calendar_accounts WHERE id = ? AND user_id = ?`)
+    .run(accountId, user.id);
+  return result.changes > 0;
 }

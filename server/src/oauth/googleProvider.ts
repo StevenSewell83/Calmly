@@ -1,6 +1,12 @@
 // Google OAuth 2.0 provider config + token + userinfo helpers.
 // Microsoft mirrors this in microsoftProvider.ts (CAL-02).
 
+import {
+  OAuthRefreshError,
+  type RefreshArgs,
+  type RefreshResult,
+} from "./refresh";
+
 const AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
@@ -123,6 +129,72 @@ export async function exchangeGoogleCode(
     expiresInSec: parsed.expires_in,
     scope: parsed.scope ?? "",
     idToken: parsed.id_token ?? null,
+  };
+}
+
+// Refresh-grant exchange. Used by /oauth/google/refresh to mint a fresh
+// access_token from a long-lived refresh_token. Google does NOT rotate
+// refresh tokens by default, so the response usually omits refresh_token —
+// callers should preserve the existing one when that field is absent.
+
+export async function refreshGoogleAccessToken(
+  args: RefreshArgs,
+): Promise<RefreshResult> {
+  const fetchFn = args.fetchImpl ?? fetch;
+  const body = new URLSearchParams({
+    grant_type: "refresh_token",
+    refresh_token: args.refreshToken,
+    client_id: args.clientId,
+    client_secret: args.clientSecret,
+  });
+  let res: Response;
+  try {
+    res = await fetchFn(TOKEN_URL, {
+      method: "POST",
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+        accept: "application/json",
+      },
+      body,
+    });
+  } catch (e) {
+    throw new OAuthRefreshError(
+      `google refresh network error: ${e instanceof Error ? e.message : String(e)}`,
+      "network_error",
+      0,
+    );
+  }
+  let parsed: TokenResponse | null = null;
+  try {
+    parsed = (await res.json()) as TokenResponse;
+  } catch {
+    parsed = null;
+  }
+  if (!res.ok) {
+    const errCode =
+      typeof (parsed as { error?: unknown } | null)?.error === "string" &&
+      (parsed as { error: string }).error === "invalid_grant"
+        ? "invalid_grant"
+        : "provider_error";
+    throw new OAuthRefreshError(
+      `google refresh failed (${res.status})`,
+      errCode,
+      res.status,
+    );
+  }
+  if (!parsed?.access_token || !parsed.expires_in) {
+    throw new OAuthRefreshError(
+      "google refresh response missing required fields",
+      "provider_error",
+      200,
+    );
+  }
+  return {
+    accessToken: parsed.access_token,
+    expiresInSec: parsed.expires_in,
+    scope: parsed.scope ?? "",
+    idToken: parsed.id_token ?? null,
+    refreshToken: parsed.refresh_token ?? null,
   };
 }
 
