@@ -1,20 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { findDeepLinkInArgv, parseDeepLink } from "../deeplink";
 
-describe("parseDeepLink", () => {
+describe("parseDeepLink — auth callback", () => {
   it("extracts the token from a well-formed URL", () => {
     const r = parseDeepLink("calmly://auth/callback?token=abc123");
-    expect(r).toEqual({ token: "abc123" });
+    expect(r).toEqual({ kind: "auth", token: "abc123" });
   });
 
   it("preserves URL-encoded token values", () => {
     const r = parseDeepLink("calmly://auth/callback?token=ab%2Bcd%2F%3D%3D");
-    // URL.searchParams.get decodes percent-encoding for us.
-    expect(r).toEqual({ token: "ab+cd/==" });
+    expect(r).toEqual({ kind: "auth", token: "ab+cd/==" });
   });
 
   it("treats the scheme case-insensitively", () => {
     expect(parseDeepLink("CALMLY://auth/callback?token=abc")).toEqual({
+      kind: "auth",
       token: "abc",
     });
   });
@@ -26,7 +26,7 @@ describe("parseDeepLink", () => {
     expect(parseDeepLink("evil://auth/callback?token=abc")).toBe(null);
   });
 
-  it("rejects right scheme but wrong host", () => {
+  it("rejects right scheme but unknown host", () => {
     expect(parseDeepLink("calmly://other/callback?token=abc")).toBe(null);
   });
 
@@ -53,7 +53,59 @@ describe("parseDeepLink", () => {
 
   it("tolerates an optional trailing slash on /callback", () => {
     const r = parseDeepLink("calmly://auth/callback/?token=abc");
-    expect(r).toEqual({ token: "abc" });
+    expect(r).toEqual({ kind: "auth", token: "abc" });
+  });
+});
+
+describe("parseDeepLink — calendar OAuth done", () => {
+  it("extracts the ticket for google", () => {
+    const r = parseDeepLink("calmly://oauth/google/done?ticket=abc.def");
+    expect(r).toEqual({
+      kind: "calendar-oauth",
+      provider: "google",
+      ticket: "abc.def",
+    });
+  });
+
+  it("extracts the ticket for microsoft", () => {
+    const r = parseDeepLink("calmly://oauth/microsoft/done?ticket=xyz");
+    expect(r).toEqual({
+      kind: "calendar-oauth",
+      provider: "microsoft",
+      ticket: "xyz",
+    });
+  });
+
+  it("rejects an unknown provider", () => {
+    expect(parseDeepLink("calmly://oauth/apple/done?ticket=abc")).toBe(null);
+  });
+
+  it("rejects a missing ticket", () => {
+    expect(parseDeepLink("calmly://oauth/google/done")).toBe(null);
+    expect(parseDeepLink("calmly://oauth/google/done?other=x")).toBe(null);
+  });
+
+  it("rejects empty ticket", () => {
+    expect(parseDeepLink("calmly://oauth/google/done?ticket=")).toBe(null);
+  });
+
+  it("rejects an unknown action segment", () => {
+    expect(parseDeepLink("calmly://oauth/google/start?ticket=abc")).toBe(null);
+  });
+
+  it("rejects an extra path segment", () => {
+    expect(parseDeepLink("calmly://oauth/google/done/extra?ticket=abc")).toBe(
+      null,
+    );
+  });
+
+  it("tolerates a trailing slash on the action", () => {
+    const r = parseDeepLink("calmly://oauth/google/done/?ticket=abc");
+    expect(r).toEqual({
+      kind: "calendar-oauth",
+      provider: "google",
+      ticket: "abc",
+    });
   });
 });
 

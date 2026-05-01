@@ -1,5 +1,6 @@
 import { contextBridge } from "electron";
 import { authBridge } from "./auth";
+import { calendarBridge } from "./calendar";
 import { dbBridge } from "./db";
 import { inboxBridge } from "./inbox";
 import { logBridge } from "./log";
@@ -35,6 +36,7 @@ const calmlyApi: CalmlyApi = {
   log: logBridge,
   settings: settingsBridge,
   search: searchBridge,
+  calendar: calendarBridge,
 };
 
 if (process.contextIsolated) {

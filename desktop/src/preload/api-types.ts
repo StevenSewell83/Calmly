@@ -540,6 +540,19 @@ export interface SettingsBridge {
   reindexSearch(): Promise<void>;
 }
 
+// Calendar OAuth bridge (CAL-01 / CAL-02). connectGoogle opens the user's
+// browser, waits for the calmly:// deep-link to come back, and persists the
+// refresh token in the F-12 secret store. The renderer never sees the
+// refresh token — only the connection metadata.
+export type ListCalendarAccountsResult =
+  | { ok: true; accounts: import("@calmly/shared").CalendarAccount[] }
+  | { ok: false; error: "NotSignedIn" };
+
+export interface CalendarBridge {
+  connectGoogle(): Promise<import("@calmly/shared").CalendarConnectResult>;
+  listAccounts(): Promise<ListCalendarAccountsResult>;
+}
+
 export interface CalmlyApi {
   version: string;
   platform: string;
@@ -559,4 +572,5 @@ export interface CalmlyApi {
   log: LogBridge;
   settings: SettingsBridge;
   search: SearchBridge;
+  calendar: CalendarBridge;
 }

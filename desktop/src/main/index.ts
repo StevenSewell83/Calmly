@@ -6,6 +6,7 @@ import { acquireSingleInstanceLock } from "./auth/deeplink-install";
 import { createAuthOrchestrator } from "./auth/session";
 import { wrapOrchestrator } from "./auth/orchestrator";
 import { createApiClient } from "./net/client";
+import { createConnectGoogle } from "./calendar/googleOAuth";
 import { createDesktopLogger } from "./logging";
 import {
   configureElectronLog,
@@ -77,7 +78,14 @@ if (!gotInstanceLock) {
     );
 
     activeSyncLoop = createSyncBootstrap({ getDb, apiBaseUrl: API_BASE_URL });
-    registerAllIpc(orchestrator, activeSyncLoop, logger);
+    const connectGoogle = createConnectGoogle({
+      apiBaseUrl: API_BASE_URL,
+      apiClient,
+      openExternal: (url: string) => shell.openExternal(url),
+      subscribeDeepLink: deepLinks.onCalendarOAuth,
+      log: (msg, fields) => logger.info(`[calmly:calendar:google] ${msg}`, fields ?? {}),
+    });
+    registerAllIpc(orchestrator, activeSyncLoop, logger, { connectGoogle });
     activeSyncLoop.start();
 
     // Kick off FTS backfill asynchronously after boot — no-op if already done.

@@ -5,6 +5,7 @@ import { authRoutesPlugin } from "./auth/routes";
 import type { Config } from "./config";
 import type { EmailAdapter } from "./email/adapter";
 import { selectEmailSender } from "./email/select";
+import { googleOAuthPlugin } from "./routes/oauth/google";
 import { healthRoute } from "./routes/health";
 import { versionRoute } from "./routes/version";
 import { syncRoutes } from "./sync/routes";
@@ -73,6 +74,26 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     initBot(tgConfig);
     await app.register(telegramPlugin(tgConfig));
     app.log.info("[telegram] webhook registered");
+  }
+
+  // CAL-01 Google Calendar OAuth — optional; only wired when GOOGLE_CLIENT_ID
+  // + secret are configured. We fall back to COOKIE_SECRET for ticket signing
+  // in dev so a single env-var is enough to spin the flow up.
+  if (deps.config.GOOGLE_CLIENT_ID && deps.config.GOOGLE_CLIENT_SECRET) {
+    const ticketSecret =
+      deps.config.OAUTH_TICKET_SECRET ?? deps.config.COOKIE_SECRET;
+    await app.register(
+      googleOAuthPlugin({
+        clientId: deps.config.GOOGLE_CLIENT_ID,
+        clientSecret: deps.config.GOOGLE_CLIENT_SECRET,
+        redirectBaseUrl:
+          deps.config.OAUTH_REDIRECT_BASE_URL ?? deps.config.APP_URL,
+        ticketSecret,
+        stateTtlSec: deps.config.OAUTH_STATE_TTL_SEC,
+        ticketTtlSec: deps.config.OAUTH_TICKET_TTL_SEC,
+      }),
+    );
+    app.log.info("[oauth] google calendar routes registered");
   }
 
   return app;

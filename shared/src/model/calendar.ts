@@ -29,3 +29,20 @@ export const CalendarEventImportRecordSchema = CalendarEventImportSchema.innerTy
   deleted_at: z.number().int().nonnegative().nullable(),
 });
 export type CalendarEventImportRecord = z.infer<typeof CalendarEventImportRecordSchema>;
+
+export const calendarAccountStatuses = [
+  "connected",
+  "disconnected",
+  "error",
+] as const;
+export const CalendarAccountStatusSchema = z.enum(calendarAccountStatuses);
+export type CalendarAccountStatus = z.infer<typeof CalendarAccountStatusSchema>;
+
+export const CalendarAccountSchema = z.object({
+  id: uuid,
+  provider: CalendarProviderSchema,
+  external_account_id: z.string().min(1),
+  email: z.string().email(),
+  status: CalendarAccountStatusSchema,
+});
+export type CalendarAccount = z.infer<typeof CalendarAccountSchema>;

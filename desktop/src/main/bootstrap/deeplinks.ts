@@ -1,9 +1,14 @@
 import type { BrowserWindow } from "electron";
-import { findDeepLinkInArgv, parseDeepLink } from "../auth/deeplink";
+import { findDeepLinkInArgv, parseDeepLink, type DeepLinkPayload } from "../auth/deeplink";
 import { installDeepLink } from "../auth/deeplink-install";
 import type { AuthOrchestrator, RedeemResult } from "../auth/session";
 
 const DEEPLINK_RESULT_CHANNEL = "auth:deeplink-redeemed";
+
+export type CalendarOAuthDeepLinkHandler = (payload: {
+  provider: "google" | "microsoft";
+  ticket: string;
+}) => void;
 
 export interface DeepLinkBootstrap {
   // Call once: registers the OS protocol handler and buffers incoming URLs.
@@ -12,6 +17,9 @@ export interface DeepLinkBootstrap {
   setReady(orchestrator: AuthOrchestrator, mainWindow: () => BrowserWindow | null): void;
   // Cold-start: push a link from process.argv and flush.
   pushFromArgv(argv: string[]): void;
+  // Subscribe to calendar OAuth completions so calendar/<provider>OAuth.ts
+  // can resolve its in-flight connect() call.
+  onCalendarOAuth(handler: CalendarOAuthDeepLinkHandler): () => void;
 }
 
 export function createDeepLinkBootstrap(): DeepLinkBootstrap {
@@ -19,12 +27,29 @@ export function createDeepLinkBootstrap(): DeepLinkBootstrap {
   let orch: AuthOrchestrator | null = null;
   let getWin: (() => BrowserWindow | null) | null = null;
   let windowReady = false;
+  const calendarHandlers = new Set<CalendarOAuthDeepLinkHandler>();
 
   function dispatch(url: string): void {
-    if (!orch) return;
     const parsed = parseDeepLink(url);
     if (!parsed) return;
-    void orch.redeem(parsed.token).then((result: RedeemResult) => {
+    if (parsed.kind === "auth") {
+      dispatchAuth(parsed);
+      return;
+    }
+    if (parsed.kind === "calendar-oauth") {
+      for (const handler of calendarHandlers) {
+        try {
+          handler({ provider: parsed.provider, ticket: parsed.ticket });
+        } catch {
+          // handlers are advisory; never let a bad subscriber kill the flow
+        }
+      }
+    }
+  }
+
+  function dispatchAuth(payload: Extract<DeepLinkPayload, { kind: "auth" }>): void {
+    if (!orch) return;
+    void orch.redeem(payload.token).then((result: RedeemResult) => {
       const win = getWin?.();
       if (win && !win.isDestroyed()) {
         win.webContents.send(DEEPLINK_RESULT_CHANNEL, result);
@@ -61,6 +86,12 @@ export function createDeepLinkBootstrap(): DeepLinkBootstrap {
         pending.push(url);
         tryFlush();
       }
+    },
+    onCalendarOAuth(handler) {
+      calendarHandlers.add(handler);
+      return () => {
+        calendarHandlers.delete(handler);
+      };
     },
   };
 }

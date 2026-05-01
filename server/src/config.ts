@@ -33,6 +33,23 @@ const ConfigSchema = z.object({
   EMAIL_FROM: z.string().min(1).optional(),
   RESEND_API_KEY: z.string().min(1).optional(),
   DEV_MAIL_DIR: z.string().min(1).default("./.dev-mail"),
+
+  // CAL-01 / CAL-02 calendar OAuth. Optional: when GOOGLE_CLIENT_ID + secret
+  // are not set, the /oauth/google/* routes are simply not registered.
+  GOOGLE_CLIENT_ID: z.string().min(1).optional(),
+  GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
+  MICROSOFT_CLIENT_ID: z.string().min(1).optional(),
+  MICROSOFT_CLIENT_SECRET: z.string().min(1).optional(),
+  // Where the OAuth provider redirects after consent. Defaults to APP_URL,
+  // so the caller only needs to override this if the public-facing host
+  // differs from APP_URL (e.g. behind a reverse proxy on a different domain).
+  OAUTH_REDIRECT_BASE_URL: z.string().url().optional(),
+  // HMAC key for one-shot OAuth pickup tickets. Required when ANY OAuth
+  // provider is configured; falls back to COOKIE_SECRET so a single-secret
+  // dev setup just works.
+  OAUTH_TICKET_SECRET: z.string().min(32).optional(),
+  OAUTH_STATE_TTL_SEC: z.coerce.number().int().positive().default(600),
+  OAUTH_TICKET_TTL_SEC: z.coerce.number().int().positive().default(300),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;

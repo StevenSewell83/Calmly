@@ -5,15 +5,30 @@
 
 export const PROTOCOL = "calmly";
 
-const DEEPLINK_HOST = "auth";
-const DEEPLINK_PATH = "/callback";
+const AUTH_HOST = "auth";
+const AUTH_PATH = "/callback";
 
-export interface DeepLinkPayload {
-  token: string;
-}
+const OAUTH_HOST = "oauth";
+// "done" here is a URL path segment (calmly://oauth/<provider>/done) —
+// unrelated to TaskStatus. The eslint-disable below is intentional.
+// eslint-disable-next-line no-restricted-syntax
+const OAUTH_DONE_ACTION = "done";
+const OAUTH_PROVIDERS = ["google", "microsoft"] as const;
+type OAuthProviderHost = (typeof OAUTH_PROVIDERS)[number];
 
-// Strict parse of calmly://auth/callback?token=...  Anything else returns
-// null so the caller can ignore stray invocations without throwing.
+export type DeepLinkPayload =
+  | { kind: "auth"; token: string }
+  | {
+      kind: "calendar-oauth";
+      provider: OAuthProviderHost;
+      ticket: string;
+    };
+
+// Strict parse of:
+//   calmly://auth/callback?token=...
+//   calmly://oauth/<provider>/done?ticket=...
+// Anything else returns null so the caller can ignore stray invocations
+// without throwing.
 export function parseDeepLink(rawUrl: unknown): DeepLinkPayload | null {
   if (typeof rawUrl !== "string") return null;
   if (!rawUrl.toLowerCase().startsWith(`${PROTOCOL}://`)) return null;
@@ -25,13 +40,32 @@ export function parseDeepLink(rawUrl: unknown): DeepLinkPayload | null {
     return null;
   }
   if (parsed.protocol !== `${PROTOCOL}:`) return null;
-  if (parsed.host !== DEEPLINK_HOST) return null;
-  const path = parsed.pathname.replace(/\/$/, "");
-  if (path !== DEEPLINK_PATH) return null;
 
-  const token = parsed.searchParams.get("token");
-  if (!token) return null;
-  return { token };
+  if (parsed.host === AUTH_HOST) {
+    const path = parsed.pathname.replace(/\/$/, "");
+    if (path !== AUTH_PATH) return null;
+    const token = parsed.searchParams.get("token");
+    if (!token) return null;
+    return { kind: "auth", token };
+  }
+
+  if (parsed.host === OAUTH_HOST) {
+    // Path is `/<provider>/done` — split, drop empty leading segment.
+    const segs = parsed.pathname.replace(/\/+$/, "").split("/").filter(Boolean);
+    if (segs.length !== 2) return null;
+    const [provider, action] = segs as [string, string];
+    if (!isOAuthProvider(provider)) return null;
+    if (action !== OAUTH_DONE_ACTION) return null;
+    const ticket = parsed.searchParams.get("ticket");
+    if (!ticket) return null;
+    return { kind: "calendar-oauth", provider, ticket };
+  }
+
+  return null;
+}
+
+function isOAuthProvider(s: string): s is OAuthProviderHost {
+  return (OAUTH_PROVIDERS as readonly string[]).includes(s);
 }
 
 // On Windows/Linux a deep-link launch passes the URL as one of the argv

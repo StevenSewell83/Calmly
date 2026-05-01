@@ -1,7 +1,8 @@
 import type { AuthOrchestrator } from "../auth/session";
 import type { SyncLoop } from "../sync/loop";
-import type { Logger } from "@calmly/shared";
+import type { Logger, CalendarConnectResult } from "@calmly/shared";
 import { registerAuthIpc } from "../ipc/auth";
+import { registerCalendarIpc } from "../ipc/calendar";
 import { registerDbIpc } from "../ipc/db";
 import { registerInboxIpc } from "../ipc/inbox";
 import { registerLogIpc } from "../ipc/log";
@@ -17,10 +18,15 @@ import { registerTriageIpc } from "../ipc/triage";
 import { registerSettingsIpc } from "../ipc/settings";
 import { registerSearchIpc } from "../ipc/search";
 
+export interface RegisterAllIpcDeps {
+  connectGoogle: () => Promise<CalendarConnectResult>;
+}
+
 export function registerAllIpc(
   orchestrator: AuthOrchestrator,
   syncLoop: SyncLoop,
   logger: Logger,
+  deps: RegisterAllIpcDeps,
 ): void {
   registerDbIpc();
   registerSecretsIpc();
@@ -37,4 +43,5 @@ export function registerAllIpc(
   registerSyncIpc(syncLoop);
   registerSettingsIpc();
   registerSearchIpc();
+  registerCalendarIpc({ connectGoogle: deps.connectGoogle });
 }

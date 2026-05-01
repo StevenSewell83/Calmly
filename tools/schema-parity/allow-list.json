@@ -37,6 +37,24 @@
       "presentIn": ["server"],
       "absentIn": ["shared", "desktop"],
       "reason": "F-08 server-only session table. id_hash is private to the server; the cookie value is what the client knows."
+    },
+    {
+      "table": "calendar_accounts",
+      "presentIn": ["desktop", "server"],
+      "absentIn": ["shared"],
+      "reason": "CAL-01 connection metadata; not sync-replicated. The shared `CalendarAccount` type in shared/src/types/calendar.ts is a public wire shape (id, provider, email, status); it intentionally omits user_id / created_at / updated_at which are private to each side."
+    },
+    {
+      "table": "oauth_states",
+      "presentIn": ["server"],
+      "absentIn": ["shared", "desktop"],
+      "reason": "CAL-01 server-only short-lived state + PKCE verifier rows for the OAuth handshake. Never replicates; never crosses the wire."
+    },
+    {
+      "table": "oauth_tickets",
+      "presentIn": ["server"],
+      "absentIn": ["shared", "desktop"],
+      "reason": "CAL-01 server-only one-shot pickup table for OAuth completion (refresh + access tokens, deleted on redeem). Never replicates."
     }
   ],
   "divergences": [
