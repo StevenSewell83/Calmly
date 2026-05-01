@@ -37,7 +37,8 @@ type HandleFn = (e: unknown, ...args: unknown[]) => unknown;
 const handlers = new Map<string, HandleFn>();
 
 beforeAll(() => {
-  vi.mocked(ipcMain.handle).mockImplementation((ch: string, fn: HandleFn) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  vi.mocked(ipcMain.handle).mockImplementation((ch: string, fn: any) => {
     handlers.set(ch, fn);
     return ipcMain;
   });
@@ -134,7 +135,7 @@ describe("ai:setSettings", () => {
     const r = await call("ai:setSettings", { enabled: true, mode: "cloud" });
     expect(r).toEqual({ ok: true });
     expect(mockRun).toHaveBeenCalled();
-    const written = JSON.parse(mockRun.mock.calls[0][0] as string) as Record<string, unknown>;
+    const written = JSON.parse(mockRun.mock.calls[0]![0] as string) as Record<string, unknown>;
     expect(written["ai.enabled"]).toBe(true);
     expect(written["ai.mode"]).toBe("cloud");
     expect(written["syncServerUrl"]).toBe("https://example.com");

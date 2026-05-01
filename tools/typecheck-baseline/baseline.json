@@ -4,24 +4,6 @@
   "errors": [
     {
       "workspace": "desktop",
-      "file": "src/main/ai/__tests__/anthropic.test.ts",
-      "code": "TS2554",
-      "count": 3
-    },
-    {
-      "workspace": "desktop",
-      "file": "src/main/ipc/__tests__/aiSettings.test.ts",
-      "code": "TS2345",
-      "count": 1
-    },
-    {
-      "workspace": "desktop",
-      "file": "src/main/ipc/__tests__/aiSettings.test.ts",
-      "code": "TS2532",
-      "count": 1
-    },
-    {
-      "workspace": "desktop",
       "file": "src/main/ipc/__tests__/triage.test.ts",
       "code": "TS2353",
       "count": 3

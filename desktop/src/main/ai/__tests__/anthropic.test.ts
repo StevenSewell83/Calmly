@@ -50,25 +50,28 @@ describe("AnthropicProvider.complete", () => {
   });
 
   it("categorizes 401 as auth error", async () => {
-    mockCreate.mockRejectedValue(new Anthropic.APIError(401, "Unauthorized"));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockCreate.mockRejectedValue(new (Anthropic.APIError as any)(401, "Unauthorized"));
     const r = await provider.complete("system", "user");
     expect(r).toMatchObject({ ok: false, error: { kind: "auth" } });
   });
 
   it("categorizes 429 as quota error", async () => {
-    mockCreate.mockRejectedValue(new Anthropic.APIError(429, "Rate limit"));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockCreate.mockRejectedValue(new (Anthropic.APIError as any)(429, "Rate limit"));
     const r = await provider.complete("system", "user");
     expect(r).toMatchObject({ ok: false, error: { kind: "quota" } });
   });
 
   it("categorizes timeout error", async () => {
-    mockCreate.mockRejectedValue(new Anthropic.APIConnectionTimeoutError());
+    mockCreate.mockRejectedValue(new Anthropic.APIConnectionTimeoutError({ message: "Timeout" }));
     const r = await provider.complete("system", "user");
     expect(r).toMatchObject({ ok: false, error: { kind: "timeout" } });
   });
 
   it("categorizes connection error as network", async () => {
-    mockCreate.mockRejectedValue(new Anthropic.APIConnectionError());
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockCreate.mockRejectedValue(new (Anthropic.APIConnectionError as any)());
     const r = await provider.complete("system", "user");
     expect(r).toMatchObject({ ok: false, error: { kind: "network" } });
   });
