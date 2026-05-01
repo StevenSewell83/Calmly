@@ -588,6 +588,20 @@ export type AiTestResult =
   | { ok: true }
   | { ok: false; error: "NoKey" | "InvalidKey" | "NetworkError" | "InternalError"; message?: string };
 
+export type AIAction = "triage_cleanup" | "make_startable" | "brain_dump_split";
+
+export type AIError =
+  | { kind: "auth" }
+  | { kind: "quota" }
+  | { kind: "network" }
+  | { kind: "timeout" }
+  | { kind: "invalid_response"; raw?: string }
+  | { kind: "unknown"; cause?: unknown };
+
+export type AIRunResult =
+  | { ok: true; value: { action: AIAction; result: unknown } }
+  | { ok: false; error: AIError };
+
 export interface AiBridge {
   getSettings(): Promise<AiSettings>;
   setSettings(patch: Partial<AiSettings>): Promise<{ ok: boolean; error?: string }>;
@@ -595,6 +609,7 @@ export interface AiBridge {
   setKey(value: string): Promise<{ ok: boolean; error?: string }>;
   clearKey(): Promise<boolean>;
   testConnection(): Promise<AiTestResult>;
+  run(action: AIAction, payload: Record<string, unknown>): Promise<AIRunResult>;
 }
 
 export interface CalmlyApi {

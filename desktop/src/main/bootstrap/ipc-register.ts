@@ -19,6 +19,7 @@ import { registerTriageIpc } from "../ipc/triage";
 import { registerSettingsIpc } from "../ipc/settings";
 import { registerSearchIpc } from "../ipc/search";
 import { registerAiSettingsIpc } from "../ipc/aiSettings";
+import { registerAiIpc } from "../ipc/ai";
 
 export interface RegisterAllIpcDeps {
   apiClient: ApiClient;
@@ -53,4 +54,5 @@ export function registerAllIpc(
     connectMicrosoft: deps.connectMicrosoft,
   });
   registerAiSettingsIpc();
+  registerAiIpc();
 }
