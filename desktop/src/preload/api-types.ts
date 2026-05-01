@@ -542,6 +542,7 @@ export interface CalendarBridge {
   connectMicrosoft(): Promise<import("@calmly/shared").CalendarConnectResult>;
   listAccounts(): Promise<ListCalendarAccountsResult>;
   disconnect(accountId: string): Promise<DisconnectCalendarResult>;
+  refresh(accountId?: string): Promise<{ ok: boolean }>;
   onAccountStatusChanged(
     handler: (event: AccountStatusEventPayload) => void,
   ): () => void;

@@ -6,6 +6,7 @@ import {
 } from "../calendar/localStore";
 import { calendarTokens } from "../calendar/tokens";
 import { calendarStatusEvents } from "../calendar/statusEvents";
+import { triggerImport } from "../calendar/importWorker";
 import type { ApiClient } from "../net/client";
 import { ApiHttpError } from "../net/client";
 import { getCurrentUser } from "../auth/currentUser";
@@ -121,6 +122,19 @@ export function registerCalendarIpc(deps: CalendarIpcDeps): void {
 
       const disconnected: CalendarAccountStatus = "disconnected";
       calendarStatusEvents.notify({ accountId, status: disconnected });
+      return { ok: true };
+    },
+  );
+
+  ipcMain.handle(
+    "calendar:refresh",
+    async (_e, accountId: unknown): Promise<{ ok: boolean }> => {
+      const user = getCurrentUser();
+      if (!user) return { ok: false };
+      const id = typeof accountId === "string" && accountId.length > 0
+        ? accountId
+        : undefined;
+      await triggerImport(id);
       return { ok: true };
     },
   );

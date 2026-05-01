@@ -20,6 +20,8 @@ import { createDeepLinkBootstrap } from "./bootstrap/deeplinks";
 import { registerAllIpc } from "./bootstrap/ipc-register";
 import { createSyncBootstrap } from "./bootstrap/sync-bootstrap";
 import { runSearchBackfill } from "./search/backfill";
+import { createCalendarRefresh } from "./calendar/refresh";
+import { startCalendarImportWorker, stopCalendarImportWorker } from "./calendar/importWorker";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -100,6 +102,15 @@ if (!gotInstanceLock) {
     });
     activeSyncLoop.start();
 
+    const calendarRefresh = createCalendarRefresh({
+      apiClient,
+      log: (msg, fields) => logger.info(`[calmly:calendar:refresh] ${msg}`, fields ?? {}),
+    });
+    startCalendarImportWorker({
+      calendarRefresh,
+      log: (msg, fields) => logger.info(`[calmly:calendar:import] ${msg}`, fields ?? {}),
+    });
+
     // Kick off FTS backfill asynchronously after boot — no-op if already done.
     runSearchBackfill(getDb(), logger);
 
@@ -154,6 +165,7 @@ app.on("window-all-closed", () => {
 
 app.on("before-quit", () => {
   activeSyncLoop?.stop();
+  stopCalendarImportWorker();
   unregisterAllShortcuts();
   closeDb();
 });

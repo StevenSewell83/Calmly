@@ -25,6 +25,12 @@ export const calendarBridge: CalendarBridge = {
       accountId,
     ) as Promise<DisconnectCalendarResult>;
   },
+  refresh(accountId?: string): Promise<{ ok: boolean }> {
+    return ipcRenderer.invoke(
+      "calendar:refresh",
+      accountId,
+    ) as Promise<{ ok: boolean }>;
+  },
   onAccountStatusChanged(
     handler: (event: AccountStatusEventPayload) => void,
   ): () => void {
