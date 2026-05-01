@@ -53,7 +53,7 @@ export type DiscardResult =
   | { ok: true }
   | {
       ok: false;
-      error: "NotFound" | "AlreadyResolved" | "InternalError";
+      error: "NotFound" | "AlreadyResolved" | "InvalidArgs" | "InternalError";
     };
 
 interface InboxRow {
@@ -403,11 +403,12 @@ export function resolveWithBreakdown(
       );
 
       for (let i = 0; i < cleanSubs.length; i++) {
-        const subId = subtaskIds[i];
+        const subId = subtaskIds[i]!;
+        const subTitle = cleanSubs[i]!;
         insertTask.run(
           subId,
           args.userId,
-          cleanSubs[i],
+          subTitle,
           initialStatus,
           null,
           parentId,
@@ -418,7 +419,7 @@ export function resolveWithBreakdown(
           args.db,
           subId,
           {
-            title: cleanSubs[i],
+            title: subTitle,
             notes: null,
             type: "task",
             status: initialStatus,

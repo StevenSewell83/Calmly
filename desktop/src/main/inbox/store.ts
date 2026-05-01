@@ -177,7 +177,7 @@ export function snoozeInboxItem(
 
 export type SkipInboxResult =
   | { ok: true }
-  | { ok: false; error: "NotFound" | "InternalError" };
+  | { ok: false; error: "NotFound" | "InvalidArgs" | "InternalError" };
 
 // Marks an item as resolved with no triage outcome — the user
 // dismissed it. Same full-snapshot rule as snoozeInboxItem: the

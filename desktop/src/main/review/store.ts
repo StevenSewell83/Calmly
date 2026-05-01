@@ -207,7 +207,7 @@ export function moveTaskTo(
 
 export type SaveReflectionResult =
   | { ok: true }
-  | { ok: false; error: "InternalError" };
+  | { ok: false; error: "InvalidArgs" | "InternalError" };
 
 export function saveReflection(
   db: Database.Database,

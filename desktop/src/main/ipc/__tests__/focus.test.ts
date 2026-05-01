@@ -11,7 +11,7 @@ vi.mock("../handler", () => ({
     v !== null && typeof v === "object" && !Array.isArray(v),
 }));
 
-vi.mock("../focus/store", () => ({
+vi.mock("../../focus/store", () => ({
   currentFocus: vi.fn(),
   startFocus: vi.fn(),
   endFocus: vi.fn(),
@@ -20,7 +20,7 @@ vi.mock("../focus/store", () => ({
 }));
 
 import { registerFocusIpc } from "../focus";
-import * as store from "../focus/store";
+import * as store from "../../focus/store";
 
 beforeAll(() => registerFocusIpc());
 

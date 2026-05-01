@@ -43,7 +43,7 @@ export type PlanPushByResult =
 
 export type PlanDropFromTodayResult =
   | DropFromTodayResult
-  | { ok: false; error: "NotSignedIn" };
+  | { ok: false; error: "NotSignedIn" | "InvalidArgs" };
 
 export function registerPlanIpc(): void {
   authedHandler<PlanListResult>("plan:listForDay", (ctx, raw) => {

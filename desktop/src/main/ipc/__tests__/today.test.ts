@@ -11,14 +11,14 @@ vi.mock("../handler", () => ({
     v !== null && typeof v === "object" && !Array.isArray(v),
 }));
 
-vi.mock("../today/store", () => ({
+vi.mock("../../today/store", () => ({
   listTodayTasks: vi.fn(),
   listTodayEvents: vi.fn(),
   countUnresolvedInbox: vi.fn(),
 }));
 
 import { registerTodayIpc } from "../today";
-import * as store from "../today/store";
+import * as store from "../../today/store";
 
 beforeAll(() => registerTodayIpc());
 

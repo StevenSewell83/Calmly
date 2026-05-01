@@ -33,7 +33,7 @@ beforeEach(() => {
 
 type HandleCallback = (event: unknown, ...args: unknown[]) => Promise<unknown>;
 
-function captureHandler(): { invoke: (raw?: unknown) => Promise<unknown> } {
+function captureHandler(): { invoke: (...args: unknown[]) => Promise<unknown> } {
   let captured: HandleCallback | null = null;
   (ipcMain.handle as ReturnType<typeof vi.fn>).mockImplementation(
     (_ch: string, fn: HandleCallback) => { captured = fn; },

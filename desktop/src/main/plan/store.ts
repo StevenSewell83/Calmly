@@ -303,7 +303,7 @@ export function dropFromToday(
 
 export type UnscheduleResult =
   | { ok: true }
-  | { ok: false; error: "NotFound" | "InternalError" };
+  | { ok: false; error: "NotFound" | "InvalidArgs" | "InternalError" };
 
 // Returns a placed task to the backlog (clears scheduled_start/end
 // pair). Idempotent — clearing an already-cleared task succeeds and

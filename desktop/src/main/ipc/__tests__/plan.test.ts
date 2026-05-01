@@ -11,7 +11,7 @@ vi.mock("../handler", () => ({
     v !== null && typeof v === "object" && !Array.isArray(v),
 }));
 
-vi.mock("../plan/store", () => ({
+vi.mock("../../plan/store", () => ({
   listForDay: vi.fn(),
   scheduleTask: vi.fn(),
   unscheduleTask: vi.fn(),
@@ -19,7 +19,7 @@ vi.mock("../plan/store", () => ({
 }));
 
 import { registerPlanIpc } from "../plan";
-import * as store from "../plan/store";
+import * as store from "../../plan/store";
 
 beforeAll(() => registerPlanIpc());
 

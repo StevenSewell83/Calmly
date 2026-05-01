@@ -4,74 +4,44 @@
   "errors": [
     {
       "workspace": "desktop",
-      "file": "src/main/ipc/__tests__/focus.test.ts",
-      "code": "TS2307",
+      "file": "src/main/ai/__tests__/anthropic.test.ts",
+      "code": "TS2554",
+      "count": 3
+    },
+    {
+      "workspace": "desktop",
+      "file": "src/main/ipc/__tests__/aiSettings.test.ts",
+      "code": "TS2345",
       "count": 1
     },
     {
       "workspace": "desktop",
-      "file": "src/main/ipc/__tests__/inbox.test.ts",
-      "code": "TS2307",
-      "count": 1
-    },
-    {
-      "workspace": "desktop",
-      "file": "src/main/ipc/__tests__/plan.test.ts",
-      "code": "TS2307",
-      "count": 1
-    },
-    {
-      "workspace": "desktop",
-      "file": "src/main/ipc/__tests__/today.test.ts",
-      "code": "TS2307",
+      "file": "src/main/ipc/__tests__/aiSettings.test.ts",
+      "code": "TS2532",
       "count": 1
     },
     {
       "workspace": "desktop",
       "file": "src/main/ipc/__tests__/triage.test.ts",
-      "code": "TS2307",
-      "count": 1
-    },
-    {
-      "workspace": "desktop",
-      "file": "src/main/ipc/handler.test.ts",
-      "code": "TS2554",
-      "count": 1
-    },
-    {
-      "workspace": "desktop",
-      "file": "src/main/ipc/inbox.ts",
-      "code": "TS2345",
-      "count": 1
-    },
-    {
-      "workspace": "desktop",
-      "file": "src/main/ipc/plan.ts",
-      "code": "TS2345",
+      "code": "TS2353",
       "count": 3
     },
     {
       "workspace": "desktop",
-      "file": "src/main/ipc/review.ts",
-      "code": "TS2345",
+      "file": "src/main/sync/client.ts",
+      "code": "TS2339",
       "count": 1
     },
     {
       "workspace": "desktop",
-      "file": "src/main/ipc/triage.ts",
-      "code": "TS2345",
+      "file": "src/main/sync/loop.ts",
+      "code": "TS2322",
       "count": 1
     },
     {
       "workspace": "desktop",
-      "file": "src/main/plan/store.ts",
-      "code": "TS2304",
-      "count": 1
-    },
-    {
-      "workspace": "desktop",
-      "file": "src/main/triage/store.ts",
-      "code": "TS2345",
+      "file": "src/main/sync/loop.ts",
+      "code": "TS2339",
       "count": 1
     }
   ]

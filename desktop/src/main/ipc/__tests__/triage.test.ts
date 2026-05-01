@@ -11,14 +11,14 @@ vi.mock("../handler", () => ({
     v !== null && typeof v === "object" && !Array.isArray(v),
 }));
 
-vi.mock("../triage/store", () => ({
+vi.mock("../../triage/store", () => ({
   resolveAsTask: vi.fn(),
   resolveAsEvent: vi.fn(),
   discardInboxItem: vi.fn(),
 }));
 
 import { registerTriageIpc } from "../triage";
-import * as store from "../triage/store";
+import * as store from "../../triage/store";
 
 beforeAll(() => registerTriageIpc());
 

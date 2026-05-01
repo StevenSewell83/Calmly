@@ -138,7 +138,7 @@ export type InboxSnoozeResult =
 
 export type InboxSkipResult =
   | { ok: true }
-  | { ok: false; error: "NotSignedIn" | "NotFound" | "InternalError" };
+  | { ok: false; error: "NotSignedIn" | "NotFound" | "InvalidArgs" | "InternalError" };
 
 export interface InboxBridge {
   // Persists raw text to the local inbox and queues the upsert for sync.
@@ -212,6 +212,7 @@ export type TriageDiscardResult =
         | "NotSignedIn"
         | "NotFound"
         | "AlreadyResolved"
+        | "InvalidArgs"
         | "InternalError";
     };
 
@@ -279,7 +280,7 @@ export type PlanUnscheduleResult =
   | { ok: true }
   | {
       ok: false;
-      error: "NotSignedIn" | "NotFound" | "InternalError";
+      error: "NotSignedIn" | "NotFound" | "InvalidArgs" | "InternalError";
     };
 
 export interface PlanScheduleArgs {
@@ -479,7 +480,7 @@ export type ReviewMoveToResult =
 
 export type ReviewSaveReflectionResult =
   | { ok: true }
-  | { ok: false; error: "NotSignedIn" | "InternalError" };
+  | { ok: false; error: "NotSignedIn" | "InvalidArgs" | "InternalError" };
 
 export type ReviewCompleteShutdownResult =
   | { ok: true }

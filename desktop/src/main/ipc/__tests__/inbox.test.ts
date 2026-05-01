@@ -17,7 +17,7 @@ vi.mock("../handler", () => ({
     v !== null && typeof v === "object" && !Array.isArray(v),
 }));
 
-vi.mock("../inbox/store", () => ({
+vi.mock("../../inbox/store", () => ({
   addInboxItem: vi.fn(),
   listInbox: vi.fn(),
   snoozeInboxItem: vi.fn(),
@@ -25,7 +25,7 @@ vi.mock("../inbox/store", () => ({
 }));
 
 import { registerInboxIpc } from "../inbox";
-import * as store from "../inbox/store";
+import * as store from "../../inbox/store";
 
 beforeAll(() => registerInboxIpc());
 
