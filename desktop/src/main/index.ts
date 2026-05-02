@@ -4,6 +4,7 @@ import { dirname } from "node:path";
 import { closeDb, getDb, initDb } from "./db";
 import { acquireSingleInstanceLock } from "./auth/deeplink-install";
 import { createAuthOrchestrator } from "./auth/session";
+import { createDevStubOrchestrator } from "./auth/devStubOrchestrator";
 import { wrapOrchestrator } from "./auth/orchestrator";
 import { createApiClient } from "./net/client";
 import { createConnectGoogle } from "./calendar/googleOAuth";
@@ -75,11 +76,21 @@ if (!gotInstanceLock) {
         )) as typeof fetch,
     });
 
+    const useDevAuthStub =
+      !app.isPackaged && process.env["CALMLY_DEV_AUTH"] === "stub";
+    if (useDevAuthStub) {
+      console.log(
+        "[calmly:auth] DEV STUB ENABLED — signed in as dev@calmly.local; no server calls",
+      );
+    }
     const orchestrator = wrapOrchestrator(
-      createAuthOrchestrator({
-        client: apiClient,
-        log: (msg, fields) => console.log(`[calmly:auth] ${msg}`, fields ?? {}),
-      }),
+      useDevAuthStub
+        ? createDevStubOrchestrator()
+        : createAuthOrchestrator({
+            client: apiClient,
+            log: (msg, fields) =>
+              console.log(`[calmly:auth] ${msg}`, fields ?? {}),
+          }),
       getDb,
     );
 

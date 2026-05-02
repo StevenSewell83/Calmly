@@ -9,6 +9,7 @@
     "pnpm": ">=9.0.0"
   },
   "scripts": {
+    "dev": "CALMLY_DEV_AUTH=stub pnpm --filter @calmly/desktop dev",
     "typecheck": "pnpm -r typecheck",
     "typecheck:gated": "pnpm --filter @calmly/typecheck-baseline check",
     "build": "pnpm -r build",

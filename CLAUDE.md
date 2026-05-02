@@ -2,6 +2,10 @@
 
 Desktop-first ADHD planning app (Electron + Telegram bot, hybrid local/cloud AI). Spec lives in `ADHD_App_PRD_AI_Revised_v2.md` — treat it as the source of truth for product decisions.
 
+## Fast dev launch
+
+`pnpm dev` (from repo root) starts the desktop app with `CALMLY_DEV_AUTH=stub` so it boots straight into the signed-in shell as `dev@calmly.local` — no Docker, no sync server, no magic-link round trip. The stub is gated on `!app.isPackaged`, so packaged builds always use the real auth flow. To exercise the real flow in dev (e.g. when working on auth itself), run `pnpm --filter @calmly/desktop dev` directly without the env var.
+
 ## Issue tracking: use `bd` (beads)
 
 This project uses **bd (beads)** as the primary task tracker. Do NOT use TodoWrite, TaskCreate, or scratch markdown files for tracking work — use beads.
