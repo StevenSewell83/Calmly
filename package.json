@@ -9,7 +9,7 @@
     "pnpm": ">=9.0.0"
   },
   "scripts": {
-    "dev": "CALMLY_DEV_AUTH=stub pnpm --filter @calmly/desktop dev",
+    "dev": "cross-env CALMLY_DEV_AUTH=stub pnpm --filter @calmly/desktop dev",
     "typecheck": "pnpm -r typecheck",
     "typecheck:gated": "pnpm --filter @calmly/typecheck-baseline check",
     "build": "pnpm -r build",
@@ -31,6 +31,7 @@
   },
   "devDependencies": {
     "@eslint/js": "9.14.0",
+    "cross-env": "7.0.3",
     "eslint": "9.14.0",
     "eslint-config-prettier": "9.1.0",
     "eslint-plugin-react-hooks": "5.0.0",
