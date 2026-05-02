@@ -12,7 +12,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS task_fts USING fts5(
   notes,
   content='tasks',
   content_rowid='rowid',
-  tokenize='unicode61 remove_diacritics 2 tokenchars "_-"'
+  tokenize="unicode61 remove_diacritics 2 tokenchars '_-'"
 );
 
 -- Populate from existing rows on first run.
@@ -41,7 +41,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS inbox_fts USING fts5(
   raw_text,
   content='inbox_items',
   content_rowid='rowid',
-  tokenize='unicode61 remove_diacritics 2 tokenchars "_-"'
+  tokenize="unicode61 remove_diacritics 2 tokenchars '_-'"
 );
 
 INSERT INTO inbox_fts(rowid, raw_text)
