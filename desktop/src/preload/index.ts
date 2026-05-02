@@ -10,6 +10,7 @@ import { focusBridge } from "./focus";
 import { planBridge } from "./plan";
 import { quickplanBridge } from "./quickplan";
 import { replanBridge } from "./replan";
+import { remindersBridge } from "./reminders";
 import { reviewBridge } from "./review";
 import { eventsBridge, tasksBridge } from "./today";
 import { triageBridge } from "./triage";
@@ -35,6 +36,7 @@ const calmlyApi: CalmlyApi = {
   quickplan: quickplanBridge,
   replan: replanBridge,
   review: reviewBridge,
+  reminders: remindersBridge,
   log: logBridge,
   settings: settingsBridge,
   search: searchBridge,

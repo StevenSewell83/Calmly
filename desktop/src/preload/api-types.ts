@@ -1,4 +1,4 @@
-import type { FocusSource, InboxSource } from "@calmly/shared";
+import type { FocusSource, InboxSource, ReminderImportance } from "@calmly/shared";
 import type {
   EventTodayRow,
   FocusSessionRow,
@@ -629,6 +629,53 @@ export interface AiBridge {
   }>;
 }
 
+// Per-task reminder rule wire shape — mirrors ReminderRuleRow in
+// main/reminders/store. Renderer treats `active` as 0|1 to keep one
+// shape between SQLite and the bridge.
+export interface ReminderRuleItem {
+  id: string;
+  task_id: string;
+  importance: ReminderImportance;
+  interval_seconds: number;
+  escalation_json: string;
+  active: 0 | 1;
+  version: number;
+}
+
+export interface RemindersUpsertArgs {
+  taskId: string;
+  importance: ReminderImportance;
+  intervalSeconds: number;
+  /** Serialized JSON object — escalation policy. The shape is the
+   * reminders epic's concern; this layer just round-trips a string. */
+  escalationJson: string;
+  active: boolean;
+}
+
+export type RemindersGetResult =
+  | { ok: true; rule: ReminderRuleItem | null }
+  | { ok: false; error: "NotSignedIn" | "InvalidArgs" };
+
+export type RemindersUpsertResult =
+  | { ok: true; id: string }
+  | {
+      ok: false;
+      error: "NotSignedIn" | "NotFound" | "InvalidArgs" | "InternalError";
+    };
+
+export type RemindersDeleteResult =
+  | { ok: true }
+  | {
+      ok: false;
+      error: "NotSignedIn" | "NotFound" | "InvalidArgs" | "InternalError";
+    };
+
+export interface RemindersBridge {
+  get(taskId: string): Promise<RemindersGetResult>;
+  upsert(args: RemindersUpsertArgs): Promise<RemindersUpsertResult>;
+  delete(taskId: string): Promise<RemindersDeleteResult>;
+}
+
 export interface CalmlyApi {
   version: string;
   platform: string;
@@ -645,6 +692,7 @@ export interface CalmlyApi {
   quickplan: QuickPlanBridge;
   replan: ReplanBridge;
   review: ReviewBridge;
+  reminders: RemindersBridge;
   log: LogBridge;
   settings: SettingsBridge;
   search: SearchBridge;

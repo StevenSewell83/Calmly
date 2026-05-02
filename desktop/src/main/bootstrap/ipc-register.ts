@@ -11,6 +11,7 @@ import { registerSecretsIpc } from "../ipc/secrets";
 import { registerFocusIpc } from "../ipc/focus";
 import { registerPlanIpc } from "../ipc/plan";
 import { registerQuickPlanIpc } from "../ipc/quickplan";
+import { registerRemindersIpc } from "../ipc/reminders";
 import { registerReplanIpc } from "../ipc/replan";
 import { registerReviewIpc } from "../ipc/review";
 import { registerSyncIpc } from "../ipc/sync";
@@ -43,6 +44,7 @@ export function registerAllIpc(
   registerTriageIpc();
   registerPlanIpc();
   registerQuickPlanIpc();
+  registerRemindersIpc();
   registerReplanIpc();
   registerReviewIpc();
   registerFocusIpc();
