@@ -1,0 +1,40 @@
+# Never ship host node_modules into the image — pnpm symlinks point at host paths
+# (e.g. C:/Users/.../.pnpm/...) which are invalid inside the container. The
+# Dockerfile runs `pnpm install` against the manifests; let it create fresh
+# symlinks rather than copying the host's.
+**/node_modules
+
+# Build / dev artifacts
+**/dist
+**/out
+**/.vite
+**/coverage
+**/.turbo
+
+# VCS + tooling
+.git
+.gitignore
+.github
+.beads
+.husky
+.vscode
+.idea
+
+# Logs / local files
+**/*.log
+.env
+.env.*
+!.env.example
+
+# Desktop / platform-specific (server image doesn't need them)
+desktop
+deploy
+docs
+oss-sync
+tools
+scripts
+e2e
+
+# OS noise
+**/.DS_Store
+**/Thumbs.db
