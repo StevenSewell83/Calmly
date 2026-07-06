@@ -30,10 +30,17 @@ there's a concrete ingestion service to point at.
 ## Before tagging
 
 1. **Update `desktop/CHANGELOG.md`**
-   - Move bullets from `[Unreleased]` into the versioned section for this
-     release, dated `YYYY-MM-DD`.
+   - Move bullets from `[Unreleased]` into a `## [X.Y.Z] - YYYY-MM-DD` section
+     (real date, not "Unreleased" — `scripts/release-notes.mjs` refuses to
+     extract notes for a section still marked Unreleased, which is exactly
+     the guard REL-08's release job runs before creating a draft Release).
    - Leave an empty `## [Unreleased]` section at the top for the next cycle.
-2. **Bump version in `desktop/package.json`**
+2. **Bump version in `desktop/package.json`** (matches the CHANGELOG section
+   and the tag you're about to push). This is for local/manual builds and so
+   the committed history reads correctly — REL-08's CI pipeline re-stamps
+   `desktop/package.json` from the tag itself before building on every OS
+   leg, so the tag is the actual single source of truth for what ships; a
+   mismatch here just means a confusing diff, not a broken release.
 3. **Commit the release prep**
    ```bash
    git add desktop/package.json desktop/CHANGELOG.md
@@ -44,6 +51,11 @@ there's a concrete ingestion service to point at.
    git tag desktop-vX.Y.Z
    git push origin desktop-vX.Y.Z
    ```
+   Pushing the tag triggers `.github/workflows/desktop-release.yml`: it
+   builds all three OS installers, runs the REL-09 packaged smoke suite
+   (Linux leg — failure there blocks the release), checksums everything, and
+   opens a **draft** GitHub Release with notes extracted from the CHANGELOG
+   section you just added. See "After tagging" below.
 
 ## Building installers
 
@@ -63,10 +75,15 @@ there's a concrete ingestion service to point at.
 Windows/macOS artifacts built without the signing secrets below are still
 fully functional installers — just unsigned, which means Windows SmartScreen
 and macOS Gatekeeper will warn/block on them. Fine for local dev builds; not
-fine for anything handed to a real user. CI wiring for these (windows-latest /
-macos-latest runners building on tag push, auto-attaching artifacts to a
-draft GitHub Release) lands in REL-08. Until then, run the above locally or
-via a manual/dispatch workflow run.
+fine for anything handed to a real user. `.github/workflows/desktop-release.yml`
+(REL-08) builds all three OSes on `windows-latest`/`macos-latest`/
+`ubuntu-latest` runners on every `desktop-v*` tag push, passing these secrets
+through automatically, and attaches every installer to a draft GitHub
+Release. Until the secrets are provisioned (see the owner checklist below),
+that pipeline still runs and produces clearly-logged unsigned artifacts —
+run the commands above locally for a quick unsigned build, or use the
+workflow's `workflow_dispatch` dry run (see "After tagging") to exercise the
+full pipeline from a branch.
 
 ## Code signing & notarization (REL-05)
 
@@ -320,11 +337,71 @@ If any step fails, check `desktop/src/main/auth/deeplink-install.ts` (the
 `desktop/src/main/bootstrap/deeplinks.ts` (buffering/dispatch) before
 assuming it's an `electron-builder.yml` config problem.
 
-## After tagging
+## After tagging (REL-08)
 
-Once REL-08 lands CI publishing, this section will describe watching the
-release workflow and filling in the draft GitHub Release — mirroring
-`server/RELEASING.md`'s "After tagging" section. Until then, attach the
-locally-built installers to a manually-created GitHub Release draft, pasting
-the relevant `desktop/CHANGELOG.md` section (see `scripts/release-notes.mjs`
-— extracts the matching version section by tag).
+`.github/workflows/desktop-release.yml` triggers on `desktop-v*` tag pushes
+(and manual `workflow_dispatch`, see the dry-run procedure below). It:
+
+1. Resolves the release version from the tag (`${GITHUB_REF_NAME#desktop-v}`)
+   and stamps it into `desktop/package.json` on each OS runner before
+   building — the tag is the single source of truth for what version ships.
+2. Builds `ubuntu-latest` / `windows-latest` / `macos-latest` in parallel
+   (`dist:linux` / `dist:win` / `dist:mac`), passing the REL-05 signing
+   secrets through so a fully-provisioned repo produces signed/notarized
+   artifacts and an unprovisioned one produces clearly-logged unsigned ones.
+3. On the Linux leg only, runs the REL-09 packaged smoke suite
+   (`test:e2e:packaged`) against its own freshly-built artifact. A failure
+   here fails the whole `build` job — **no OS leg's installers reach the
+   release job if the smoke suite fails**, whether or not that particular
+   leg's own build succeeded.
+4. Downloads every OS's installers plus the electron-updater `latest*.yml`
+   manifests, generates one `SHA256SUMS.txt` covering all of them, extracts
+   this version's notes from `desktop/CHANGELOG.md` via
+   `scripts/release-notes.mjs` (failing loudly if that section is missing or
+   still dated "Unreleased"), and opens a **draft** GitHub Release with the
+   installers + `SHA256SUMS.txt` attached.
+
+### Verify the draft
+
+1. Open the draft Release on GitHub. Confirm:
+   - One installer per platform (AppImage + deb, `.exe`, `.dmg` + `.zip`) plus
+     `latest-linux.yml` / `latest.yml` / `latest-mac.yml` and
+     `SHA256SUMS.txt`.
+   - The notes body matches the `desktop/CHANGELOG.md` section for this
+     version.
+   - `sha256sum -c SHA256SUMS.txt` against the downloaded files matches.
+2. If signing secrets are configured, spot-check a signed artifact using the
+   commands in "Verifying signatures" above before publishing.
+3. **Publish the draft** (human action — the workflow deliberately never does
+   this itself).
+
+### Verify auto-update picks it up (v1.0.0 → v1.0.1 dry run)
+
+Do this once per significant change to the update pipeline (electron-updater
+config, publish feed, signing), and before the very first real `1.0.0`
+release:
+
+1. Tag and let CI publish a `desktop-v1.0.0` draft as above; publish it.
+2. Install that build on a test machine (or run `release/linux-unpacked/calmly`
+   directly).
+3. Bump `desktop/CHANGELOG.md` + tag `desktop-v1.0.1` the same way; publish
+   that draft too.
+4. Launch the `1.0.0` install and confirm Settings → Updates (REL-06/REL-07)
+   detects `1.0.1`, downloads it, and offers to restart — without the user
+   having to know a new version exists otherwise.
+5. Confirm the updated app reports `1.0.1` (Settings → About, or
+   `app.getVersion()`).
+
+### Exercising the pipeline without a real tag
+
+Use `workflow_dispatch` on this workflow from any branch (`dry_run` defaults
+to `true`): it builds all three OS legs, including the Linux packaged smoke
+suite, but skips version-stamping guarantees tied to a real tag and skips the
+release-notes/CHANGELOG guard and the draft-release job entirely — nothing is
+published. This is the primary way to validate a change to the pipeline
+itself (matrix setup, signing passthrough, artifact collection) before ever
+pushing a `desktop-v*` tag. To test the actual draft-release path without
+burning a `1.0.0`-shaped tag, push a prerelease-style tag instead, e.g.
+`desktop-v0.9.0-rc.1` — the workflow treats any version containing a `-` as a
+prerelease on the created GitHub Release, and delete the tag + draft
+afterwards once verified.

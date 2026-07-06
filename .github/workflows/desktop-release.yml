@@ -1,0 +1,281 @@
+name: Desktop release
+
+# REL-08 (calmly-y5z.11): tag-driven desktop release pipeline. Mirrors
+# release.yml's (sync server, sync-v* tags) tag-prefix versioning and
+# checksum discipline, but desktop uses its own desktop-v* prefix so the
+# server and the app release independently, and ships a 3-OS installer
+# matrix (electron-builder, not a container image) instead of a GHCR push.
+#
+# workflow_dispatch exists purely so this pipeline can be exercised end to
+# end (all three OS legs) from a feature branch without burning a real tag —
+# `dry_run` defaults to true for exactly that reason: build everything,
+# publish nothing. Only a `desktop-v*` tag push, or an explicit
+# `workflow_dispatch` with dry_run=false, reaches the draft-release job.
+on:
+  push:
+    tags:
+      - "desktop-v*"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: >-
+          Build every OS leg but skip publishing (no draft Release created,
+          no release-notes/CHANGELOG guard enforced). Set to false only to
+          replay/repair a real tag's release without re-tagging.
+        type: boolean
+        default: true
+
+# One release run per ref at a time; unlike ci.yml this does NOT
+# cancel-in-progress — an in-flight release build (signing, notarization,
+# smoke test) should run to completion rather than being killed mid-way by a
+# second dispatch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9.12.3"
+
+jobs:
+  version:
+    name: Resolve release version
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+      publish: ${{ steps.resolve.outputs.publish }}
+      prerelease: ${{ steps.resolve.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version + publish flag
+        id: resolve
+        shell: bash
+        env:
+          # Read via env (not interpolated into the script body) so a
+          # maliciously-crafted ref/input value can't inject shell syntax —
+          # GITHUB_REF_NAME/GITHUB_REF_TYPE are also already-provided env
+          # vars, referenced directly below for the same reason.
+          EVENT_NAME: ${{ github.event_name }}
+          DRY_RUN_INPUT: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+
+          if [[ "${GITHUB_REF_TYPE}" == "tag" && "${GITHUB_REF_NAME}" == desktop-v* ]]; then
+            version="${GITHUB_REF_NAME#desktop-v}"
+            publish=true
+          else
+            # workflow_dispatch on a branch: no tag to derive a version from.
+            # Build with a clearly-synthetic version so the artifacts can
+            # never be confused with a real release, and never publish.
+            current="$(node -p "require('./desktop/package.json').version")"
+            version="${current}-dryrun.${GITHUB_RUN_NUMBER}"
+            publish=false
+          fi
+
+          if [[ "${EVENT_NAME}" == "workflow_dispatch" && "${DRY_RUN_INPUT}" == "true" ]]; then
+            publish=false
+          fi
+
+          case "$version" in
+            *-*) prerelease=true ;;
+            *) prerelease=false ;;
+          esac
+
+          echo "Resolved version=${version} publish=${publish} prerelease=${prerelease}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "publish=${publish}" >> "$GITHUB_OUTPUT"
+          echo "prerelease=${prerelease}" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build (${{ matrix.artifact_name }})
+    needs: version
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: linux
+            dist_script: dist:linux
+          - os: windows-latest
+            artifact_name: windows
+            dist_script: dist:win
+          - os: macos-latest
+            artifact_name: macos
+            dist_script: dist:mac
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: corepack enable
+        shell: bash
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.local/share/pnpm/store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-${{ runner.os }}-
+
+      # Lifecycle scripts on (unlike ci.yml's schema-parity/migration-sweep
+      # jobs): electron-builder's own npmRebuild step needs the desktop
+      # workspace's better-sqlite3 native module already present, and the
+      # Linux leg's packaged smoke suite opens a real SQLite DB from the
+      # test runner.
+      - run: pnpm install --frozen-lockfile
+        shell: bash
+
+      - name: Stamp release version into desktop/package.json
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          node -e "
+            const fs = require('node:fs');
+            const file = 'desktop/package.json';
+            const pkg = JSON.parse(fs.readFileSync(file, 'utf8'));
+            pkg.version = process.env.RELEASE_VERSION;
+            fs.writeFileSync(file, JSON.stringify(pkg, null, 2) + '\n');
+          "
+          echo "desktop/package.json version -> ${RELEASE_VERSION}"
+
+      - name: Install Electron runtime libs (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libnss3 \
+            libatk1.0-0 \
+            libatk-bridge2.0-0 \
+            libcups2 \
+            libdrm2 \
+            libxkbcommon0 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxfixes3 \
+            libxrandr2 \
+            libgbm1 \
+            libpango-1.0-0 \
+            libcairo2 \
+            libasound2t64 \
+            xvfb
+
+      # REL-05 signing env contract, passed through verbatim — electron-builder
+      # itself decides whether to sign/notarize purely from whether these are
+      # set (see desktop/build/hooks/signingStatus.mjs and
+      # docs/RELEASING.md#code-signing--notarization-rel-05). Absent secrets
+      # (e.g. this repo before the owner provisions them, or any fork) produce
+      # a clearly-logged UNSIGNED artifact, not a failure. Harmless to pass
+      # mac/Windows-only vars into the Linux leg — electron-builder --linux
+      # never reads them.
+      - name: Build packaged artifact (${{ matrix.dist_script }})
+        shell: bash
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+        run: pnpm --filter @calmly/desktop run "${{ matrix.dist_script }}"
+
+      # REL-09: prove the artifact users actually download boots, migrates,
+      # and persists before it's allowed to reach a release. Linux-only (no
+      # Windows/macOS packaged-smoke runner yet — see docs/RELEASING.md's
+      # manual checklists for those) but this failing fails the WHOLE build
+      # job, which the draft-release job below depends on: fail = no release.
+      - name: Run packaged smoke E2E (Xvfb)
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: xvfb-run -a pnpm --filter @calmly/desktop test:e2e:packaged
+
+      - name: Upload packaged smoke artifacts on failure
+        if: failure() && matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-release-packaged-smoke
+          path: |
+            desktop/e2e-results-packaged/**
+            desktop/playwright-report-packaged/**
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload installer artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.artifact_name }}
+          path: |
+            desktop/release/*.AppImage
+            desktop/release/*.deb
+            desktop/release/*.exe
+            desktop/release/*.dmg
+            desktop/release/*.zip
+            desktop/release/latest*.yml
+            desktop/release/*.blockmap
+          if-no-files-found: error
+          retention-days: 14
+
+  draft-release:
+    name: Draft GitHub Release
+    needs: [version, build]
+    if: needs.version.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all installer artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: desktop-*
+          path: dist-artifacts
+          merge-multiple: true
+
+      - name: Generate SHA256SUMS.txt
+        shell: bash
+        working-directory: dist-artifacts
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(*.AppImage *.deb *.exe *.dmg *.zip *.yml *.blockmap)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::No release artifacts were downloaded — nothing to checksum."
+            exit 1
+          fi
+          sha256sum "${files[@]}" > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      # REL-11's extractor is the guard that stops a tag going out with no
+      # real notes: it exits non-zero (failing this job, before any Release
+      # is created) if desktop/CHANGELOG.md has no section for this version,
+      # or that section is still dated "Unreleased".
+      - name: Extract release notes (REL-11)
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          node scripts/release-notes.mjs "${RELEASE_VERSION}" > release_notes.md
+          cat release_notes.md
+
+      - name: Create draft GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Calmly Desktop ${{ needs.version.outputs.version }}
+          body_path: release_notes.md
+          draft: true
+          prerelease: ${{ needs.version.outputs.prerelease == 'true' }}
+          files: |
+            dist-artifacts/*
+          token: ${{ secrets.GITHUB_TOKEN }}
