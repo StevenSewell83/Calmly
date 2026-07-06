@@ -156,7 +156,12 @@ export async function signInAsTestUser(opts: SignInOptions): Promise<{
 
   // 5. Synthesize the calmly:// deep-link URL from the parsed token (the
   // email's link points at the server's redeem endpoint; we want the URL the
-  // OS would deliver to the desktop client).
+  // OS would deliver to the desktop client). The server's GET
+  // /auth/magic-link/redeem now 302s to exactly this URL for browser
+  // navigations (server/src/auth/routes.ts, isBrowserNavigation) — we still
+  // synthesize it by hand here rather than driving a real browser + OS
+  // protocol dispatch through that redirect, since Playwright's Electron
+  // harness has no way to register/observe the OS-level calmly:// handoff.
   const deepLinkUrl = `calmly://auth/callback?token=${mail.token}`;
 
   // 6. Emit the open-url event in the main process. This is what the OS

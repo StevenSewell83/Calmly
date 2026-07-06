@@ -281,6 +281,61 @@ describe.skipIf(!dockerAvailable)(
       expect(cookieStr).toMatch(/^calmly_session=/);
     });
 
+    it("GET /auth/magic-link/redeem — browser Accept header 302s to the calmly:// deep link and leaves the token unconsumed", async () => {
+      const userId = await ensureUser("browser-redeem@example.com");
+      const rawToken = generateToken();
+      await insertToken(userId, rawToken, new Date(Date.now() + 15 * 60_000));
+
+      const res = await app.inject({
+        method: "GET",
+        url: `/auth/magic-link/redeem?token=${encodeURIComponent(rawToken)}`,
+        headers: { accept: "text/html,application/xhtml+xml,*/*;q=0.8" },
+      });
+
+      expect(res.statusCode).toBe(302);
+      expect(res.headers.location).toBe(
+        `calmly://auth/callback?token=${encodeURIComponent(rawToken)}`,
+      );
+      expect(res.headers["set-cookie"]).toBeUndefined();
+
+      // The redirect must not have consumed the token — the desktop app's
+      // own POST redeem (what its deeplink handler does next) must still
+      // succeed exactly once.
+      const postRes = await app.inject({
+        method: "POST",
+        url: "/auth/magic-link/redeem",
+        payload: { token: rawToken },
+      });
+      expect(postRes.statusCode).toBe(200);
+      expect(postRes.json()).toMatchObject({ user: { email: "browser-redeem@example.com" } });
+
+      const secondPostRes = await app.inject({
+        method: "POST",
+        url: "/auth/magic-link/redeem",
+        payload: { token: rawToken },
+      });
+      expect(secondPostRes.statusCode).toBe(410);
+    });
+
+    it("GET /auth/magic-link/redeem — application/json Accept header redeems in place (no redirect)", async () => {
+      const userId = await ensureUser("json-redeem@example.com");
+      const rawToken = generateToken();
+      await insertToken(userId, rawToken, new Date(Date.now() + 15 * 60_000));
+
+      const res = await app.inject({
+        method: "GET",
+        url: `/auth/magic-link/redeem?token=${encodeURIComponent(rawToken)}`,
+        headers: { accept: "application/json" },
+      });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.headers.location).toBeUndefined();
+      expect(res.json()).toMatchObject({ user: { email: "json-redeem@example.com" } });
+      const setCookie = res.headers["set-cookie"];
+      const cookieStr = Array.isArray(setCookie) ? setCookie[0] ?? "" : (setCookie ?? "");
+      expect(cookieStr).toMatch(/^calmly_session=/);
+    });
+
     // Both redeem endpoints must enforce IP-based rate limiting via the shared
     // redeemMagicLink helper. Pre-seeding 20 token-request rows for the test IP
     // fills the perIpPerHour bucket (default=20); the next redeem → 429.

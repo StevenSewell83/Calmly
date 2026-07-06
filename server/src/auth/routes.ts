@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyReply } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { EmailAdapter } from "../email/adapter";
 import { requireSession } from "../middleware/requireSession";
@@ -56,6 +56,21 @@ function clearSessionCookie(
 
 export interface AuthRoutesDeps {
   email: EmailAdapter;
+}
+
+// The magic-link email always points at this server (APP_URL), not the
+// calmly:// scheme, because email clients strip/refuse non-http(s) links.
+// A browser navigating here is the human clicking that link — we want the OS
+// to hand off to the desktop app, so we 302 to the deep link with the token
+// still unconsumed; the app's own deeplink handler redeems it via POST. A
+// programmatic client (fetch/XHR, curl) wants the redeem to happen here and
+// the session JSON back directly. X-Requested-With is the classic
+// XHR-library tell and wins over Accept even if Accept also lists text/html.
+function isBrowserNavigation(req: FastifyRequest): boolean {
+  if (req.headers["x-requested-with"]) return false;
+  const accept = req.headers.accept ?? "";
+  if (accept.includes("application/json")) return false;
+  return accept.includes("text/html");
 }
 
 export function authRoutesPlugin(deps: AuthRoutesDeps) {
@@ -153,9 +168,9 @@ export function authRoutesPlugin(deps: AuthRoutesDeps) {
       return { user: req.sessionUser };
     });
 
-    // Convenience GET for redeem so the email link works as an Electron deep
-    // link without forcing a POST. Clients that call this from JS should
-    // prefer POST so credentials/cookie semantics are unambiguous.
+    // Convenience GET for redeem so the email link works whether it's opened
+    // by a browser or hit programmatically. Clients that call this from JS
+    // should prefer POST so credentials/cookie semantics are unambiguous.
     app.get<{ Querystring: { token?: string } }>(
       "/auth/magic-link/redeem",
       async (req, reply) => {
@@ -164,6 +179,23 @@ export function authRoutesPlugin(deps: AuthRoutesDeps) {
           reply.code(400).send({ error: "invalid_request" });
           return;
         }
+
+        if (isBrowserNavigation(req)) {
+          // Hand the still-unconsumed token straight to the desktop app's
+          // custom-protocol handler (deeplink-install.ts) instead of
+          // redeeming it here — redeeming server-side would burn the
+          // single-use token before the app ever saw it, so the app would
+          // have nothing to POST /auth/magic-link/redeem with. See
+          // desktop/e2e/foundations/_helpers.ts:160 for the E2E workaround
+          // this real redirect replaces (that helper still synthesizes the
+          // deep link directly to avoid depending on OS protocol dispatch).
+          reply
+            .code(302)
+            .header("cache-control", "no-store")
+            .redirect(`calmly://auth/callback?token=${encodeURIComponent(raw)}`);
+          return;
+        }
+
         const result = await redeemMagicLink(app.pool, cfg, {
           rawToken: raw,
           ip: req.ip,
