@@ -15,7 +15,7 @@ export function registerSettingsIpc(): void {
   });
 
   ipcMain.handle("settings:getSyncServerUrl", () => {
-    return resolveServerUrl(getDb());
+    return resolveServerUrl(getDb(), app.isPackaged);
   });
 
   ipcMain.handle("settings:setSyncServerUrl", (_event, url: string) => {

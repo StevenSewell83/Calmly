@@ -27,12 +27,16 @@ import { startCalendarImportWorker, stopCalendarImportWorker } from "./calendar/
 import { startTelemetryWorker, stopTelemetryWorker } from "./telemetry";
 import { initCrashReporting } from "./crash";
 import { createUpdateService } from "./updates/updateService";
+import { resolveEnvConfig } from "./bootstrap/env-config";
+import { resolveServerUrl } from "./sync/serverConfig";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const isDev = !app.isPackaged;
-const API_BASE_URL = process.env["CALMLY_SYNC_URL"] ?? "http://localhost:3001";
-const ALLOW_PII = !app.isPackaged && process.env["LOG_PII"] === "true";
+const { devAuthStubEnabled, allowPii: ALLOW_PII } = resolveEnvConfig({
+  isPackaged: app.isPackaged,
+  env: process.env,
+});
 
 crashReporter.start({
   productName: "Calmly",
@@ -75,6 +79,11 @@ if (!gotInstanceLock) {
       `[calmly:db] open path=${dbInfo.path} version=${dbInfo.version} appliedNow=[${dbInfo.appliedNow.join(",")}]`,
     );
 
+    // Single source of truth for the sync server URL — the same resolution
+    // ipc/settings.ts's settings:getSyncServerUrl uses, so what Settings
+    // displays and what the app actually talks to can never disagree.
+    const API_BASE_URL = resolveServerUrl(getDb(), app.isPackaged);
+
     const apiClient = createApiClient({
       baseUrl: API_BASE_URL,
       fetchImpl: ((input: string | URL, init?: RequestInit) =>
@@ -84,15 +93,13 @@ if (!gotInstanceLock) {
         )) as typeof fetch,
     });
 
-    const useDevAuthStub =
-      !app.isPackaged && process.env["CALMLY_DEV_AUTH"] === "stub";
-    if (useDevAuthStub) {
+    if (devAuthStubEnabled) {
       console.log(
         "[calmly:auth] DEV STUB ENABLED — signed in as dev@calmly.local; no server calls",
       );
     }
     const orchestrator = wrapOrchestrator(
-      useDevAuthStub
+      devAuthStubEnabled
         ? createDevStubOrchestrator()
         : createAuthOrchestrator({
             client: apiClient,

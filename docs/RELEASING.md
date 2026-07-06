@@ -3,6 +3,30 @@
 This covers `@calmly/desktop` (Electron). For the sync server, see
 `server/RELEASING.md`.
 
+## Build & runtime configuration (REL-10 audit)
+
+Every `app.isPackaged` / `process.env` / `import.meta.env` read in
+`desktop/src` that changes behavior between a dev checkout and a shipped
+build, swept as of the REL-10 audit. If you add a new one, add a row here —
+that's the whole point of the table.
+
+| Variable / gate | Effect | Dev default | Packaged behavior | Override story |
+|---|---|---|---|---|
+| `CALMLY_SYNC_URL` (env) | Base URL the desktop app talks to for auth, sync, calendar OAuth, telemetry (`desktop/src/main/sync/serverConfig.ts` `resolveServerUrl`) | Read if set, else falls through | Read if set, else falls through | Highest-priority override in both dev and packaged builds. Used by Playwright E2E fixtures (`desktop/e2e/fixtures/electronApp.ts`) to point at a fake/unreachable server. Not user-facing — for scripted/CI use. |
+| Stored `syncServerUrl` (Settings → Sync server → Custom server URL, `SyncServerSection.tsx`) | Same as above; persisted in `user_settings` | Used if no env override | Used if no env override | **This is the self-hoster override** documented in `docs/SELF_HOSTING.md` — no env var or rebuild needed. Settings display (`settings:getSyncServerUrl`) and the real network client resolve through the exact same `resolveServerUrl(db, isPackaged)` call, so they can't disagree. |
+| Bundled default (no env, no stored setting) | Fallback base URL | `http://localhost:3001` (`DEV_DEFAULT_SERVER_URL`) — the docker-compose server this repo ships, zero config needed for `pnpm dev` | `https://sync.calmly.app` (`DEFAULT_SERVER_URL` in `@calmly/shared`) — the hosted production service | Packaged builds never fall back to `localhost:3001` — that was a pre-REL-10 bug (packaged apps silently defaulted to a loopback address unless `CALMLY_SYNC_URL` happened to be set). |
+| `CALMLY_DEV_AUTH=stub` (env) | Skip real auth, sign in as `dev@calmly.local`, zero server calls (`auth/devStubOrchestrator.ts`) | Enabled when set | **Always dead** — gated on `!app.isPackaged` regardless of the env value (`bootstrap/env-config.ts` `resolveEnvConfig`) | None needed; packaged builds cannot activate this by construction. Unit-tested in `bootstrap/__tests__/env-config.test.ts`; REL-09's packaged boot E2E asserts it end-to-end. |
+| `LOG_PII=true` (env) | Bypass log scrubbing (emails, API keys) for local debugging (`logging/index.ts` `allowPii`) | Enabled when set | **Always dead** — same `!app.isPackaged` gate, in `resolveEnvConfig` | None needed. Unit-tested alongside the dev-auth gate. |
+| `devTools` window option (`bootstrap/window.ts`) | Whether the BrowserWindow ships with DevTools enabled | On (`isDev = !app.isPackaged`) | Off | None — matches Electron security guidance; nothing else in the codebase re-enables it. |
+| `CALMLY_CRASH_INGEST_URL` (env) | `submitURL` electron's `crashReporter` uploads to when the user has opted in (`main/crash/index.ts`) | Placeholder `https://crash-disabled.calmly.invalid/` (a non-routable host — uploads simply fail) unless set | Same placeholder unless set at build/deploy time | **Parked, not built**: there is no crash-ingestion backend yet (out of scope for REL-10 — see follow-up bead below). Set this env var once one exists; no code change required. |
+| Crash reporting toggle (Settings → Privacy, POL-03, `crash:setEnabled` IPC) | Gates the *upload*, not just local collection: `crashReporter.start()` always runs at boot with `uploadToServer: false` (crashes are captured to disk either way, per Electron's design); flipping this setting to `true` re-invokes `crashReporter.start()` with `uploadToServer: true` and the real `submitURL` | Off by default | Off by default | Opt-in only, per PRD §18. Persisted in `user_settings`; a restart is required to actually change the running `uploadToServer` flag (surfaced to the user as `restartRequired` in `crash:getStatus`). Unit-tested in `main/crash/__tests__/index.test.ts`. |
+| `ELECTRON_RENDERER_URL` (env, electron-vite internal) | Dev-server URL the main window loads from instead of the built `index.html`; also the only origin `will-navigate` allows without externalizing the link | Set automatically by `electron-vite dev` | Unset — packaged builds always `loadFile` the bundled renderer | Not user-configurable; internal to the electron-vite toolchain. |
+| `NODE_ENV=test` (env) | Suppresses global-shortcut registration so Playwright/vitest runs don't fight for `CmdOrCtrl+Shift+I`/`F` with a real OS hotkey grab | Set by test runners | N/A — packaged builds never run with `NODE_ENV=test` | None needed. |
+
+Follow-up: the crash-ingestion backend itself (a real endpoint behind
+`CALMLY_CRASH_INGEST_URL`) is out of scope for REL-10 — file a bead when
+there's a concrete ingestion service to point at.
+
 ## Before tagging
 
 1. **Update `desktop/CHANGELOG.md`**

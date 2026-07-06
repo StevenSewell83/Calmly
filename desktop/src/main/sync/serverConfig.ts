@@ -3,6 +3,12 @@ import type Database from "better-sqlite3";
 
 const ENV_OVERRIDE = process.env["CALMLY_SYNC_URL"];
 
+// Dev-only fallback so `pnpm --filter @calmly/desktop dev` talks to the
+// docker-compose sync server (server/, port 3001) with zero config. Packaged
+// builds never see this — see resolveServerUrl below and the config matrix
+// in docs/RELEASING.md.
+export const DEV_DEFAULT_SERVER_URL = "http://localhost:3001";
+
 /** Reads the persisted custom server URL from user_settings. */
 function readStoredUrl(db: Database.Database): string | null {
   try {
@@ -58,13 +64,25 @@ export function clearServerUrl(db: Database.Database): void {
 }
 
 /**
- * Resolves the active sync server URL.
- * Priority: env override > stored user setting > bundled default.
+ * Resolves the active sync server URL — the single source of truth used by
+ * both the real networking (main/index.ts) and the Settings display
+ * (ipc/settings.ts), so they can never disagree.
+ *
+ * Priority: env override (CALMLY_SYNC_URL) > stored user setting (Settings →
+ * Sync server, self-hosters per docs/SELF_HOSTING.md) > bundled default.
+ * The bundled default itself depends on `isPackaged`: packaged builds default
+ * to the production hosted server; dev builds default to the local
+ * docker-compose server so `pnpm dev` needs no configuration.
  */
-export function resolveServerUrl(db: Database.Database): string {
+export function resolveServerUrl(
+  db: Database.Database,
+  isPackaged: boolean,
+): string {
   if (ENV_OVERRIDE) {
     const v = validateServerUrl(ENV_OVERRIDE);
     if (v.ok) return v.url;
   }
-  return readStoredUrl(db) ?? DEFAULT_SERVER_URL;
+  const stored = readStoredUrl(db);
+  if (stored) return stored;
+  return isPackaged ? DEFAULT_SERVER_URL : DEV_DEFAULT_SERVER_URL;
 }
