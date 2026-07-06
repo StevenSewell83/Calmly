@@ -142,4 +142,52 @@ describe("findDeepLinkInArgv", () => {
     const argv = [42 as unknown as string, "calmly://auth/callback?token=x"];
     expect(findDeepLinkInArgv(argv)).toBe("calmly://auth/callback?token=x");
   });
+
+  // REL-03: on Windows, packaged protocol launches deliver the calmly:// URL
+  // as an argv entry in two distinct shapes — cold start (process.argv of a
+  // fresh launch triggered by the OS) and second-instance (the argv Electron
+  // hands to the existing instance's "second-instance" listener when a
+  // protocol click re-invokes an already-running app). Both are plain
+  // string[] by the time they reach findDeepLinkInArgv, so one parser
+  // covers both — these cases pin the exact shapes each path produces.
+  it("cold start: extracts the URL from a fresh-launch argv (exe path + flags + URL)", () => {
+    const coldStartArgv = [
+      "C:\\Users\\alex\\AppData\\Local\\Programs\\Calmly\\Calmly.exe",
+      "calmly://auth/callback?token=coldstart",
+    ];
+    expect(findDeepLinkInArgv(coldStartArgv)).toBe(
+      "calmly://auth/callback?token=coldstart",
+    );
+  });
+
+  it("cold start: returns null when launched with no protocol URL (normal double-click)", () => {
+    const coldStartArgv = [
+      "C:\\Users\\alex\\AppData\\Local\\Programs\\Calmly\\Calmly.exe",
+    ];
+    expect(findDeepLinkInArgv(coldStartArgv)).toBe(null);
+  });
+
+  it("second-instance: extracts the URL from the argv passed to the running instance", () => {
+    // Shape Electron's `second-instance` event delivers: the relaunching
+    // process's full argv, exe path first, our custom NSIS-appended URL last.
+    const secondInstanceArgv = [
+      "C:\\Users\\alex\\AppData\\Local\\Programs\\Calmly\\Calmly.exe",
+      "--allow-file-access-from-files",
+      "calmly://auth/callback?token=secondinstance",
+    ];
+    expect(findDeepLinkInArgv(secondInstanceArgv)).toBe(
+      "calmly://auth/callback?token=secondinstance",
+    );
+  });
+
+  it("second-instance: first URL wins if the OS/shell somehow passes more than one", () => {
+    const secondInstanceArgv = [
+      "Calmly.exe",
+      "calmly://auth/callback?token=first",
+      "calmly://auth/callback?token=second",
+    ];
+    expect(findDeepLinkInArgv(secondInstanceArgv)).toBe(
+      "calmly://auth/callback?token=first",
+    );
+  });
 });
