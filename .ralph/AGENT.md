@@ -101,3 +101,22 @@ Migrations:
   CI parity check (`pnpm schema:check`) and the path-touch gate (PREVENT-5)
   will fail PRs that diverge. Allow-listed divergences live in
   `tools/schema-parity/allow-list.json`.
+- **Numbering collisions (calmly-wv9): claim your version number in the
+  bead, not just in the filename.** Two workers independently picking the
+  same "next" sequential number (e.g. both adding `0010_*.sql`) is how app
+  boot broke post-merge — per-worker tests only ever see their own
+  migrations, so the `UNIQUE` collision on `_meta_migrations.version` only
+  surfaces after merge. Before filing a `bd create` for a new
+  `desktop/src/main/db/migrations/*.sql` file:
+  1. Run `ls desktop/src/main/db/migrations | sort | tail -1` (or
+     `git log --all` for in-flight branches/worktrees) to find the true
+     next-available number, and re-check immediately before you write the
+     file — another worker may have claimed it since you looked.
+  2. Put the claimed version number in the bead spec itself (not just the
+     commit), so a second worker reading the queue sees it's taken.
+  3. CI now enforces this automatically as a backstop, not a substitute
+     for the check above: `vitest` runs
+     `desktop/src/main/db/__tests__/migration-versions.test.ts` (static
+     duplicate/gap scan) and `migration-sweep.test.ts` (applies every
+     migration through the real runner on a fresh DB) on every push/PR.
+     A collision fails the build instead of reaching `main`.

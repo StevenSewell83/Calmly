@@ -312,6 +312,35 @@ jobs:
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - run: pnpm schema:check
 
+  migration-sweep:
+    # calmly-wv9: dedicated, fast-fail gate for the migration
+    # version-collision class of bug (two workers independently claiming
+    # the same sequential version number — see the bead for the incident).
+    # Runs the full migration set through the real runner on a fresh DB
+    # plus a static duplicate/gap scan, ahead of the ~10min `test` job so a
+    # collision surfaces fast. Doesn't need the native better-sqlite3 build
+    # (these tests only use node:sqlite + a type-only better-sqlite3
+    # import), so it can install with --ignore-scripts like schema-parity.
+    name: Migration sweep (version collisions/gaps)
+    needs: setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: actions/cache@v4
+        with:
+          path: ~/.local/share/pnpm/store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: >
+          pnpm --filter @calmly/desktop exec vitest run
+          src/main/db/__tests__/migration-versions.test.ts
+          src/main/db/__tests__/migration-sweep.test.ts
+
   schema-paths:
     name: Migrations touch shared
     runs-on: ubuntu-latest
