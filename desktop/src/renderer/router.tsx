@@ -16,6 +16,7 @@ import { SettingsAppearance } from "./pages/Settings/Appearance";
 import { SettingsShortcuts } from "./pages/Settings/Shortcuts";
 import { SettingsData } from "./pages/Settings/Data";
 import { SettingsPrivacy } from "./pages/Settings/Privacy";
+import { SettingsUpdates } from "./pages/Settings/Updates";
 
 const routes: RouteObject[] = [
   {
@@ -42,6 +43,7 @@ const routes: RouteObject[] = [
           { path: "shortcuts", element: <SettingsShortcuts /> },
           { path: "privacy", element: <SettingsPrivacy /> },
           { path: "data", element: <SettingsData /> },
+          { path: "updates", element: <SettingsUpdates /> },
         ],
       },
       { path: "*", element: <Navigate to="/" replace /> },

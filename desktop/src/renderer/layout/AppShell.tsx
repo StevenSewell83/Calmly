@@ -11,7 +11,9 @@ import {
 import { CaptureBar } from "../components/CaptureBar";
 import { MountainClimberIcon } from "../components/MountainClimberIcon";
 import { SearchOverlay } from "../components/SearchOverlay";
+import { useActiveFocusSession } from "../hooks/useActiveFocusSession";
 import { useShortcuts } from "../hooks/useShortcuts";
+import { useUpdateStatus } from "../hooks/useUpdateStatus";
 import { META_SYMBOL } from "../utils/platform";
 
 interface NavSpec {
@@ -39,9 +41,10 @@ const SETTINGS_ITEM: NavSpec = {
 interface SidebarItemProps {
   spec: NavSpec;
   active: boolean;
+  showReadyBadge?: boolean;
 }
 
-function SidebarItem({ spec, active }: SidebarItemProps) {
+function SidebarItem({ spec, active, showReadyBadge }: SidebarItemProps) {
   const Icon = spec.icon;
   return (
     <NavLink
@@ -61,6 +64,13 @@ function SidebarItem({ spec, active }: SidebarItemProps) {
       <span className="text-sm font-medium tracking-wide flex-1">
         {spec.label}
       </span>
+      {showReadyBadge && (
+        <span
+          aria-label="Update ready"
+          title="An update is ready to install"
+          className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"
+        />
+      )}
       <span
         className={[
           "text-[10px] font-bold tracking-widest uppercase rounded-md px-2 py-0.5 border",
@@ -78,6 +88,10 @@ function SidebarItem({ spec, active }: SidebarItemProps) {
 export function AppShell() {
   const location = useLocation();
   const [searchOpen, setSearchOpen] = useState(false);
+  const updateStatus = useUpdateStatus();
+  const focusSessionActive = useActiveFocusSession(location.pathname);
+  // Anti-nag: the ready pill never renders over an active Focus session.
+  const showUpdateReadyBadge = updateStatus.state === "ready" && !focusSessionActive;
 
   useShortcuts({
     openSearch: () => setSearchOpen(true),
@@ -115,6 +129,7 @@ export function AppShell() {
           <SidebarItem
             spec={SETTINGS_ITEM}
             active={location.pathname.startsWith("/settings")}
+            showReadyBadge={showUpdateReadyBadge}
           />
           <button
             type="button"

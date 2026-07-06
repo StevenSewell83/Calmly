@@ -15,6 +15,7 @@ const SUB_NAV: Sub[] = [
   { to: "/settings/shortcuts", label: "Shortcuts" },
   { to: "/settings/privacy", label: "Privacy" },
   { to: "/settings/data", label: "Data" },
+  { to: "/settings/updates", label: "Updates" },
 ];
 
 export function SettingsLayout() {
