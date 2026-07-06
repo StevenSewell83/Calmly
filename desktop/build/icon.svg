@@ -1,0 +1,42 @@
+<!--
+  Calmly app icon — hand-authored master source. Derived from the
+  MountainClimberIcon glyph in GUI_draft.ts (stone surface + emerald accent,
+  soft rounded shape language). This is the single source of truth for the
+  app's visual identity: desktop/scripts/generate-icons.mjs rasterizes this
+  file into build/icon.png (1024x1024 master) and then derives icon.icns /
+  icon.ico from that master. Edit this file to change the icon; never
+  hand-edit the generated binaries.
+-->
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- Stone-900 rounded-square badge, matching the sidebar logo treatment
+       (`bg-stone-900 rounded-[2.2rem]`) from GUI_draft.ts. -->
+  <rect x="0" y="0" width="1024" height="1024" rx="200" ry="200" fill="#1c1917" />
+
+  <!-- MountainClimberIcon glyph, scaled and centered from its native 160x160
+       viewBox. Mountain + climber in stone-50 (off-white), snow cap in
+       emerald-400 as the single accent — no text, per PRD calm/anti-shame
+       posture. -->
+  <g transform="translate(143.5,143.5) scale(4.6125)" fill="none">
+    <path
+      d="M26 130L80 34.5L134 130H26Z"
+      stroke="#fafaf9"
+      stroke-width="6"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <path
+      d="M60.5 69.5L80 34.5L99.5 69.5C93.5 72.5 87 66 80 72C73 66 66.5 72.5 60.5 69.5Z"
+      fill="#34d399"
+    />
+    <g transform="translate(10,5)">
+      <circle cx="48" cy="80" r="5" fill="#fafaf9" />
+      <path d="M48 85V105" stroke="#fafaf9" stroke-width="6" stroke-linecap="round" />
+      <path d="M62 65V105" stroke="#fafaf9" stroke-width="4" stroke-linecap="round" />
+      <path d="M62 65L82 74L62 83V65Z" fill="#fafaf9" />
+      <path d="M48 90L62 85" stroke="#fafaf9" stroke-width="5" stroke-linecap="round" />
+      <path d="M48 90L38 95" stroke="#fafaf9" stroke-width="5" stroke-linecap="round" />
+      <path d="M48 105L58 112" stroke="#fafaf9" stroke-width="6" stroke-linecap="round" />
+      <path d="M48 105L40 118" stroke="#fafaf9" stroke-width="6" stroke-linecap="round" />
+    </g>
+  </g>
+</svg>

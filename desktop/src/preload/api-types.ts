@@ -505,6 +505,7 @@ export interface SearchBridge {
 }
 
 export interface SettingsBridge {
+  getAppVersion(): Promise<string>;
   getSyncServerUrl(): Promise<string>;
   setSyncServerUrl(url: string): Promise<void>;
   clearSyncServerUrl(): Promise<void>;

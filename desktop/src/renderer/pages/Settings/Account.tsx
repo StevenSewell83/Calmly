@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { SyncServerSection } from "./SyncServerSection";
+import { AppVersion } from "./AppVersion";
 
 export function SettingsAccount() {
   const { state, signOut } = useAuth();
@@ -58,6 +59,8 @@ export function SettingsAccount() {
           {signingOut ? "Signing out…" : "Sign out"}
         </button>
       </div>
+
+      <AppVersion />
     </section>
   );
 }

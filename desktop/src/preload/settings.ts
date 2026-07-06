@@ -2,6 +2,9 @@ import { ipcRenderer } from "electron";
 import type { SettingsBridge } from "./api-types";
 
 export const settingsBridge: SettingsBridge = {
+  getAppVersion(): Promise<string> {
+    return ipcRenderer.invoke("settings:getAppVersion") as Promise<string>;
+  },
   getSyncServerUrl(): Promise<string> {
     return ipcRenderer.invoke("settings:getSyncServerUrl") as Promise<string>;
   },
