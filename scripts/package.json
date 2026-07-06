@@ -1,0 +1,13 @@
+{
+  "name": "@calmly/scripts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Repo-root release/ops scripts (release-notes.mjs, oss-smoke-test.sh).",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "2.1.4"
+  }
+}

@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "server/**"
+      - "desktop/**"
 
 jobs:
   check-unreleased:
@@ -12,8 +13,18 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            server:
+              - 'server/**'
 
       - name: Check for Unreleased section
+        if: steps.filter.outputs.server == 'true'
         run: |
           if ! grep -q '## \[Unreleased\]' server/CHANGELOG.md 2>/dev/null; then
             echo "FAIL: server/CHANGELOG.md is missing an [Unreleased] section."
@@ -25,5 +36,37 @@ jobs:
           else
             echo "FAIL: server/ files changed but server/CHANGELOG.md was not updated."
             echo "Add a bullet under '## [Unreleased]' in server/CHANGELOG.md."
+            exit 1
+          fi
+
+  check-unreleased-desktop:
+    name: desktop/CHANGELOG.md has Unreleased entry
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            desktop:
+              - 'desktop/**'
+
+      - name: Check for Unreleased section
+        if: steps.filter.outputs.desktop == 'true'
+        run: |
+          if ! grep -q '## \[Unreleased\]' desktop/CHANGELOG.md 2>/dev/null; then
+            echo "FAIL: desktop/CHANGELOG.md is missing an [Unreleased] section."
+            echo "Add a bullet under '## [Unreleased]' describing your change."
+            exit 1
+          fi
+          if git diff origin/${{ github.base_ref }}...HEAD -- desktop/CHANGELOG.md | grep -q '^+'; then
+            echo "CHANGELOG.md updated — OK"
+          else
+            echo "FAIL: desktop/ files changed but desktop/CHANGELOG.md was not updated."
+            echo "Add a bullet under '## [Unreleased]' in desktop/CHANGELOG.md."
             exit 1
           fi

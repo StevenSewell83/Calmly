@@ -4,3 +4,4 @@ packages:
   - "shared"
   - "tools/*"
   - "oss-sync"
+  - "scripts"

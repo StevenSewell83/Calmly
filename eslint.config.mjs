@@ -156,6 +156,7 @@ export default tseslint.config(
       "desktop/playwright.config.ts",
       "server/**/*.{ts,tsx}",
       "shared/**/*.{ts,tsx}",
+      "scripts/**/*.{js,mjs,ts}",
       "*.{js,ts}",
       "**/*.config.{js,ts,cjs,mjs}",
     ],
