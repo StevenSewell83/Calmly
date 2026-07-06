@@ -18,6 +18,7 @@ import { settingsBridge } from "./settings";
 import { searchBridge } from "./search";
 import { aiSettingsBridge } from "./aiSettings";
 import { crashBridge } from "./crash";
+import { updatesBridge } from "./updates";
 import type { CalmlyApi } from "./api-types";
 
 const calmlyApi: CalmlyApi = {
@@ -43,6 +44,7 @@ const calmlyApi: CalmlyApi = {
   calendar: calendarBridge,
   ai: aiSettingsBridge,
   crash: crashBridge,
+  updates: updatesBridge,
 };
 
 if (process.contextIsolated) {

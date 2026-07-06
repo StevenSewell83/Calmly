@@ -1,4 +1,5 @@
 import { app, BrowserWindow, crashReporter, session, shell } from "electron";
+import { autoUpdater } from "electron-updater";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 import { closeDb, getDb, initDb } from "./db";
@@ -25,6 +26,7 @@ import { createCalendarRefresh } from "./calendar/refresh";
 import { startCalendarImportWorker, stopCalendarImportWorker } from "./calendar/importWorker";
 import { startTelemetryWorker, stopTelemetryWorker } from "./telemetry";
 import { initCrashReporting } from "./crash";
+import { createUpdateService } from "./updates/updateService";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -53,6 +55,12 @@ logger.info("desktop boot", {
 const deepLinks = createDeepLinkBootstrap();
 let mainWindow: BrowserWindow | null = null;
 let activeSyncLoop: ReturnType<typeof createSyncBootstrap> | null = null;
+const updateService = createUpdateService({
+  autoUpdater,
+  isPackaged: app.isPackaged,
+  platform: process.platform,
+  log: (msg, fields) => logger.info(`[calmly:updates] ${msg}`, fields ?? {}),
+});
 
 const gotInstanceLock = acquireSingleInstanceLock();
 if (!gotInstanceLock) {
@@ -113,8 +121,10 @@ if (!gotInstanceLock) {
       apiClient,
       connectGoogle,
       connectMicrosoft,
+      updateService,
     });
     activeSyncLoop.start();
+    updateService.start();
 
     const calendarRefresh = createCalendarRefresh({
       apiClient,
@@ -183,6 +193,7 @@ app.on("before-quit", () => {
   activeSyncLoop?.stop();
   stopCalendarImportWorker();
   stopTelemetryWorker();
+  updateService.stop();
   unregisterAllShortcuts();
   closeDb();
 });

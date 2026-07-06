@@ -64,3 +64,10 @@ protocols:
   - name: Calmly
     schemes:
       - calmly
+# REL-06: electron-updater reads latest*.yml from this feed after each
+# GitHub Release publish (wired by REL-08's CI job — this repo/owner just
+# tells electron-builder where those artifacts + manifest land).
+publish:
+  provider: github
+  owner: stevensewell83
+  repo: calmly

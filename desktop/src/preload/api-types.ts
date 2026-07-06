@@ -1,4 +1,4 @@
-import type { FocusSource, InboxSource, ReminderImportance } from "@calmly/shared";
+import type { FocusSource, InboxSource, ReminderImportance, UpdateStatus } from "@calmly/shared";
 import type {
   EventTodayRow,
   FocusSessionRow,
@@ -529,6 +529,18 @@ export interface CrashBridge {
   setEnabled(enabled: boolean): Promise<void>;
 }
 
+// Auto-update bridge (REL-06). No nag dialogs from the main process — the
+// renderer polls getStatus()/subscribes to onStatusChanged and decides how
+// (or whether) to surface it. download()/quitAndInstall() only take effect
+// once the user acts; see REL-07 for the Settings UI that calls these.
+export interface UpdatesBridge {
+  getStatus(): Promise<UpdateStatus>;
+  check(): Promise<UpdateStatus>;
+  download(): Promise<UpdateStatus>;
+  quitAndInstall(): Promise<UpdateStatus>;
+  onStatusChanged(handler: (status: UpdateStatus) => void): () => void;
+}
+
 // Calendar OAuth bridge (CAL-01 / CAL-02 / CAL-03). connectGoogle and
 // connectMicrosoft open the user's browser, wait for the calmly://
 // deep-link, and persist the refresh token in the F-12 secret store. The
@@ -700,4 +712,5 @@ export interface CalmlyApi {
   calendar: CalendarBridge;
   ai: AiBridge;
   crash: CrashBridge;
+  updates: UpdatesBridge;
 }

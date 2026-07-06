@@ -22,11 +22,14 @@ import { registerSearchIpc } from "../ipc/search";
 import { registerAiSettingsIpc } from "../ipc/aiSettings";
 import { registerAiIpc } from "../ipc/ai";
 import { registerCrashIpc } from "../ipc/crash";
+import { registerUpdatesIpc } from "../ipc/updates";
+import type { UpdateService } from "../updates/updateService";
 
 export interface RegisterAllIpcDeps {
   apiClient: ApiClient;
   connectGoogle: () => Promise<CalendarConnectResult>;
   connectMicrosoft: () => Promise<CalendarConnectResult>;
+  updateService: UpdateService;
 }
 
 export function registerAllIpc(
@@ -59,4 +62,5 @@ export function registerAllIpc(
   registerAiSettingsIpc();
   registerAiIpc();
   registerCrashIpc();
+  registerUpdatesIpc(deps.updateService);
 }
