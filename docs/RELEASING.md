@@ -53,14 +53,161 @@ there's a concrete ingestion service to point at.
   electron-builder cannot cross-build a working NSIS installer with native
   module rebuilds from Linux.
 - macOS: `pnpm --filter @calmly/desktop dist:mac` (equivalently `dist -- --mac`)
-  → `Calmly-X.Y.Z.dmg` + `Calmly-X.Y.Z-mac.zip` (unsigned; signing/notarization
-  is REL-05). Requires an actual macOS host or CI runner — electron-builder's
-  DMG target shells out to macOS-only tooling (`hdiutil`, the optional
-  `dmg-license` dependency) and cannot run on Linux/Windows.
+  → `Calmly-X.Y.Z.dmg` + `Calmly-X.Y.Z-mac.zip`, signed + notarized if the
+  secrets below are present in the environment, unsigned otherwise (see
+  "Code signing & notarization"). Requires an actual macOS host or CI runner
+  — electron-builder's DMG target shells out to macOS-only tooling
+  (`hdiutil`, the optional `dmg-license` dependency) and cannot run on
+  Linux/Windows.
 
-CI wiring for these (windows-latest / macos-latest runners building on tag
-push, auto-attaching artifacts to a draft GitHub Release) lands in REL-08.
-Until then, run the above locally or via a manual/dispatch workflow run.
+Windows/macOS artifacts built without the signing secrets below are still
+fully functional installers — just unsigned, which means Windows SmartScreen
+and macOS Gatekeeper will warn/block on them. Fine for local dev builds; not
+fine for anything handed to a real user. CI wiring for these (windows-latest /
+macos-latest runners building on tag push, auto-attaching artifacts to a
+draft GitHub Release) lands in REL-08. Until then, run the above locally or
+via a manual/dispatch workflow run.
+
+## Code signing & notarization (REL-05)
+
+Electron-builder itself decides whether to sign, purely from environment
+variables — nothing in `desktop/electron-builder.yml` needs to change between
+a signed release build and an unsigned dev/CI build. **No secret VALUES live
+in this repo, ever** — only the variable *names* below, which get set as
+GitHub Actions repository secrets (REL-08 wires the actual passthrough) or
+exported locally when building on your own machine.
+
+### Secret names
+
+| Secret | Platform | Used for |
+|---|---|---|
+| `CSC_LINK` | macOS | Base64-encoded Developer ID Application `.p12` certificate |
+| `CSC_KEY_PASSWORD` | macOS | Password for that `.p12` |
+| `APPLE_ID` | macOS | Apple ID (email) used to notarize |
+| `APPLE_APP_SPECIFIC_PASSWORD` | macOS | App-specific password for that Apple ID (not the Apple ID's real password) |
+| `APPLE_TEAM_ID` | macOS | 10-character Apple Developer Team ID |
+| `WIN_CSC_LINK` | Windows | Base64-encoded Authenticode `.p12` certificate (falls back to `CSC_LINK` if unset — only safe if it's the same cross-platform-capable cert) |
+| `WIN_CSC_KEY_PASSWORD` | Windows | Password for the Windows `.p12` (falls back to `CSC_KEY_PASSWORD`) |
+
+Chosen path for Windows: a standard OV/EV Authenticode code-signing
+certificate via `CSC_LINK`/`CSC_KEY_PASSWORD` (or the `WIN_`-prefixed
+variants, if using a different cert than macOS). **Alternative not wired
+here**: Azure Trusted Signing (`win.signtoolOptions` + `@azure/trusted-
+signing-cli`) avoids needing a locally-held `.p12`/HSM-backed cert, at the
+cost of an Azure subscription and a provisioned Trusted Signing resource. If
+a traditional Authenticode cert turns out to be hard for the project to
+obtain, switch to that path instead — do not wire both.
+
+### Graceful skip — no secrets is not a build failure
+
+Absent any of the above, `dist`/`dist:mac`/`dist:win` complete successfully
+and produce **unsigned** artifacts. `desktop/build/hooks/afterPack.mjs` logs
+this clearly for every packaged build:
+
+```
+[afterPack] UNSIGNED build — signing secrets not configured (macOS: set CSC_LINK + CSC_KEY_PASSWORD to enable Developer ID signing)
+[afterPack] UNSIGNED build — signing secrets not configured (Windows: set WIN_CSC_LINK + WIN_CSC_KEY_PASSWORD, or CSC_LINK + CSC_KEY_PASSWORD, to enable Authenticode signing)
+```
+
+If only the codesign secrets are present but not the three notarization ones,
+the build is signed but not notarized — also logged explicitly, since a
+signed-but-unnotarized `.app` is *still* blocked outright by Gatekeeper on
+current macOS (unlike Windows SmartScreen, which merely warns on unsigned).
+
+`desktop/build/hooks/afterSign.mjs` is the opposite case: electron-builder
+only invokes it when signing actually happened, and it runs the verification
+commands below, **throwing** (failing the build) if verification fails — a
+half-signed release can never slip out silently.
+`desktop/build/hooks/afterAllArtifactBuild.mjs` logs a final per-artifact
+signed/unsigned summary once every target has built.
+
+### Producing / renewing each credential
+
+**Developer ID Application certificate (macOS codesign)**
+1. Enroll in the [Apple Developer Program](https://developer.apple.com/programs/)
+   (paid, per year) if not already enrolled.
+2. In Xcode or the [developer portal](https://developer.apple.com/account/resources/certificates/list),
+   create a **Developer ID Application** certificate (not "Apple
+   Distribution" — that's for the Mac App Store, which this project doesn't
+   use).
+3. Export it from Keychain Access as a `.p12`, protected with a password.
+4. `base64 -i DeveloperIDApplication.p12 | pbcopy` → paste as the
+   `CSC_LINK` repo secret. Set `CSC_KEY_PASSWORD` to the export password.
+5. Renew: Developer ID certificates are valid 5 years; the Apple Developer
+   Program membership itself renews annually — expiry of either breaks
+   signing, watch for `errSecInternalComponent`/expired-cert failures in the
+   mac release job.
+
+**App-specific password (macOS notarize)**
+1. Sign in at [appleid.apple.com](https://appleid.apple.com) → Sign-In and
+   Security → App-Specific Passwords → generate one, label it e.g.
+   "calmly-notarize".
+2. Set it as `APPLE_APP_SPECIFIC_PASSWORD`. Set `APPLE_ID` to the Apple ID
+   email itself, and `APPLE_TEAM_ID` to the 10-character Team ID shown at
+   the top of the [developer portal membership page](https://developer.apple.com/account/#/membership).
+3. Renew: app-specific passwords don't expire but can be individually
+   revoked from the same page — regenerate if notarization starts failing
+   with an authentication error.
+
+**Authenticode certificate (Windows codesign)**
+1. Buy an OV (Organization Validation) or EV (Extended Validation) code-
+   signing certificate from a CA (DigiCert, Sectigo, SSL.com, etc.). EV
+   certs build Windows SmartScreen reputation faster but require
+   hardware-token / HSM issuance — factor that into CI automation (an EV
+   cert usually can't be exported as a plain `.p12` for `WIN_CSC_LINK`;
+   Azure Trusted Signing exists partly to solve this — see above).
+2. For an OV cert exportable as `.p12`: export with a password, then
+   `base64 -w0 cert.p12 | pbcopy` (Linux/macOS) or
+   `[Convert]::ToBase64String([IO.File]::ReadAllBytes("cert.p12")) | Set-Clipboard`
+   (PowerShell) → `WIN_CSC_LINK` secret, password → `WIN_CSC_KEY_PASSWORD`.
+3. Renew: OV/EV certs are typically valid 1–3 years; track the expiry date
+   and re-issue before it lapses.
+
+### Verifying signatures
+
+Run these after any signed build, before tagging a release:
+
+```bash
+# macOS — codesign structure/validity
+codesign -dv --verbose=4 "release/mac/Calmly.app"
+
+# macOS — Gatekeeper's actual opinion (must say "accepted", "source=Notarized Developer ID")
+spctl -a -t exec -vv "release/mac/Calmly.app"
+
+# macOS — confirm the notarization ticket is stapled (works offline afterward)
+xcrun stapler validate "release/mac/Calmly.app"
+```
+
+```powershell
+# Windows — Authenticode signature status and signer
+Get-AuthenticodeSignature -FilePath "release\win-unpacked\Calmly.exe" |
+  Format-List Status, SignerCertificate
+```
+
+`desktop/build/hooks/afterSign.mjs` runs the macOS trio automatically on
+every signed mac build, and the `Get-AuthenticodeSignature` check on every
+signed Windows build run on an actual Windows host (it warns rather than
+silently passing if it fires on a non-Windows host, since PowerShell/signtool
+aren't available there — cross-building a signed Windows installer from
+Linux/macOS still needs this manual check run once on Windows before
+release).
+
+### Owner follow-up (blocking real signed releases, not this bead)
+
+Obtaining the actual certificates and app-specific password, and adding them
+as repository secrets, is an owner/business task — **pending as of this
+bead**. Until it's done, `dist`/`dist:mac`/`dist:win` keep working and
+produce clearly-logged unsigned artifacts; REL-08's CI pipeline will pass
+these env vars through once they exist. Checklist:
+
+- [ ] Enroll/renew Apple Developer Program membership
+- [ ] Generate Developer ID Application certificate, export as base64 `.p12`
+      → `CSC_LINK` + `CSC_KEY_PASSWORD` repo secrets
+- [ ] Generate an app-specific password → `APPLE_APP_SPECIFIC_PASSWORD`,
+      plus `APPLE_ID` + `APPLE_TEAM_ID` repo secrets
+- [ ] Purchase a Windows Authenticode code-signing certificate (or provision
+      Azure Trusted Signing) → `WIN_CSC_LINK` + `WIN_CSC_KEY_PASSWORD` (or
+      the Azure equivalents) repo secrets
 
 ## Windows manual verification checklist (REL-03)
 
