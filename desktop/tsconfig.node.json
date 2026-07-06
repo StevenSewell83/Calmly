@@ -13,6 +13,7 @@
     "src/preload/**/*",
     "electron.vite.config.ts",
     "playwright.config.ts",
+    "playwright.packaged.config.ts",
     "e2e/**/*"
   ]
 }

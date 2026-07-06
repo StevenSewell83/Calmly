@@ -1,0 +1,91 @@
+name: Desktop packaged smoke E2E
+
+# REL-09 (calmly-y5z.8): proves the artifact users actually download boots,
+# migrates, signs in, and persists. Deliberately a SEPARATE workflow from
+# ci.yml rather than a job added to its shared `on: push/pull_request`
+# triggers — this suite runs `electron-builder --linux` (native module
+# rebuild against the packaged Electron ABI + AppImage/deb packaging), which
+# is meaningfully heavier than the electron-vite dev build the existing `e2e`
+# job in ci.yml uses, and ci.yml's jobs have no per-job `if:` gates that would
+# let us add a `schedule` trigger there without re-running the ENTIRE
+# pipeline (typecheck/lint/test/e2e/...) every night. Nightly + manual
+# dispatch keeps the added cost bounded and predictable; REL-08's desktop
+# release pipeline (calmly-y5z.11, not yet landed) is expected to also invoke
+# `pnpm --filter @calmly/desktop test:e2e:packaged` directly in its Linux
+# release leg once that workflow exists, in addition to this nightly canary.
+on:
+  schedule:
+    - cron: "17 4 * * *" # nightly, well off the hour
+  workflow_dispatch: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9.12.3"
+
+jobs:
+  packaged-smoke:
+    name: Packaged smoke E2E (Linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: corepack enable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.local/share/pnpm/store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-${{ runner.os }}-
+
+      # Lifecycle scripts on: the desktop postinstall rebuild is needed for
+      # the test runner's own better-sqlite3 (migrations.spec.ts opens the
+      # packaged DB file directly); electron-builder does its own separate
+      # rebuild against the packaged ABI during dist:linux.
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Electron runtime libs
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libnss3 \
+            libatk1.0-0 \
+            libatk-bridge2.0-0 \
+            libcups2 \
+            libdrm2 \
+            libxkbcommon0 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxfixes3 \
+            libxrandr2 \
+            libgbm1 \
+            libpango-1.0-0 \
+            libcairo2 \
+            libasound2t64 \
+            xvfb
+
+      - name: Build packaged Linux artifact
+        run: pnpm --filter @calmly/desktop dist:linux
+
+      - name: Run packaged smoke E2E (Xvfb)
+        run: xvfb-run -a pnpm --filter @calmly/desktop test:e2e:packaged
+
+      - name: Upload packaged smoke artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: packaged-smoke-results
+          path: |
+            desktop/e2e-results-packaged/**
+            desktop/playwright-report-packaged/**
+          if-no-files-found: ignore
+          retention-days: 7

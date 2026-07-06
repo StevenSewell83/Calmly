@@ -6,6 +6,10 @@ import { defineConfig } from "@playwright/test";
 export default defineConfig({
   testDir: "./e2e",
   testMatch: /.*\.spec\.ts$/,
+  // e2e/packaged/** is a separate suite (REL-09, playwright.packaged.config.ts)
+  // that launches the electron-builder Linux artifact and requires a prior
+  // `dist:linux` — exclude it here so `test:e2e` never depends on that build.
+  testIgnore: /e2e[\\/]packaged[\\/]/,
   timeout: 60_000,
   expect: { timeout: 10_000 },
   fullyParallel: false,

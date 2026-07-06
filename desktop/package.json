@@ -18,6 +18,7 @@
     "test:perf": "PERF_TEST=1 vitest run --config vitest.perf.config.ts",
     "test:e2e": "playwright test",
     "test:e2e:build": "electron-vite build && playwright test",
+    "test:e2e:packaged": "playwright test --config=playwright.packaged.config.ts",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json"
   },
   "dependencies": {
