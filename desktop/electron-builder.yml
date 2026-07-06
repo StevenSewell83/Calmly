@@ -1,0 +1,49 @@
+# electron-builder configuration — packaging baseline for @calmly/desktop (REL-01).
+#
+# Linux (AppImage + deb) only for now; Windows (REL-03), macOS (REL-04), code signing
+# (REL-05), and publish/auto-update config (REL-06) build on top of this file. The icon
+# under build/icon.png is a flat placeholder — REL-02 replaces it with real brand identity.
+#
+# pnpm + npmRebuild note: electron-builder's default node_modules inclusion walks the
+# `dependencies` field of package.json (devDependencies are never shipped) and, with
+# npmRebuild left at its default `true`, shells out to @electron/rebuild to rebuild native
+# modules (better-sqlite3) against the packaged Electron's ABI as part of `dist`/
+# `dist:linux`. This duplicates the desktop `postinstall` rebuild (which targets the local
+# dev Electron ABI), but the two don't conflict: postinstall runs once at `pnpm install`
+# time for local dev/test, while electron-builder's rebuild runs at package time against
+# release/app.asar.unpacked and only affects the packaged artifact. electron-builder 25.x
+# resolves pnpm's node_modules/.pnpm symlink layout correctly, so no custom `beforeBuild`
+# hook is needed. If a future bump regresses this (native module missing, or a
+# NODE_MODULE_VERSION mismatch when the packaged app loads better-sqlite3), the fallback is
+# `npmRebuild: false` here plus an explicit `beforeBuild` hook that runs
+# `electron-builder install-app-deps` against this package directory.
+appId: com.calmly.app
+productName: Calmly
+directories:
+  output: release
+  buildResources: build
+files:
+  - out/**
+  - package.json
+  - "!src/**"
+  - "!test/**"
+  - "!e2e/**"
+  - "!scripts/**"
+  - "!**/*.map"
+  - "!**/*.tsbuildinfo"
+asar: true
+asarUnpack:
+  - "**/*.node"
+npmRebuild: true
+linux:
+  target:
+    - AppImage
+    - deb
+  category: Utility
+  maintainer: Calmly <hello@calmly.app>
+# Deep-link registration groundwork (calmly://...) for magic-link auth redemption.
+# Windows/macOS protocol handler verification happens in REL-03/REL-04.
+protocols:
+  - name: Calmly
+    schemes:
+      - calmly

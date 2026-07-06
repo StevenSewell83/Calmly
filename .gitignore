@@ -13,6 +13,11 @@ out/
 release/
 app/dist/
 
+# electron-builder buildResources (icons etc.) is a source dir, not build output —
+# un-ignore it from the generic "build/" rule above.
+!desktop/build/
+!desktop/build/**
+
 # Playwright
 playwright-report/
 e2e-results/
