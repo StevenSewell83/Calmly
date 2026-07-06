@@ -61,10 +61,20 @@ describe("snooze presets", () => {
   });
 
   it("tomorrow lands on next-day 8am local", () => {
-    // 2026-04-30T15:00:00Z; next-day 8am local should be 2026-05-01 08:00 local.
+    // 2026-04-30T15:00:00Z; next-day 8am local should be the following
+    // calendar day at 08:00 local time. Compare against the local
+    // calendar day derived the same way (setDate + 1) rather than a
+    // hard-coded `getDate() + 1`, since that breaks whenever the local
+    // TZ offset pushes the instant across a month boundary (e.g. April
+    // only has 30 days, so a naive +1 expects the impossible "day 31"
+    // in some timezones).
     const now = new Date(Date.UTC(2026, 3, 30, 15, 0, 0)).getTime();
     const target = new Date(snoozeTomorrowMorning(now));
-    expect(target.getDate()).toBe(new Date(now).getDate() + 1);
+    const expectedDay = new Date(now);
+    expectedDay.setDate(expectedDay.getDate() + 1);
+    expect(target.getFullYear()).toBe(expectedDay.getFullYear());
+    expect(target.getMonth()).toBe(expectedDay.getMonth());
+    expect(target.getDate()).toBe(expectedDay.getDate());
     expect(target.getHours()).toBe(8);
     expect(target.getMinutes()).toBe(0);
   });

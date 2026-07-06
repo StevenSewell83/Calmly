@@ -19,7 +19,9 @@ export function formatClock(at: number): string {
  */
 export function formatRelativePast(at: number, now: number = Date.now()): string {
   const diffMs = Math.max(0, now - at);
-  const minutes = Math.round(diffMs / 60_000);
+  // Floor (not round) so e.g. 30s ago reads "Just now" rather than
+  // rounding up to "1m ago" before a full minute has actually elapsed.
+  const minutes = Math.floor(diffMs / 60_000);
   if (minutes < 1) return "Just now";
   if (minutes < 60) return `${minutes}m ago`;
   const hours = Math.round(minutes / 60);

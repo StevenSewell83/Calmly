@@ -33,6 +33,7 @@
     "zod": "3.23.8"
   },
   "devDependencies": {
+    "@grammyjs/types": "3.26.0",
     "@testcontainers/postgresql": "10.13.2",
     "@types/node": "20.16.10",
     "@types/pg": "8.11.10",
