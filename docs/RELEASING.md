@@ -28,7 +28,11 @@ This covers `@calmly/desktop` (Electron). For the sync server, see
   (NSIS, one-click, per-user). Requires a Windows build host or CI runner —
   electron-builder cannot cross-build a working NSIS installer with native
   module rebuilds from Linux.
-- macOS: not yet wired (REL-04).
+- macOS: `pnpm --filter @calmly/desktop dist:mac` (equivalently `dist -- --mac`)
+  → `Calmly-X.Y.Z.dmg` + `Calmly-X.Y.Z-mac.zip` (unsigned; signing/notarization
+  is REL-05). Requires an actual macOS host or CI runner — electron-builder's
+  DMG target shells out to macOS-only tooling (`hdiutil`, the optional
+  `dmg-license` dependency) and cannot run on Linux/Windows.
 
 CI wiring for these (windows-latest / macos-latest runners building on tag
 push, auto-attaching artifacts to a draft GitHub Release) lands in REL-08.
@@ -84,6 +88,66 @@ registration + second-instance wiring) and `desktop/src/main/bootstrap/deeplinks
 the NSIS config only gets the app installed and launched once; the app's own
 `app.setAsDefaultProtocolClient()` call is what actually claims the
 `calmly://` scheme in the registry.
+
+## macOS manual verification checklist (REL-04)
+
+As with Windows, actually clicking a link and having macOS launch/foreground
+Calmly isn't practical to automate in CI — verify by hand once per
+macOS-affecting change to packaging or deep-link code, and always before a
+tagged release. Prerequisites: a macOS machine, a built `Calmly-X.Y.Z.dmg`
+from `pnpm --filter @calmly/desktop dist:mac`, and a way to trigger a real
+magic-link email (or a `calmly://auth/callback?token=...` URL you can paste
+into a browser's address bar as a stand-in).
+
+1. **Built Info.plist declares the `calmly://` scheme**
+   - After a `dist:mac` run, inspect the app bundle's `Info.plist` (path looks
+     like `release/mac/Calmly.app/Contents/Info.plist`):
+     ```bash
+     plutil -p "release/mac/Calmly.app/Contents/Info.plist" | grep -A3 CFBundleURLSchemes
+     ```
+   - Confirm it contains `"calmly"` under `CFBundleURLTypes` →
+     `CFBundleURLSchemes`. This is what `electron-builder.yml`'s top-level
+     `protocols` stanza (`schemes: [calmly]`) generates — if it's missing,
+     the OS never learns to route `calmly://` links to Calmly at all,
+     independent of anything `app.setAsDefaultProtocolClient` does at
+     runtime.
+2. **Install registers the protocol handler**
+   - Drag `Calmly.app` from the mounted DMG into `/Applications` and launch
+     it once (first launch is what calls
+     `app.setAsDefaultProtocolClient("calmly")` in
+     `desktop/src/main/auth/deeplink-install.ts`).
+   - Confirm registration: `open calmly://auth/callback?token=x` from a
+     terminal should bring Calmly to the foreground rather than erroring
+     with "no application knows how to open" the URL.
+3. **Cold-start deep link (app not running) — the open-url path**
+   - Unlike Windows/Linux, macOS never puts the URL in argv; it always
+     delivers via the `open-url` app event (see
+     `desktop/src/main/auth/deeplink-install.ts`'s `app.on("open-url", ...)`
+     registration, which happens before `app.whenReady()` specifically so a
+     launch-time URL isn't missed).
+   - Fully quit Calmly (Cmd+Q, confirm no process in Activity Monitor).
+   - Click a magic link, or run `open calmly://auth/callback?token=...`.
+   - Confirm Calmly launches fresh and signs in directly — no blank window,
+     no lost URL (if the URL is silently dropped, the buffering in
+     `desktop/src/main/bootstrap/deeplinks.ts` — covered by unit tests — is
+     the first place to check, then whether `open-url` fired before the
+     listener was attached).
+4. **Warm dispatch (app already running)**
+   - With Calmly running and signed out, run
+     `open calmly://auth/callback?token=...` again.
+   - Confirm the existing window is brought to the foreground and signs in,
+     with no second Calmly process/window.
+5. **Calendar OAuth deep link**
+   - Start a Google or Microsoft calendar connect from Settings, complete the
+     browser consent screen, and confirm the resulting
+     `calmly://oauth/<provider>/done?ticket=...` redirect completes the
+     connection instead of leaving the browser tab open with no feedback in
+     the app.
+
+If any step fails, check `desktop/src/main/auth/deeplink-install.ts` (the
+`open-url`/`setAsDefaultProtocolClient` registration) and
+`desktop/src/main/bootstrap/deeplinks.ts` (buffering/dispatch) before
+assuming it's an `electron-builder.yml` config problem.
 
 ## After tagging
 

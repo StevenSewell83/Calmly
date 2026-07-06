@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  REL-04: hardened-runtime entitlements for the unsigned local build. Used as
+  both `entitlements` and `entitlementsInherit` in electron-builder.yml, so
+  every signed binary in the bundle (helpers included) gets exactly this set.
+  Signing/notarization itself (provisioning profile, Apple ID, stapling) is
+  REL-05 — this file only needs to be correct ahead of that.
+
+  Keep this list minimal: no microphone/camera/location/etc. Add an entry
+  only when a concrete feature needs it, with its own comment explaining why.
+-->
+<plist version="1.0">
+<dict>
+  <!-- Electron/V8 needs to allocate JIT-executable memory; without this the
+       hardened runtime kills the process on launch. -->
+  <key>com.apple.security.cs.allow-jit</key>
+  <true/>
+  <!-- Electron's V8 snapshot + some native modules (better-sqlite3) require
+       unsigned executable memory pages; without this the hardened runtime
+       refuses to map them. -->
+  <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+  <true/>
+  <!-- Sync with the Calmly server, magic-link auth, Google/Microsoft
+       calendar OAuth, and update checks are all outbound HTTPS from the
+       renderer/main process. -->
+  <key>com.apple.security.network.client</key>
+  <true/>
+</dict>
+</plist>

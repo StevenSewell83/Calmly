@@ -37,10 +37,24 @@ asar: true
 asarUnpack:
   - "**/*.node"
 npmRebuild: true
-# mac icon field only — REL-04 adds the rest of the mac platform config
-# (targets, signing, notarization) on top of this.
+# REL-04: DMG (for humans) + ZIP (required by electron-updater on macOS,
+# which cannot apply DMG-packaged updates) targets. hardenedRuntime +
+# entitlements are required for a build that can later be signed/notarized
+# (REL-05) without repackaging; gatekeeperAssess: false skips a local
+# Gatekeeper check that only makes sense for a signed/notarized build (this
+# one isn't yet) and would otherwise just fail noisily. `protocols` above
+# (schemes: [calmly]) is what actually generates the CFBundleURLTypes entry
+# in the built Info.plist — nothing mac-specific needed here for that part.
 mac:
   icon: build/icon.icns
+  target:
+    - dmg
+    - zip
+  category: public.app-category.productivity
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
 # REL-03: Windows installer. NSIS one-click, per-user (no UAC elevation),
 # launches the app immediately after install — zero-decision, matching the
 # ADHD-first "no friction to first success" posture. Never wipe user task
