@@ -3,11 +3,11 @@
 // (index.ts's SIGTERM handler calls app.close(), which fires onClose).
 import type { FastifyInstance } from "fastify";
 import { getLinkingStatus } from "../telegram/linking";
-import {
-  DESKTOP_CHANNEL_NAME,
-  TELEGRAM_CHANNEL_NAME,
-} from "./channels/types";
+import { getBot as getTelegramBot } from "../telegram/bot";
+import type { OutboundBotClient } from "../telegram/outbound";
+import { DESKTOP_CHANNEL_NAME } from "./channels/types";
 import { LogChannel } from "./channels/log";
+import { TelegramChannel } from "./channels/telegram";
 import { ChannelRouter } from "./router";
 import { reminderDeliveryRoutes } from "./routes";
 import { ReminderScheduler } from "./scheduler";
@@ -23,9 +23,17 @@ export function reminderSchedulerPlugin(opts: ReminderSchedulerPluginOptions) {
     const router = new ChannelRouter({
       isTelegramLinked: async (userId) =>
         (await getLinkingStatus(app.pool, userId)).linked,
-      // Real channels are TGR-09 (telegram) / TGR-10 (desktop); LogChannel
-      // stands in for both until then — see channels/types.ts.
-      telegram: new LogChannel(TELEGRAM_CHANNEL_NAME, app.log),
+      // TGR-09 wires the real Telegram channel; desktop's real channel is
+      // TGR-10 — LogChannel stands in for it until then, see channels/types.ts.
+      telegram: new TelegramChannel({
+        pool: app.pool,
+        // grammy's Bot.api is structurally richer than OutboundBotClient's
+        // narrow sendMessage/editMessageText shape (same friction
+        // dispatcher.ts casts around for CallbackBotClient/TelegramFileClient).
+        // Resolved lazily (not at registration time, which runs before
+        // app.ts calls initBot) — see TelegramChannelDeps' getBot doc.
+        getBot: () => getTelegramBot() as unknown as OutboundBotClient,
+      }),
       desktop: new LogChannel(DESKTOP_CHANNEL_NAME, app.log),
     });
     const scheduler = new ReminderScheduler({ store, router, logger: app.log });

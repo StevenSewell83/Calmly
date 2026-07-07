@@ -70,6 +70,10 @@ export interface SendMessageInput {
   buttons?: SendMessageButton[];
   /** Caller-supplied label for what this message is about (e.g. 'reminder'). */
   intent?: string;
+  /** Set when `text` was built with markdown.ts's escapeMarkdownV2 (e.g.
+   * TGR-09's Important reminders) — omitted, Telegram sends `text` as
+   * plain text, same as before this field existed. */
+  parseMode?: "MarkdownV2";
 }
 
 export type EditMessageInput = Omit<SendMessageInput, "intent">;
@@ -84,18 +88,23 @@ export interface SendMessageResult {
 
 // Structural subset of grammy's Bot — enough for outbound sends. Real Bot
 // instances satisfy this; tests pass MockTelegramBotApi.
+export interface OutboundOther {
+  reply_markup?: InlineKeyboardMarkup;
+  parse_mode?: "MarkdownV2";
+}
+
 export interface OutboundBotClient {
   api: {
     sendMessage(
       chatId: number | string,
       text: string,
-      other?: { reply_markup?: InlineKeyboardMarkup },
+      other?: OutboundOther,
     ): Promise<{ message_id: number }>;
     editMessageText(
       chatId: number | string,
       messageId: number,
       text: string,
-      other?: { reply_markup?: InlineKeyboardMarkup },
+      other?: OutboundOther,
     ): Promise<unknown>;
   };
 }
@@ -154,6 +163,7 @@ export async function sendMessage(
   const now = (deps.now ?? Date.now)();
 
   const replyMarkup = buildReplyMarkup(id, buttons);
+  const other = buildOther(replyMarkup, input.parseMode);
 
   await pool.query(
     `INSERT INTO outbound_messages
@@ -163,7 +173,7 @@ export async function sendMessage(
   );
 
   const outcome = await sendWithRetry(
-    () => deps.bot.api.sendMessage(chatId, input.text, replyMarkup ? { reply_markup: replyMarkup } : undefined),
+    () => deps.bot.api.sendMessage(chatId, input.text, other),
     deps.sleep,
   );
 
@@ -212,15 +222,10 @@ export async function editMessage(
   const buttons = input.buttons ?? [];
   const replyMarkup = buildReplyMarkup(outboundMessageId, buttons);
   const telegramMessageId = parseInt(row.telegram_message_id, 10);
+  const other = buildOther(replyMarkup, input.parseMode);
 
   const outcome = await sendWithRetry(
-    () =>
-      deps.bot.api.editMessageText(
-        row.chat_id,
-        telegramMessageId,
-        input.text,
-        replyMarkup ? { reply_markup: replyMarkup } : undefined,
-      ),
+    () => deps.bot.api.editMessageText(row.chat_id, telegramMessageId, input.text, other),
     deps.sleep,
   );
 
@@ -249,6 +254,20 @@ export async function editMessage(
     outboundMessageId,
   ]);
   throw new TelegramSendFailedError(outboundMessageId, outcome.error);
+}
+
+// undefined (not an empty object) when there's nothing to attach, so
+// existing tests asserting `sendMessage(chatId, text, undefined)` for the
+// no-buttons/no-parseMode case keep passing unchanged.
+function buildOther(
+  replyMarkup: InlineKeyboardMarkup | undefined,
+  parseMode: SendMessageInput["parseMode"],
+): OutboundOther | undefined {
+  if (!replyMarkup && !parseMode) return undefined;
+  return {
+    ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
+    ...(parseMode ? { parse_mode: parseMode } : {}),
+  };
 }
 
 function buildReplyMarkup(
