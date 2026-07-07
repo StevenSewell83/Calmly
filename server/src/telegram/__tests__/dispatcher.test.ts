@@ -26,6 +26,8 @@ import {
 let mockBot: MockTelegramBotApi;
 let mockHandleStart: ReturnType<typeof vi.fn>;
 let mockHandleNow: ReturnType<typeof vi.fn>;
+let mockHandleToday: ReturnType<typeof vi.fn>;
+let mockHandleInbox: ReturnType<typeof vi.fn>;
 let mockHandleText: ReturnType<typeof vi.fn>;
 let mockHandleVoice: ReturnType<typeof vi.fn>;
 let mockHandleCallbackQuery: ReturnType<typeof vi.fn>;
@@ -49,6 +51,22 @@ vi.mock("../handlers/commands/now", () => ({
     pool: unknown,
     log: unknown,
   ): unknown => mockHandleNow(msg, pool, log),
+}));
+
+vi.mock("../handlers/commands/today", () => ({
+  handleToday: (
+    msg: unknown,
+    pool: unknown,
+    log: unknown,
+  ): unknown => mockHandleToday(msg, pool, log),
+}));
+
+vi.mock("../handlers/commands/inbox", () => ({
+  handleInbox: (
+    msg: unknown,
+    pool: unknown,
+    log: unknown,
+  ): unknown => mockHandleInbox(msg, pool, log),
 }));
 
 vi.mock("../handlers/text", () => ({
@@ -104,6 +122,8 @@ describe("dispatchUpdate — hermetic routing + reply pipeline", () => {
     mockBot = new MockTelegramBotApi();
     mockHandleStart = vi.fn();
     mockHandleNow = vi.fn();
+    mockHandleToday = vi.fn();
+    mockHandleInbox = vi.fn();
     mockHandleText = vi.fn().mockResolvedValue(null);
     mockHandleVoice = vi.fn().mockResolvedValue(null);
     mockHandleCallbackQuery = vi.fn().mockResolvedValue(undefined);
@@ -175,7 +195,7 @@ describe("dispatchUpdate — hermetic routing + reply pipeline", () => {
 
   it("handleText resolving null → no outbound (e.g. an out-of-scope slash command)", async () => {
     mockHandleText.mockResolvedValue(null);
-    const update = makeTextUpdate("/today");
+    const update = makeTextUpdate("/help");
 
     dispatchUpdate(update, makeStubLogger(), stubPool);
 
@@ -358,6 +378,80 @@ describe("dispatchUpdate — hermetic routing + reply pipeline", () => {
 
     await new Promise((r) => setTimeout(r, 20));
     expect(mockHandleNow).toHaveBeenCalledTimes(1);
+    expect(mockBot.outbound).toEqual([]);
+  });
+
+  it("/today → handleToday called, reply sent with MarkdownV2 parse_mode, never reaches handleText", async () => {
+    mockHandleToday.mockResolvedValue("1\\. 09:00 Standup");
+    const update = makeTextUpdate("/today", { chat_id: 9008 });
+
+    dispatchUpdate(update, makeStubLogger(), stubPool);
+
+    await vi.waitFor(() => {
+      expect(mockBot.outbound).toHaveLength(1);
+    });
+    expect(mockHandleText).not.toHaveBeenCalled();
+    expect(mockHandleToday).toHaveBeenCalledTimes(1);
+    expect(mockHandleToday).toHaveBeenCalledWith(
+      update.message,
+      stubPool,
+      expect.anything(),
+    );
+    expect(mockBot.outbound[0]).toEqual({
+      method: "sendMessage",
+      chat_id: 9008,
+      text: "1\\. 09:00 Standup",
+      other: { parse_mode: "MarkdownV2" },
+    });
+  });
+
+  it("handleToday throws → dispatcher swallows the error, no outbound", async () => {
+    mockHandleToday.mockRejectedValue(new Error("db blew up"));
+    const update = makeTextUpdate("/today");
+
+    expect(() =>
+      dispatchUpdate(update, makeStubLogger(), stubPool),
+    ).not.toThrow();
+
+    await new Promise((r) => setTimeout(r, 20));
+    expect(mockHandleToday).toHaveBeenCalledTimes(1);
+    expect(mockBot.outbound).toEqual([]);
+  });
+
+  it("/inbox → handleInbox called, reply sent with MarkdownV2 parse_mode, never reaches handleText", async () => {
+    mockHandleInbox.mockResolvedValue("Inbox: 2 items\n• Buy milk");
+    const update = makeTextUpdate("/inbox", { chat_id: 9009 });
+
+    dispatchUpdate(update, makeStubLogger(), stubPool);
+
+    await vi.waitFor(() => {
+      expect(mockBot.outbound).toHaveLength(1);
+    });
+    expect(mockHandleText).not.toHaveBeenCalled();
+    expect(mockHandleInbox).toHaveBeenCalledTimes(1);
+    expect(mockHandleInbox).toHaveBeenCalledWith(
+      update.message,
+      stubPool,
+      expect.anything(),
+    );
+    expect(mockBot.outbound[0]).toEqual({
+      method: "sendMessage",
+      chat_id: 9009,
+      text: "Inbox: 2 items\n• Buy milk",
+      other: { parse_mode: "MarkdownV2" },
+    });
+  });
+
+  it("handleInbox throws → dispatcher swallows the error, no outbound", async () => {
+    mockHandleInbox.mockRejectedValue(new Error("db blew up"));
+    const update = makeTextUpdate("/inbox");
+
+    expect(() =>
+      dispatchUpdate(update, makeStubLogger(), stubPool),
+    ).not.toThrow();
+
+    await new Promise((r) => setTimeout(r, 20));
+    expect(mockHandleInbox).toHaveBeenCalledTimes(1);
     expect(mockBot.outbound).toEqual([]);
   });
 

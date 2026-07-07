@@ -3,12 +3,12 @@
 // /start <CODE> — redeem a linking code (handleStart)
 // /start        — onboarding message (handleStart)
 // /now          — current focus task + next step (TGR-04, handleNow)
+// /today        — today's plan (TGR-05, handleToday)
+// /inbox        — inbox count + previews (TGR-05, handleInbox)
 // voice notes   — download + transcribe + inbox capture (handleVoice)
 // plain text / other media — inbox capture + fallback reply (handleText)
 // callback_query — inline button presses on outbound messages (TGR-03,
 //   handleCallbackQuery)
-// Slash commands other than /start and /now (TGR-05: /today, /inbox)
-// are still out of scope here.
 
 import type { Update } from "grammy/types";
 import type { FastifyBaseLogger } from "fastify";
@@ -16,6 +16,8 @@ import type pg from "pg";
 import { getBot } from "./bot";
 import { handleStart } from "./handlers/start";
 import { handleNow } from "./handlers/commands/now";
+import { handleToday } from "./handlers/commands/today";
+import { handleInbox } from "./handlers/commands/inbox";
 import { handleText } from "./handlers/text";
 import { handleVoice, getDefaultTranscriptionProvider } from "./handlers/voice";
 import { handleCallbackQuery, type CallbackBotClient } from "./handlers/callback";
@@ -75,6 +77,26 @@ export function dispatchUpdate(
       return bot.api.sendMessage(msg.chat.id, reply, { parse_mode: "MarkdownV2" });
     }).catch((err: unknown) => {
       log.error({ err }, "[telegram] failed to reply to /now");
+    });
+    return;
+  }
+
+  if (text === "/today") {
+    void handleToday(msg, pool, log).then((reply) => {
+      const bot = getBot();
+      return bot.api.sendMessage(msg.chat.id, reply, { parse_mode: "MarkdownV2" });
+    }).catch((err: unknown) => {
+      log.error({ err }, "[telegram] failed to reply to /today");
+    });
+    return;
+  }
+
+  if (text === "/inbox") {
+    void handleInbox(msg, pool, log).then((reply) => {
+      const bot = getBot();
+      return bot.api.sendMessage(msg.chat.id, reply, { parse_mode: "MarkdownV2" });
+    }).catch((err: unknown) => {
+      log.error({ err }, "[telegram] failed to reply to /inbox");
     });
     return;
   }

@@ -8,10 +8,12 @@ import { MockTelegramBotApi } from "../../test-utils/telegramBotMock";
 import { BOT_COMMANDS, registerBotCommands } from "../commands";
 
 describe("BOT_COMMANDS", () => {
-  it("includes /start and /now", () => {
+  it("includes /start, /now, /today and /inbox", () => {
     const names = BOT_COMMANDS.map((c) => c.command);
     expect(names).toContain("start");
     expect(names).toContain("now");
+    expect(names).toContain("today");
+    expect(names).toContain("inbox");
   });
 
   it("every command has a non-empty description", () => {

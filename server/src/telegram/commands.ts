@@ -7,6 +7,8 @@ import type { BotCommand } from "@grammyjs/types";
 export const BOT_COMMANDS: readonly BotCommand[] = [
   { command: "start", description: "Link your Telegram account to Calmly" },
   { command: "now", description: "See your current focus task and next step" },
+  { command: "today", description: "See today's plan" },
+  { command: "inbox", description: "See your inbox count and recent items" },
 ];
 
 // Structural subset of grammy's Bot — enough to register commands. Real
