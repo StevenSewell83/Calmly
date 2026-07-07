@@ -60,3 +60,8 @@ Thumbs.db
 .ralph/merge-loop.log
 .ralph/docs/generated/
 .ralph/pids/
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+.beads-credential-key
+.beads/proxieddb/
