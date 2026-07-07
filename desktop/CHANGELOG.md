@@ -10,6 +10,13 @@ extracts the matching section below for the GitHub Release body.
 
 ## [Unreleased]
 
+## [0.9.0-rc.1] - 2026-07-07
+
+### Added
+- Release-pipeline verification build: first end-to-end exercise of the
+  `desktop-v*` tag workflow (3-OS build matrix, packaged smoke suite,
+  checksums, draft Release). Not for distribution.
+
 ## [1.0.0] - Unreleased
 
 <!--
