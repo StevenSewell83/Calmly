@@ -16,7 +16,7 @@ import type { ReminderStore } from "./store";
 import {
   computeNextFire,
   isDue,
-  isDuplicateFire,
+  isBlockedByInFlight,
   isExhausted,
   isRetryDue,
   isTaskActionable,
@@ -132,7 +132,9 @@ export class ReminderScheduler {
         summary.skippedNotDue++;
         continue;
       }
-      if (isDuplicateFire(nextFire as number, c.lastDelivery, c.intervalSeconds)) {
+      // Counted under skippedDuplicate together with the UNIQUE-collision
+      // path below: both are "did not create a second row for this rule".
+      if (isBlockedByInFlight(c.lastDelivery)) {
         summary.skippedDuplicate++;
         continue;
       }

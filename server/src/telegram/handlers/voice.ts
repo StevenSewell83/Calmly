@@ -22,6 +22,7 @@ import type { FastifyBaseLogger } from "fastify";
 import type pg from "pg";
 import {
   captureFromTelegram,
+  findExistingTelegramCapture,
   isTelegramChatLinked,
 } from "../../inbox/createFromTelegram";
 import {
@@ -69,6 +70,18 @@ export async function handleVoice(
 
   if (voice.duration > MAX_VOICE_DURATION_SEC) {
     return voiceReplyForTooLongDuration(voice.duration, MAX_VOICE_DURATION_SEC);
+  }
+
+  // Webhook replay: this exact message was already captured — re-ack with
+  // the stored transcript rather than paying for download + transcription
+  // again (the insert-time ON CONFLICT would dedupe the row, but only
+  // after both spends).
+  const existing = await findExistingTelegramCapture(pool, {
+    chatId,
+    telegramMessageId: message.message_id,
+  });
+  if (existing !== null) {
+    return voiceReplySuccess(existing);
   }
 
   let downloaded;

@@ -44,20 +44,25 @@ export class FakeReminderActionStore implements ReminderActionStore {
     };
   }
 
-  async ackDelivery(deliveryId: string, actorSurface: ActorSurface, now: number): Promise<void> {
+  // Mirrors the real store's conditional UPDATE ... WHERE status='sent':
+  // only a 'sent' row transitions; anything else reports false so handlers
+  // take the alreadyActed path (double-press race semantics).
+  async ackDelivery(deliveryId: string, actorSurface: ActorSurface, now: number): Promise<boolean> {
     const d = this.db.deliveries.find((x) => x.id === deliveryId);
-    if (!d) return;
+    if (!d || d.status !== "sent") return false;
     d.status = "acked";
     d.actedAt = now;
     d.actedVia = actorSurface;
+    return true;
   }
 
-  async snoozeDelivery(deliveryId: string, actorSurface: ActorSurface, now: number): Promise<void> {
+  async snoozeDelivery(deliveryId: string, actorSurface: ActorSurface, now: number): Promise<boolean> {
     const d = this.db.deliveries.find((x) => x.id === deliveryId);
-    if (!d) return;
+    if (!d || d.status !== "sent") return false;
     d.status = "snoozed";
     d.actedAt = now;
     d.actedVia = actorSurface;
+    return true;
   }
 
   async deactivateRule(ruleId: string, _now: number): Promise<void> {

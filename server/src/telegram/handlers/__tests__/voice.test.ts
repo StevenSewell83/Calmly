@@ -28,6 +28,7 @@ import type { TranscriptionErrorCode } from "../../../transcription/types";
 let mockCapture: ReturnType<typeof vi.fn>;
 let mockIsLinked: ReturnType<typeof vi.fn>;
 let mockDownload: ReturnType<typeof vi.fn>;
+let mockFindExisting: ReturnType<typeof vi.fn>;
 
 vi.mock("../../../inbox/createFromTelegram", () => ({
   captureFromTelegram: (
@@ -36,6 +37,10 @@ vi.mock("../../../inbox/createFromTelegram", () => ({
   ): Promise<CaptureFromTelegramResult> => mockCapture(pool, input),
   isTelegramChatLinked: (pool: unknown, chatId: unknown): Promise<boolean> =>
     mockIsLinked(pool, chatId),
+  findExistingTelegramCapture: (
+    pool: unknown,
+    input: unknown,
+  ): Promise<string | null> => mockFindExisting(pool, input),
 }));
 
 vi.mock("../../files", async (importOriginal) => {
@@ -108,6 +113,7 @@ describe("handleVoice", () => {
     mockCapture = vi.fn();
     mockIsLinked = vi.fn();
     mockDownload = vi.fn();
+    mockFindExisting = vi.fn().mockResolvedValue(null); // no replay by default
     resetUpdateCounters();
   });
 
@@ -384,5 +390,30 @@ describe("handleVoice", () => {
     expect(provider.calls()).toEqual([
       { mimeType: "audio/ogg", byteLength: 4 },
     ]);
+  });
+});
+
+describe("handleVoice webhook replay", () => {
+  beforeEach(() => {
+    mockCapture = vi.fn();
+    mockIsLinked = vi.fn();
+    mockDownload = vi.fn();
+    mockFindExisting = vi.fn();
+    resetUpdateCounters();
+  });
+
+  it("already-captured message → re-acks with stored transcript, no download, no transcription", async () => {
+    mockIsLinked.mockResolvedValue(true);
+    mockFindExisting.mockResolvedValue("previously stored transcript");
+    const update = makeVoiceUpdate({ chat_id: CHAT_ID, durationSec: 4 });
+    const { log } = makeStubLogger();
+    const { bot, provider } = makeDeps();
+
+    const reply = await handleVoice(update.message!, stubPool, log, { bot, provider });
+
+    expect(reply).toBe(voiceReplySuccess("previously stored transcript"));
+    // download never ran, so transcription (which needs its buffer) can't have either
+    expect(mockDownload).not.toHaveBeenCalled();
+    expect(mockCapture).not.toHaveBeenCalled();
   });
 });

@@ -89,18 +89,26 @@ export function pgReminderActionStore(
       };
     },
 
+    // Conditional on status='sent' so a concurrent double-press (Telegram +
+    // desktop racing past the same findForAction read) resolves atomically:
+    // exactly one caller transitions the row, the other sees false and
+    // reports alreadyActed instead of re-applying side effects.
     async ackDelivery(deliveryId, actorSurface, now) {
-      await pool.query(
-        `UPDATE reminder_deliveries SET status = 'acked', acted_at = $2, acted_via = $3 WHERE id = $1`,
+      const res = await pool.query(
+        `UPDATE reminder_deliveries SET status = 'acked', acted_at = $2, acted_via = $3
+         WHERE id = $1 AND status = 'sent' RETURNING id`,
         [deliveryId, now, actorSurface],
       );
+      return (res.rowCount ?? 0) > 0;
     },
 
     async snoozeDelivery(deliveryId, actorSurface, now) {
-      await pool.query(
-        `UPDATE reminder_deliveries SET status = 'snoozed', acted_at = $2, acted_via = $3 WHERE id = $1`,
+      const res = await pool.query(
+        `UPDATE reminder_deliveries SET status = 'snoozed', acted_at = $2, acted_via = $3
+         WHERE id = $1 AND status = 'sent' RETURNING id`,
         [deliveryId, now, actorSurface],
       );
+      return (res.rowCount ?? 0) > 0;
     },
 
     async deactivateRule(ruleId, now) {

@@ -68,27 +68,17 @@ export function isDue(nextFire: number | null, now: number): boolean {
   return nextFire !== null && nextFire <= now;
 }
 
-const DEDUPE_DIVISOR = 2;
-
-export function dedupeWindowMs(intervalSeconds: number): number {
-  return Math.floor((intervalSeconds * 1000) / DEDUPE_DIVISOR);
-}
-
-// Extra guard alongside the DB's UNIQUE(rule_id, scheduled_for): true when
-// `candidate` falls within the dedupe window of a delivery already on
-// record for this rule, i.e. a second (overlapping) tick computed against
-// stale state shouldn't create another row for (approximately) the same
-// slot.
-export function isDuplicateFire(
-  candidate: number,
+// Guard against stacking fires: the interval floor (300s) is shorter than
+// the full retry-backoff span (1m+5m+15m), so a rule's next natural fire
+// can come due while the previous delivery is still pending mid-retries.
+// Creating another delivery then means the user gets two reminders back to
+// back once both dispatch. Identical-slot races between overlapping ticks
+// are covered separately by UNIQUE(rule_id, scheduled_for); this handles
+// the different-slot/in-flight case.
+export function isBlockedByInFlight(
   lastDelivery: LastDeliverySnapshot | null,
-  intervalSeconds: number,
 ): boolean {
-  if (!lastDelivery) return false;
-  return (
-    Math.abs(candidate - lastDelivery.scheduledFor) <
-    dedupeWindowMs(intervalSeconds)
-  );
+  return lastDelivery?.status === "pending";
 }
 
 // 1m / 5m / 15m backoff, then give up — matches the TGR-08 spec's "retry

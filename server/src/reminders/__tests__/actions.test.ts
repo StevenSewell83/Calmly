@@ -315,3 +315,46 @@ describe("snooze -> scheduler integration (TGR-11 extends TGR-08)", () => {
     expect(followup).toMatchObject({ status: "sent", scheduledFor: snoozedUntil });
   });
 });
+
+// Review fix: the true double-press race — both surfaces read status='sent'
+// before either writes. The store's conditional transition (UPDATE ... WHERE
+// status='sent') means exactly one wins; the loser must take the
+// alreadyActed path and apply NO side effects.
+describe("concurrent double-press race (atomic transition)", () => {
+  function raceStore() {
+    const { db, actionStore } = makeStores();
+    // Simulate both handlers passing the findForAction check before either
+    // transition lands: freeze the status the reader sees at 'sent'.
+    const readAsSent = {
+      ...actionStore,
+      findForAction: (deliveryId: string, userId: string) =>
+        actionStore.findForAction(deliveryId, userId).then((d) =>
+          d ? { ...d, status: "sent" as DeliveryStatus } : d,
+        ),
+      ackDelivery: actionStore.ackDelivery.bind(actionStore),
+      snoozeDelivery: actionStore.snoozeDelivery.bind(actionStore),
+      deactivateRule: actionStore.deactivateRule.bind(actionStore),
+      createFollowupDelivery: actionStore.createFollowupDelivery.bind(actionStore),
+      rescheduleTaskDueDate: actionStore.rescheduleTaskDueDate.bind(actionStore),
+    };
+    return { db, store: readAsSent };
+  }
+
+  it("Done racing Done: second caller reports alreadyActed, rule deactivated once", async () => {
+    const { db, store } = raceStore();
+    const p = { deliveryId: DELIVERY_ID, userId: USER_ID, now: NOW } as const;
+    const first = await handleDone(store, { ...p, actorSurface: "telegram" });
+    const second = await handleDone(store, { ...p, actorSurface: "desktop" });
+    expect(first.ok && !("reason" in first) && first.alreadyActed).toBe(false);
+    expect(second.ok && !("reason" in second) && second.alreadyActed).toBe(true);
+    expect(db.deliveries.filter((d) => d.id === DELIVERY_ID)[0]?.actedVia).toBe("telegram");
+  });
+
+  it("Snooze racing Snooze: only one follow-up delivery is created", async () => {
+    const { db, store } = raceStore();
+    const p = { deliveryId: DELIVERY_ID, userId: USER_ID, now: NOW } as const;
+    await handleSnooze(store, { ...p, actorSurface: "telegram" });
+    await handleSnooze(store, { ...p, actorSurface: "desktop" });
+    expect(db.deliveries).toHaveLength(2); // original + exactly one follow-up
+  });
+});

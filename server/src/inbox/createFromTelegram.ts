@@ -104,3 +104,23 @@ export async function isTelegramChatLinked(
   );
   return (result.rowCount ?? 0) > 0;
 }
+
+// TGR-02 replay guard: Telegram retries webhooks it thinks failed, and the
+// insert-time ON CONFLICT only dedupes AFTER download + transcription have
+// already been paid for. This lets the voice handler detect a replay up
+// front and re-ack with the stored transcript instead.
+export async function findExistingTelegramCapture(
+  pool: pg.Pool,
+  { chatId, telegramMessageId }: { chatId: string; telegramMessageId: number },
+): Promise<string | null> {
+  const externalRef = `tg:${chatId}:${telegramMessageId}`;
+  const result = await pool.query<{ raw_text: string }>(
+    `SELECT i.raw_text
+       FROM inbox_items i
+       JOIN telegram_links l ON l.user_id = i.user_id AND l.deleted_at IS NULL
+      WHERE l.chat_id = $1 AND i.external_ref = $2 AND i.deleted_at IS NULL
+      LIMIT 1`,
+    [chatId, externalRef],
+  );
+  return result.rows[0]?.raw_text ?? null;
+}

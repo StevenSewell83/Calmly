@@ -11,7 +11,7 @@ import { handleCallbackQuery, type CallbackBotClient } from "../callback";
 import { registerAction, __INTERNAL as ActionsInternal } from "../../actions";
 
 const USER_ID = "user-1";
-const CHAT_ID = "chat-42";
+const CHAT_ID = "111"; // == FROM_USER.id: the origin check requires presser === recipient
 const ROW_ID = "row-abc";
 
 const FROM_USER: User = { id: 111, is_bot: false, first_name: "Test" };
@@ -208,5 +208,22 @@ describe("actions registry", () => {
     registerAction("reschedule", vi.fn());
     unregisterAction("reschedule");
     expect(getAction("reschedule")).toBeUndefined();
+  });
+});
+
+describe("handleCallbackQuery origin check", () => {
+  it("presser that is not the outbound recipient → expired answer, handler NOT dispatched", async () => {
+    const { pool } = makeMockPool({
+      id: ROW_ID,
+      user_id: USER_ID,
+      chat_id: "999999", // someone else's chat
+      payload: { buttons: [{ actionId: "done" }] },
+    });
+    const handler = vi.fn();
+    registerAction("done", handler);
+    const { bot, answerMock } = makeBot();
+    await handleCallbackQuery(makeCallbackQuery(`done:${ROW_ID}`), pool, makeStubLogger(), { bot });
+    expect(handler).not.toHaveBeenCalled();
+    expect(answerMock).toHaveBeenCalledWith("cq-1", { text: "This button expired." });
   });
 });

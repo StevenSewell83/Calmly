@@ -77,6 +77,20 @@ export async function handleCallbackQuery(
     return;
   }
 
+  // The button may physically reside in another chat (forwarded message)
+  // or a replayed/forged callback may reference someone else's outbound
+  // row — the presser must be the user the message was sent to. Bot chats
+  // are 1:1, so chat_id IS the user's Telegram id; a group-chat bot would
+  // need a different ownership model here.
+  if (String(callbackQuery.from.id) !== row.chat_id) {
+    log.warn(
+      { callbackQueryId: callbackQuery.id, rowId, fromId: callbackQuery.from.id },
+      "[telegram] callback presser does not match outbound recipient",
+    );
+    await answer(deps.bot, callbackQuery.id, EXPIRED_TEXT);
+    return;
+  }
+
   const handler = getAction(actionId);
   if (!handler) {
     log.warn(

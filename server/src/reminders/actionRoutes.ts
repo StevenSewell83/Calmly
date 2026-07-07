@@ -33,6 +33,13 @@ export function reminderActionRoutes(deps: ReminderActionRoutesDeps) {
         const user = req.sessionUser!;
         const { id } = req.params as { id: string };
         const body = req.body as ActionBody | undefined;
+        if (
+          body?.action === "snooze" &&
+          body.minutes !== undefined &&
+          (!Number.isInteger(body.minutes) || body.minutes < 1 || body.minutes > 1440)
+        ) {
+          return reply.code(400).send({ error: "invalid_minutes" });
+        }
         const params: ActionParams = {
           deliveryId: id,
           userId: user.id,

@@ -3,9 +3,8 @@ import {
   MAX_ATTEMPTS,
   RETRY_BACKOFF_MS,
   computeNextFire,
-  dedupeWindowMs,
   isDue,
-  isDuplicateFire,
+  isBlockedByInFlight,
   isExhausted,
   isRetryDue,
   isTaskActionable,
@@ -89,24 +88,21 @@ describe("isDue", () => {
   });
 });
 
-describe("dedupeWindowMs / isDuplicateFire", () => {
-  it("dedupe window is half the interval", () => {
-    expect(dedupeWindowMs(1800)).toBe(900_000);
-    expect(dedupeWindowMs(300)).toBe(150_000);
+describe("isBlockedByInFlight", () => {
+  it("blocks while the last delivery is still pending (mid-retries)", () => {
+    expect(
+      isBlockedByInFlight({ scheduledFor: 1_000_000, status: "pending" }),
+    ).toBe(true);
   });
 
-  it("no last delivery is never a duplicate", () => {
-    expect(isDuplicateFire(1_000_000, null, 1800)).toBe(false);
+  it("does not block for terminal or actioned statuses", () => {
+    for (const status of ["sent", "failed", "skipped", "acked", "snoozed"] as const) {
+      expect(isBlockedByInFlight({ scheduledFor: 1_000_000, status })).toBe(false);
+    }
   });
 
-  it("candidate within the dedupe window of the last delivery is a duplicate", () => {
-    const last: LastDeliverySnapshot = { scheduledFor: 1_000_000, status: "sent" };
-    expect(isDuplicateFire(1_000_000 + 100, last, 1800)).toBe(true);
-  });
-
-  it("candidate outside the dedupe window is not a duplicate", () => {
-    const last: LastDeliverySnapshot = { scheduledFor: 1_000_000, status: "sent" };
-    expect(isDuplicateFire(1_000_000 + 1_800_000, last, 1800)).toBe(false);
+  it("does not block when the rule has never fired", () => {
+    expect(isBlockedByInFlight(null)).toBe(false);
   });
 });
 

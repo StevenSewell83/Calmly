@@ -118,7 +118,15 @@ function makeHarness(startNow = NOW0): Harness {
     actionId: string,
     outboundMessageId: string,
   ): Promise<void> {
-    const update = makeCallbackQueryUpdate(`${actionId}:${outboundMessageId}`);
+    // Press as the legitimate recipient: callback.ts rejects callbacks whose
+    // from.id differs from the outbound row's chat_id (origin check).
+    const rowRes = await (pool as unknown as pg.Pool).query<{ chat_id: string }>(
+      `SELECT id, user_id, chat_id, payload FROM outbound_messages WHERE id = $1`,
+      [outboundMessageId],
+    );
+    const update = makeCallbackQueryUpdate(`${actionId}:${outboundMessageId}`, {
+      user_id: Number(rowRes.rows[0]?.chat_id ?? 0),
+    });
     await handleCallbackQuery(
       update.callback_query!,
       pool as unknown as pg.Pool,
@@ -161,7 +169,15 @@ function seedRule(
   });
   h.pool.setTask(opts.taskId, opts.title);
   h.pool.setRule(opts.ruleId, opts.importance ?? "soft");
-  if (opts.linked ?? true) h.pool.linkUser(opts.userId, `chat-${opts.userId}`);
+  // Numeric chat id, like real Telegram — and equal to the presser's user id
+  // in 1:1 bot chats, which the callback origin check relies on.
+  if (opts.linked ?? true) h.pool.linkUser(opts.userId, tgChatIdFor(opts.userId));
+}
+
+function tgChatIdFor(userId: string): string {
+  let n = 0;
+  for (const ch of userId) n = n * 31 + ch.charCodeAt(0);
+  return String(100_000 + (n % 1_000_000));
 }
 
 function sendMessageCalls(

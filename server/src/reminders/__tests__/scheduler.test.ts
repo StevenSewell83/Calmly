@@ -155,6 +155,77 @@ describe("ReminderScheduler.tick — new fires", () => {
   });
 });
 
+describe("ReminderScheduler.tick — in-flight guard (review fix)", () => {
+  // Interval floor (300s) < total retry backoff (21m): without this guard a
+  // rule's next natural fire stacks a second delivery while the previous one
+  // is still pending mid-retries, and the user gets two reminders back to
+  // back once both dispatch.
+  it("does not create a new delivery while the last one is still pending", async () => {
+    const store = new FakeReminderStore();
+    store.addTask({ id: "task-1", status: "open", deletedAt: null });
+    store.addRule({
+      id: "rule-1",
+      taskId: "task-1",
+      userId: "user-1",
+      intervalSeconds: INTERVAL_SECONDS,
+      active: true,
+      updatedAt: 0,
+      deletedAt: null,
+    });
+    // First tick: channel fails retryably, delivery stays pending.
+    const failing = scriptedChannel("telegram", [{ ok: false, fallback: false }]);
+    const scheduler1 = new ReminderScheduler({
+      store,
+      router: routerWith(failing, alwaysOkChannel("desktop")),
+      now: () => INTERVAL_MS,
+    });
+    await scheduler1.tick();
+    expect(store.deliveries).toHaveLength(1);
+    expect(store.deliveries[0]).toMatchObject({ status: "pending" });
+
+    // A full interval later the next natural fire is due — but the previous
+    // delivery is still pending, so nothing new may be created.
+    const scheduler2 = new ReminderScheduler({
+      store,
+      router: routerWith(alwaysOkChannel("telegram"), alwaysOkChannel("desktop")),
+      now: () => 2 * INTERVAL_MS,
+    });
+    const summary = await scheduler2.tick();
+    expect(summary.created).toBe(0);
+    expect(summary.skippedDuplicate).toBeGreaterThanOrEqual(1);
+    expect(store.deliveries).toHaveLength(1);
+  });
+
+  it("resumes firing once the last delivery reaches a terminal status", async () => {
+    const store = new FakeReminderStore();
+    store.addTask({ id: "task-1", status: "open", deletedAt: null });
+    store.addRule({
+      id: "rule-1",
+      taskId: "task-1",
+      userId: "user-1",
+      intervalSeconds: INTERVAL_SECONDS,
+      active: true,
+      updatedAt: 0,
+      deletedAt: null,
+    });
+    const telegram = alwaysOkChannel("telegram");
+    const scheduler = new ReminderScheduler({
+      store,
+      router: routerWith(telegram, alwaysOkChannel("desktop")),
+      now: () => INTERVAL_MS,
+    });
+    await scheduler.tick(); // delivery 1: sent
+    const scheduler2 = new ReminderScheduler({
+      store,
+      router: routerWith(telegram, alwaysOkChannel("desktop")),
+      now: () => 2 * INTERVAL_MS,
+    });
+    const summary = await scheduler2.tick();
+    expect(summary.created).toBe(1);
+    expect(store.deliveries).toHaveLength(2);
+  });
+});
+
 describe("ReminderScheduler.tick — retries", () => {
   it("retries on 1m/5m/15m backoff and marks the delivery failed after 3 attempts", async () => {
     const store = new FakeReminderStore();

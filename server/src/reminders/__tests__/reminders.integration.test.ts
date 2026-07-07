@@ -367,6 +367,30 @@ describe.skipIf(!dockerAvailable)(
       return deliveryId;
     }
 
+    it("POST action (snooze): rejects out-of-range or non-integer minutes with 400", async () => {
+      const now = Date.now();
+      const { userId, ruleId, taskId } = await makeUserTaskAndRule(now);
+      const cookie = await makeSessionCookie(userId);
+      const deliveryId = await makeSentDelivery(ruleId, userId, taskId, now);
+
+      for (const minutes of [0, -5, 1441, 2.5, Number.NaN]) {
+        const res = await app.inject({
+          method: "POST",
+          url: `/reminder-deliveries/${deliveryId}/action`,
+          headers: { cookie },
+          payload: { action: "snooze", minutes },
+        });
+        expect(res.statusCode, `minutes=${minutes}`).toBe(400);
+        expect(res.json()).toMatchObject({ error: "invalid_minutes" });
+      }
+
+      // The delivery is untouched by the rejected attempts.
+      const row = await pool.query(`SELECT status FROM reminder_deliveries WHERE id = $1`, [
+        deliveryId,
+      ]);
+      expect(row.rows[0]).toMatchObject({ status: "sent" });
+    });
+
     it("POST action (done): requires auth, acks the delivery, deactivates the rule, is idempotent", async () => {
       const now = Date.now();
       const { userId, ruleId, taskId } = await makeUserTaskAndRule(now);

@@ -64,7 +64,10 @@ export async function handleDone(
   if (delivery.status !== ACTIONABLE_STATUS) {
     return alreadyActedOutcome(delivery.status, delivery.taskId, delivery.taskTitle);
   }
-  await store.ackDelivery(params.deliveryId, params.actorSurface, params.now);
+  const transitioned = await store.ackDelivery(params.deliveryId, params.actorSurface, params.now);
+  if (!transitioned) {
+    return alreadyActedOutcome("acked", delivery.taskId, delivery.taskTitle);
+  }
   await store.deactivateRule(delivery.ruleId, params.now);
   return {
     ok: true,
@@ -89,7 +92,13 @@ export async function handleSnooze(
   }
   const minutes = params.minutes ?? SNOOZE_MINUTES;
   const snoozedUntil = params.now + minutes * 60_000;
-  await store.snoozeDelivery(params.deliveryId, params.actorSurface, params.now);
+  const transitioned = await store.snoozeDelivery(params.deliveryId, params.actorSurface, params.now);
+  if (!transitioned) {
+    return {
+      ...alreadyActedOutcome("snoozed", delivery.taskId, delivery.taskTitle),
+      snoozedUntil: null,
+    };
+  }
   await store.createFollowupDelivery({
     id: randomUUID(),
     ruleId: delivery.ruleId,
@@ -118,7 +127,10 @@ export async function handleReschedule(
   if (delivery.status !== ACTIONABLE_STATUS) {
     return alreadyActedOutcome(delivery.status, delivery.taskId, delivery.taskTitle);
   }
-  await store.ackDelivery(params.deliveryId, params.actorSurface, params.now);
+  const transitioned = await store.ackDelivery(params.deliveryId, params.actorSurface, params.now);
+  if (!transitioned) {
+    return alreadyActedOutcome("acked", delivery.taskId, delivery.taskTitle);
+  }
   return {
     ok: true,
     alreadyActed: false,
