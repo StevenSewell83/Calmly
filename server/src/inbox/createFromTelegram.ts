@@ -11,14 +11,20 @@
 
 import { randomUUID } from "node:crypto";
 import type pg from "pg";
+import type { InboxSource } from "@calmly/shared";
 
 const MAX_RAW_TEXT_LENGTH = 4000;
+const DEFAULT_SOURCE: InboxSource = "telegram-text";
 
 export interface CaptureFromTelegramInput {
   chatId: string;
   telegramMessageId: number;
   rawText: string;
   now: number;
+  // TGR-02: voice captures pass 'telegram-voice' so the row is
+  // distinguishable in the inbox; defaults to the original text-capture
+  // source so TGR-01 callers are unaffected.
+  source?: InboxSource;
 }
 
 export interface CaptureFromTelegramOk {
@@ -41,7 +47,7 @@ export async function captureFromTelegram(
   pool: pg.Pool,
   input: CaptureFromTelegramInput,
 ): Promise<CaptureFromTelegramResult> {
-  const { chatId, telegramMessageId, rawText, now } = input;
+  const { chatId, telegramMessageId, rawText, now, source } = input;
 
   const truncated = rawText.length > MAX_RAW_TEXT_LENGTH;
   const text = truncated ? rawText.slice(0, MAX_RAW_TEXT_LENGTH) : rawText;
@@ -58,7 +64,7 @@ export async function captureFromTelegram(
     `INSERT INTO inbox_items
        (id, user_id, raw_text, source, created_at, resolved_at, snoozed_until,
         external_ref, version, updated_at, deleted_at)
-     SELECT $1, tl.user_id, $3, 'telegram-text', $4, NULL, NULL, $5,
+     SELECT $1, tl.user_id, $3, $6, $4, NULL, NULL, $5,
             nextval('sync_version'), $4, NULL
        FROM telegram_links tl
       WHERE tl.chat_id = $2 AND tl.deleted_at IS NULL
@@ -66,7 +72,7 @@ export async function captureFromTelegram(
      ON CONFLICT (user_id, external_ref) WHERE external_ref IS NOT NULL
        DO UPDATE SET updated_at = inbox_items.updated_at
      RETURNING id, (xmax = 0) AS inserted`,
-    [inboxId, chatId, text, now, externalRef],
+    [inboxId, chatId, text, now, externalRef, source ?? DEFAULT_SOURCE],
   );
 
   const row = result.rows[0];
@@ -80,4 +86,21 @@ export async function captureFromTelegram(
     truncated,
     alreadyProcessed: !row.inserted,
   };
+}
+
+// TGR-02: the voice handler needs to know a chat is linked BEFORE it
+// downloads and transcribes (no point paying for either on an unlinked
+// chat) — captureFromTelegram only surfaces "unlinked" as a side effect
+// of the insert, which needs the transcript in hand already. This is a
+// plain existence check against the same table, kept here alongside the
+// writer it fronts.
+export async function isTelegramChatLinked(
+  pool: pg.Pool,
+  chatId: string,
+): Promise<boolean> {
+  const result = await pool.query(
+    `SELECT 1 FROM telegram_links WHERE chat_id = $1 AND deleted_at IS NULL LIMIT 1`,
+    [chatId],
+  );
+  return (result.rowCount ?? 0) > 0;
 }

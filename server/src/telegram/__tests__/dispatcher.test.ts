@@ -20,12 +20,13 @@ import {
   resetUpdateCounters,
 } from "../../test-utils/telegramUpdates";
 
-// `mockBot`, `mockHandleStart` and `mockHandleText` are reassigned in
-// beforeEach; the vi.mock factories capture the let bindings so each
-// test sees the fresh instances.
+// `mockBot`, `mockHandleStart`, `mockHandleText` and `mockHandleVoice`
+// are reassigned in beforeEach; the vi.mock factories capture the let
+// bindings so each test sees the fresh instances.
 let mockBot: MockTelegramBotApi;
 let mockHandleStart: ReturnType<typeof vi.fn>;
 let mockHandleText: ReturnType<typeof vi.fn>;
+let mockHandleVoice: ReturnType<typeof vi.fn>;
 
 vi.mock("../bot", () => ({
   getBot: () => mockBot,
@@ -46,6 +47,16 @@ vi.mock("../handlers/text", () => ({
     pool: unknown,
     log: unknown,
   ): unknown => mockHandleText(msg, pool, log),
+}));
+
+vi.mock("../handlers/voice", () => ({
+  handleVoice: (
+    msg: unknown,
+    pool: unknown,
+    log: unknown,
+    deps: unknown,
+  ): unknown => mockHandleVoice(msg, pool, log, deps),
+  getDefaultTranscriptionProvider: () => ({ transcribe: vi.fn() }),
 }));
 
 // Imported after vi.mock so the dispatcher picks up the mocked modules.
@@ -74,6 +85,7 @@ describe("dispatchUpdate — hermetic routing + reply pipeline", () => {
     mockBot = new MockTelegramBotApi();
     mockHandleStart = vi.fn();
     mockHandleText = vi.fn().mockResolvedValue(null);
+    mockHandleVoice = vi.fn().mockResolvedValue(null);
     resetUpdateCounters();
   });
 
@@ -168,14 +180,52 @@ describe("dispatchUpdate — hermetic routing + reply pipeline", () => {
     });
   });
 
-  it("voice update → no outbound, handleText not called (TGR-02 handles voice separately)", async () => {
+  it("voice update → routed to handleVoice, reply sent via mock bot", async () => {
+    mockHandleVoice.mockResolvedValue("Saved to inbox: buy milk");
+    const update = makeVoiceUpdate({ durationSec: 4, chat_id: 9005 });
+
+    dispatchUpdate(update, makeStubLogger(), stubPool);
+
+    await vi.waitFor(() => {
+      expect(mockBot.outbound).toHaveLength(1);
+    });
+    expect(mockHandleStart).not.toHaveBeenCalled();
+    expect(mockHandleText).not.toHaveBeenCalled();
+    expect(mockHandleVoice).toHaveBeenCalledTimes(1);
+    expect(mockHandleVoice).toHaveBeenCalledWith(
+      update.message,
+      stubPool,
+      expect.anything(),
+      expect.objectContaining({ bot: mockBot }),
+    );
+    expect(mockBot.outbound[0]).toEqual({
+      method: "sendMessage",
+      chat_id: 9005,
+      text: "Saved to inbox: buy milk",
+    });
+  });
+
+  it("voice update, handleVoice resolving null → no outbound", async () => {
+    mockHandleVoice.mockResolvedValue(null);
     const update = makeVoiceUpdate({ durationSec: 4 });
 
     dispatchUpdate(update, makeStubLogger(), stubPool);
 
     await new Promise((r) => setTimeout(r, 20));
-    expect(mockHandleStart).not.toHaveBeenCalled();
-    expect(mockHandleText).not.toHaveBeenCalled();
+    expect(mockHandleVoice).toHaveBeenCalledTimes(1);
+    expect(mockBot.outbound).toEqual([]);
+  });
+
+  it("voice update, handleVoice throws → dispatcher swallows the error, no outbound", async () => {
+    mockHandleVoice.mockRejectedValue(new Error("transcription blew up"));
+    const update = makeVoiceUpdate({ durationSec: 4 });
+
+    expect(() =>
+      dispatchUpdate(update, makeStubLogger(), stubPool),
+    ).not.toThrow();
+
+    await new Promise((r) => setTimeout(r, 20));
+    expect(mockHandleVoice).toHaveBeenCalledTimes(1);
     expect(mockBot.outbound).toEqual([]);
   });
 
