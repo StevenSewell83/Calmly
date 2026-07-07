@@ -15,15 +15,17 @@ import {
   makeStartUpdate,
   makeTextUpdate,
   makeVoiceUpdate,
+  makePhotoUpdate,
   makeCallbackQueryUpdate,
   resetUpdateCounters,
 } from "../../test-utils/telegramUpdates";
 
-// `mockBot` and `mockHandleStart` are reassigned in beforeEach; the
-// vi.mock factories capture the let bindings so each test sees the
-// fresh instances.
+// `mockBot`, `mockHandleStart` and `mockHandleText` are reassigned in
+// beforeEach; the vi.mock factories capture the let bindings so each
+// test sees the fresh instances.
 let mockBot: MockTelegramBotApi;
 let mockHandleStart: ReturnType<typeof vi.fn>;
+let mockHandleText: ReturnType<typeof vi.fn>;
 
 vi.mock("../bot", () => ({
   getBot: () => mockBot,
@@ -36,6 +38,14 @@ vi.mock("../handlers/start", () => ({
     pool: unknown,
     log: unknown,
   ): unknown => mockHandleStart(msg, pool, log),
+}));
+
+vi.mock("../handlers/text", () => ({
+  handleText: (
+    msg: unknown,
+    pool: unknown,
+    log: unknown,
+  ): unknown => mockHandleText(msg, pool, log),
 }));
 
 // Imported after vi.mock so the dispatcher picks up the mocked modules.
@@ -63,6 +73,7 @@ describe("dispatchUpdate — hermetic routing + reply pipeline", () => {
   beforeEach(() => {
     mockBot = new MockTelegramBotApi();
     mockHandleStart = vi.fn();
+    mockHandleText = vi.fn().mockResolvedValue(null);
     resetUpdateCounters();
   });
 
@@ -106,24 +117,65 @@ describe("dispatchUpdate — hermetic routing + reply pipeline", () => {
     });
   });
 
-  it("plain text NOT starting with /start → no handler call, no outbound (current dispatcher floor)", async () => {
-    const update = makeTextUpdate("buy milk");
+  it("plain text NOT starting with /start → routed to handleText, reply sent via mock bot", async () => {
+    mockHandleText.mockResolvedValue("Saved to inbox.");
+    const update = makeTextUpdate("buy milk", { chat_id: 9003 });
 
     dispatchUpdate(update, makeStubLogger(), stubPool);
 
-    // Wait a microtask + a small budget; nothing should fire.
-    await new Promise((r) => setTimeout(r, 20));
+    await vi.waitFor(() => {
+      expect(mockBot.outbound).toHaveLength(1);
+    });
     expect(mockHandleStart).not.toHaveBeenCalled();
+    expect(mockHandleText).toHaveBeenCalledTimes(1);
+    expect(mockHandleText).toHaveBeenCalledWith(
+      update.message,
+      stubPool,
+      expect.anything(),
+    );
+    expect(mockBot.outbound[0]).toEqual({
+      method: "sendMessage",
+      chat_id: 9003,
+      text: "Saved to inbox.",
+    });
+  });
+
+  it("handleText resolving null → no outbound (e.g. an out-of-scope slash command)", async () => {
+    mockHandleText.mockResolvedValue(null);
+    const update = makeTextUpdate("/today");
+
+    dispatchUpdate(update, makeStubLogger(), stubPool);
+
+    await new Promise((r) => setTimeout(r, 20));
+    expect(mockHandleText).toHaveBeenCalledTimes(1);
     expect(mockBot.outbound).toEqual([]);
   });
 
-  it("voice update → no outbound until TG-04 voice wiring lands on the dispatcher", async () => {
+  it("non-text, non-voice media → routed to handleText, reply sent via mock bot", async () => {
+    mockHandleText.mockResolvedValue("I only handle text and voice notes for now.");
+    const update = makePhotoUpdate({ chat_id: 9004 });
+
+    dispatchUpdate(update, makeStubLogger(), stubPool);
+
+    await vi.waitFor(() => {
+      expect(mockBot.outbound).toHaveLength(1);
+    });
+    expect(mockHandleText).toHaveBeenCalledTimes(1);
+    expect(mockBot.outbound[0]).toMatchObject({
+      method: "sendMessage",
+      chat_id: 9004,
+      text: "I only handle text and voice notes for now.",
+    });
+  });
+
+  it("voice update → no outbound, handleText not called (TGR-02 handles voice separately)", async () => {
     const update = makeVoiceUpdate({ durationSec: 4 });
 
     dispatchUpdate(update, makeStubLogger(), stubPool);
 
     await new Promise((r) => setTimeout(r, 20));
     expect(mockHandleStart).not.toHaveBeenCalled();
+    expect(mockHandleText).not.toHaveBeenCalled();
     expect(mockBot.outbound).toEqual([]);
   });
 
