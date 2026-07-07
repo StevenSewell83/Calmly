@@ -3,6 +3,9 @@ import { X, Trash2 } from "lucide-react";
 import type { PlanTaskItem } from "../../../preload/api-types";
 import { RescheduleControls } from "./RescheduleControls";
 import { useEscapeKey } from "../../hooks/useEscapeKey";
+import { useReminderRule } from "../../hooks/useReminderRule";
+import { ReminderBadge } from "../../components/reminders/ReminderBadge";
+import { ReminderRuleEditor } from "../../components/reminders/ReminderRuleEditor";
 
 interface Props {
   task: PlanTaskItem | null;
@@ -58,6 +61,7 @@ export function TaskSidePanel({ task, day, onClose, onSaved }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const titleRef = useRef<HTMLInputElement>(null);
+  const { state: reminderState } = useReminderRule(task?.id ?? "");
 
   // Reset form whenever active task changes.
   useEffect(() => {
@@ -134,8 +138,11 @@ export function TaskSidePanel({ task, day, onClose, onSaved }: Props) {
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-stone-100">
-          <h2 className="text-xs font-bold tracking-[0.2em] uppercase text-stone-500">
+          <h2 className="flex items-center gap-2 text-xs font-bold tracking-[0.2em] uppercase text-stone-500">
             {isPlaced ? "Placed block" : "Backlog task"}
+            {reminderState.kind === "ready" ? (
+              <ReminderBadge rule={reminderState.data} />
+            ) : null}
           </h2>
           <button
             type="button"
@@ -228,6 +235,9 @@ export function TaskSidePanel({ task, day, onClose, onSaved }: Props) {
               Clear both fields to return the task to the backlog.
             </p>
           </div>
+
+          {/* Reminder rule (RM-01b) */}
+          <ReminderRuleEditor taskId={task.id} />
 
           {error ? (
             <p role="alert" className="text-xs text-red-500 font-medium px-1">{error}</p>

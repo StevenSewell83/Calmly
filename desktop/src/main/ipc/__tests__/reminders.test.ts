@@ -160,3 +160,86 @@ describe("reminders:delete", () => {
     });
   });
 });
+
+// ── reminders:getDefaults / reminders:setDefaults (RM-02) ──────────────────
+
+function makeFakeDefaultsDb(initialJson?: string): { db: HandlerCtx["db"] } {
+  const state: { row: { settings_json: string } | undefined } = {
+    row: initialJson ? { settings_json: initialJson } : undefined,
+  };
+  const db = {
+    prepare(sql: string) {
+      const normalized = sql.replace(/\s+/g, " ").trim().toLowerCase();
+      return {
+        get: () => state.row,
+        run: (...args: unknown[]) => {
+          if (normalized.startsWith("update user_settings")) {
+            state.row = { settings_json: args[0] as string };
+          }
+          return { changes: 1, lastInsertRowid: 0 };
+        },
+      };
+    },
+  } as unknown as HandlerCtx["db"];
+  return { db };
+}
+
+describe("reminders:getDefaults", () => {
+  it("returns hard-coded fallback defaults when no user_settings row exists", () => {
+    const fake = makeFakeDefaultsDb();
+    const ctx: HandlerCtx = { ...CTX, db: fake.db };
+    expect(reg.get("reminders:getDefaults")!(ctx, undefined)).toEqual({
+      ok: true,
+      defaults: { importantIntervalSeconds: 1800, softIntervalSeconds: 10800 },
+    });
+  });
+
+  it("returns stored defaults from the settings JSON when present", () => {
+    const fake = makeFakeDefaultsDb(
+      JSON.stringify({
+        "reminders.importantIntervalSeconds": 600,
+        "reminders.softIntervalSeconds": 86400,
+      }),
+    );
+    const ctx: HandlerCtx = { ...CTX, db: fake.db };
+    expect(reg.get("reminders:getDefaults")!(ctx, undefined)).toEqual({
+      ok: true,
+      defaults: { importantIntervalSeconds: 600, softIntervalSeconds: 86400 },
+    });
+  });
+});
+
+describe("reminders:setDefaults", () => {
+  it("rejects a non-object payload", () => {
+    const fake = makeFakeDefaultsDb();
+    const ctx: HandlerCtx = { ...CTX, db: fake.db };
+    expect(reg.get("reminders:setDefaults")!(ctx, "bad")).toEqual({
+      ok: false,
+      error: "InvalidArgs",
+    });
+  });
+
+  it("rejects an interval below the 5-minute floor", () => {
+    const fake = makeFakeDefaultsDb();
+    const ctx: HandlerCtx = { ...CTX, db: fake.db };
+    expect(
+      reg.get("reminders:setDefaults")!(ctx, { importantIntervalSeconds: 60 }),
+    ).toEqual({ ok: false, error: "InvalidArgs" });
+  });
+
+  it("persists a partial patch and leaves the other field untouched", () => {
+    const fake = makeFakeDefaultsDb(
+      JSON.stringify({
+        "reminders.importantIntervalSeconds": 1800,
+        "reminders.softIntervalSeconds": 10800,
+      }),
+    );
+    const ctx: HandlerCtx = { ...CTX, db: fake.db };
+    const r = reg.get("reminders:setDefaults")!(ctx, { softIntervalSeconds: 3600 });
+    expect(r).toEqual({ ok: true });
+    expect(reg.get("reminders:getDefaults")!(ctx, undefined)).toEqual({
+      ok: true,
+      defaults: { importantIntervalSeconds: 1800, softIntervalSeconds: 3600 },
+    });
+  });
+});

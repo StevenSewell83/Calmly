@@ -3,6 +3,8 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Inbox } from "lucide-react";
 import type { PlanTaskItem } from "../../../preload/api-types";
 import { PLAN_ITEM_ATTR } from "../../hooks/usePlanShortcuts";
+import { useReminderRule } from "../../hooks/useReminderRule";
+import { ReminderBadge } from "../../components/reminders/ReminderBadge";
 
 interface BacklogRowProps {
   task: PlanTaskItem;
@@ -15,6 +17,7 @@ function BacklogRow({ task, onTaskClick }: BacklogRowProps) {
       id: `backlog:${task.id}`,
       data: { kind: "backlog", taskId: task.id },
     });
+  const { state: reminderState } = useReminderRule(task.id);
 
   const style: React.CSSProperties = {
     transform: CSS.Translate.toString(transform),
@@ -67,8 +70,9 @@ function BacklogRow({ task, onTaskClick }: BacklogRowProps) {
         />
       </button>
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-stone-800 font-medium leading-snug truncate">
-          {task.title}
+        <p className="flex items-center gap-1.5 text-sm text-stone-800 font-medium leading-snug truncate">
+          <span className="truncate">{task.title}</span>
+          {reminderState.kind === "ready" ? <ReminderBadge rule={reminderState.data} /> : null}
         </p>
         {task.notes ? (
           <p className="text-[11px] text-stone-400 mt-0.5 truncate">

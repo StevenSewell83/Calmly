@@ -9,6 +9,8 @@ import {
   snapAndClampEndForStart,
 } from "./planMath";
 import { PLAN_ITEM_ATTR, PLAN_BLOCK_ATTR } from "../../hooks/usePlanShortcuts";
+import { useReminderRule } from "../../hooks/useReminderRule";
+import { ReminderBadge } from "../../components/reminders/ReminderBadge";
 
 export interface TimeBlockProps {
   task: PlanTaskItem;
@@ -43,6 +45,7 @@ export function TimeBlock({
       data: { kind: "block", taskId: task.id, startMinutes, endMinutes },
     });
 
+  const { state: reminderState } = useReminderRule(task.id);
   const initialDuration = endMinutes - startMinutes;
   const [previewDuration, setPreviewDuration] = useState<number | null>(null);
   const resizeStartY = useRef<number | null>(null);
@@ -153,8 +156,9 @@ export function TimeBlock({
     >
       <div className="flex items-start justify-between gap-2 h-full">
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-stone-800 truncate leading-tight">
-            {task.title}
+          <p className="flex items-center gap-1.5 text-sm font-medium text-stone-800 truncate leading-tight">
+            <span className="truncate">{task.title}</span>
+            {reminderState.kind === "ready" ? <ReminderBadge rule={reminderState.data} /> : null}
           </p>
           <p className="text-[10px] text-stone-500 tracking-wide mt-0.5">
             {formatBlockRange(startMinutes, startMinutes + visibleDuration)}

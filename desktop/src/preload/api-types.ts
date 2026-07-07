@@ -683,10 +683,28 @@ export type RemindersDeleteResult =
       error: "NotSignedIn" | "NotFound" | "InvalidArgs" | "InternalError";
     };
 
+// RM-02 profile defaults (Important/Soft interval applied to a task's rule
+// when it's first created). Stored on the shared user_settings blob, not a
+// new table — see main/ipc/reminders.ts.
+export interface ReminderDefaults {
+  importantIntervalSeconds: number;
+  softIntervalSeconds: number;
+}
+
+export type RemindersGetDefaultsResult =
+  | { ok: true; defaults: ReminderDefaults }
+  | { ok: false; error: "NotSignedIn" };
+
+export type RemindersSetDefaultsResult =
+  | { ok: true }
+  | { ok: false; error: "NotSignedIn" | "InvalidArgs" };
+
 export interface RemindersBridge {
   get(taskId: string): Promise<RemindersGetResult>;
   upsert(args: RemindersUpsertArgs): Promise<RemindersUpsertResult>;
   delete(taskId: string): Promise<RemindersDeleteResult>;
+  getDefaults(): Promise<RemindersGetDefaultsResult>;
+  setDefaults(patch: Partial<ReminderDefaults>): Promise<RemindersSetDefaultsResult>;
 }
 
 // Telegram linking bridge (TGR-06). Mirrors server/src/telegram/linkingRoutes.ts

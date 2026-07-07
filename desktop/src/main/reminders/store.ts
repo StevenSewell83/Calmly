@@ -1,14 +1,17 @@
 import { randomUUID } from "node:crypto";
 import type Database from "better-sqlite3";
 import type { ReminderImportance } from "@calmly/shared";
-import { reminderImportances } from "@calmly/shared";
+import { MIN_REMINDER_INTERVAL_SECONDS, reminderImportances } from "@calmly/shared";
 import { enqueueOp } from "../sync/queue";
 
 // One reminder rule per task in v1 (per-task editor — RM-01). Profile
 // defaults that fan out across many tasks live in RM-02. Ownership
 // flows through tasks.user_id; the table itself has no user_id column.
 
-export const MIN_INTERVAL_SECONDS = 300; // 5 minutes — anti-spam floor.
+// Re-exported under the historical name — the shared constant lives in
+// @calmly/shared so the renderer (RM-01b/RM-07) can read the same floor
+// without pulling in main's better-sqlite3 module graph.
+export const MIN_INTERVAL_SECONDS = MIN_REMINDER_INTERVAL_SECONDS;
 
 export interface ReminderRuleRow {
   id: string;

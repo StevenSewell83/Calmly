@@ -25,6 +25,15 @@ export const reminderImportances = ["important", "soft"] as const;
 export const ReminderImportanceSchema = z.enum(reminderImportances);
 export type ReminderImportance = z.infer<typeof ReminderImportanceSchema>;
 
+// RM-01a's anti-spam floor. Lives here (not just in main/reminders/store.ts)
+// because the renderer needs the same number for client-side validation
+// copy and can't import main's better-sqlite3-laden module graph.
+export const MIN_REMINDER_INTERVAL_SECONDS = 300; // 5 minutes
+// RM-02 profile defaults — applied to a task's rule when the user hasn't
+// picked an interval explicitly. Important defaults tighter than Soft.
+export const DEFAULT_IMPORTANT_REMINDER_INTERVAL_SECONDS = 1800; // 30 minutes
+export const DEFAULT_SOFT_REMINDER_INTERVAL_SECONDS = 10800; // 3 hours
+
 export const recurrenceOwnerTypes = ["task", "reminder"] as const;
 export const RecurrenceOwnerTypeSchema = z.enum(recurrenceOwnerTypes);
 export type RecurrenceOwnerType = z.infer<typeof RecurrenceOwnerTypeSchema>;
