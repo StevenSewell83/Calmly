@@ -19,6 +19,7 @@ import { searchBridge } from "./search";
 import { aiSettingsBridge } from "./aiSettings";
 import { crashBridge } from "./crash";
 import { updatesBridge } from "./updates";
+import { telegramBridge } from "./telegram";
 import type { CalmlyApi } from "./api-types";
 
 const calmlyApi: CalmlyApi = {
@@ -45,6 +46,7 @@ const calmlyApi: CalmlyApi = {
   ai: aiSettingsBridge,
   crash: crashBridge,
   updates: updatesBridge,
+  telegram: telegramBridge,
 };
 
 if (process.contextIsolated) {

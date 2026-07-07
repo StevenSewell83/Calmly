@@ -23,6 +23,7 @@ import { registerAiSettingsIpc } from "../ipc/aiSettings";
 import { registerAiIpc } from "../ipc/ai";
 import { registerCrashIpc } from "../ipc/crash";
 import { registerUpdatesIpc } from "../ipc/updates";
+import { registerTelegramIpc } from "../ipc/telegram";
 import type { UpdateService } from "../updates/updateService";
 
 export interface RegisterAllIpcDeps {
@@ -63,4 +64,5 @@ export function registerAllIpc(
   registerAiIpc();
   registerCrashIpc();
   registerUpdatesIpc(deps.updateService);
+  registerTelegramIpc({ apiClient: deps.apiClient });
 }

@@ -689,6 +689,37 @@ export interface RemindersBridge {
   delete(taskId: string): Promise<RemindersDeleteResult>;
 }
 
+// Telegram linking bridge (TGR-06). Mirrors server/src/telegram/linkingRoutes.ts
+// (TG-02b) exactly: the server only ever returns chatId, never a username (see
+// linking.ts's comment on why telegram_username isn't a stored column yet), so
+// the Linked state below is deliberately chatId + linkedAt rather than the
+// "@username" the original TG-08 spec assumed.
+export type TelegramLinkingStatusResult =
+  | { ok: true; linked: false }
+  | { ok: true; linked: true; chatId: string; linkedAt: number }
+  | { ok: false; error: "NotSignedIn" | "NetworkError" | "InternalError" };
+
+// botUsername is best-effort (sourced from GET /telegram/health alongside the
+// code creation call) — null when that lookup fails, in which case the
+// renderer falls back to "message the bot with this code" copy instead of a
+// clickable t.me deep link.
+export type TelegramCreateCodeResult =
+  | { ok: true; code: string; expiresAt: number; botUsername: string | null }
+  | {
+      ok: false;
+      error: "NotSignedIn" | "RateLimited" | "NetworkError" | "InternalError";
+    };
+
+export type TelegramUnlinkResult =
+  | { ok: true }
+  | { ok: false; error: "NotSignedIn" | "NetworkError" | "InternalError" };
+
+export interface TelegramBridge {
+  getStatus(): Promise<TelegramLinkingStatusResult>;
+  createLinkingCode(): Promise<TelegramCreateCodeResult>;
+  unlink(): Promise<TelegramUnlinkResult>;
+}
+
 export interface CalmlyApi {
   version: string;
   platform: string;
@@ -713,4 +744,5 @@ export interface CalmlyApi {
   ai: AiBridge;
   crash: CrashBridge;
   updates: UpdatesBridge;
+  telegram: TelegramBridge;
 }
