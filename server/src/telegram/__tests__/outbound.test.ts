@@ -279,6 +279,27 @@ describe("editMessage", () => {
     expect(calls.some((c) => /INSERT INTO outbound_messages/.test(c.sql))).toBe(false);
   });
 
+  it("edits with no buttons → sends an explicit empty inline_keyboard (clears any prior buttons)", async () => {
+    // TGR-11: Done/Snooze/Reschedule edit the original reminder message to
+    // remove its buttons. Telegram's editMessageText leaves an existing
+    // keyboard untouched when reply_markup is omitted from the request, so
+    // "no buttons" must be sent as an explicit empty array, not omitted.
+    const { pool } = makeMockPool([
+      selectRowHandler({ user_id: USER_ID, chat_id: CHAT_ID, telegram_message_id: "555", intent: "reminder" }),
+      updateHandler(),
+    ]);
+    const { bot, editMessageTextMock } = makeBot();
+
+    await editMessage(pool, "row-1", { text: "Done ✓ Buy milk" }, { bot, sleep: noopSleep });
+
+    expect(editMessageTextMock).toHaveBeenCalledWith(
+      CHAT_ID,
+      555,
+      "Done ✓ Buy milk",
+      { reply_markup: { inline_keyboard: [] } },
+    );
+  });
+
   it("unknown outboundMessageId → throws OutboundMessageNotFoundError", async () => {
     const { pool } = makeMockPool([selectRowHandler(undefined)]);
     const { bot } = makeBot();

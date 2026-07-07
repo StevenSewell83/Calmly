@@ -349,5 +349,132 @@ describe.skipIf(!dockerAvailable)(
       });
       expect(res.statusCode).toBe(404);
     });
+
+    // TGR-11 — POST /reminder-deliveries/:id/action (Done/Snooze/Reschedule).
+    async function makeSentDelivery(
+      ruleId: string,
+      userId: string,
+      taskId: string,
+      now: number,
+    ): Promise<string> {
+      const deliveryId = randomUUID();
+      await pool.query(
+        `INSERT INTO reminder_deliveries
+           (id, rule_id, user_id, task_id, scheduled_for, fired_at, channel, status, attempt_count, created_at)
+         VALUES ($1, $2, $3, $4, $5, $5, 'telegram', 'sent', 1, $5)`,
+        [deliveryId, ruleId, userId, taskId, now],
+      );
+      return deliveryId;
+    }
+
+    it("POST action (done): requires auth, acks the delivery, deactivates the rule, is idempotent", async () => {
+      const now = Date.now();
+      const { userId, ruleId, taskId } = await makeUserTaskAndRule(now);
+      const cookie = await makeSessionCookie(userId);
+      const deliveryId = await makeSentDelivery(ruleId, userId, taskId, now);
+
+      const unauth = await app.inject({
+        method: "POST",
+        url: `/reminder-deliveries/${deliveryId}/action`,
+        payload: { action: "done" },
+      });
+      expect(unauth.statusCode).toBe(401);
+
+      const res = await app.inject({
+        method: "POST",
+        url: `/reminder-deliveries/${deliveryId}/action`,
+        headers: { cookie },
+        payload: { action: "done" },
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.json()).toMatchObject({ ok: true, alreadyActed: false, status: "acked", taskId });
+
+      const row = await pool.query(
+        `SELECT status, acted_via FROM reminder_deliveries WHERE id = $1`,
+        [deliveryId],
+      );
+      expect(row.rows[0]).toMatchObject({ status: "acked", acted_via: "desktop" });
+      const rule = await pool.query(`SELECT active FROM reminder_rules WHERE id = $1`, [ruleId]);
+      expect(rule.rows[0]).toMatchObject({ active: 0 });
+
+      // Double-press (e.g. across surfaces) is a no-op, not an error.
+      const again = await app.inject({
+        method: "POST",
+        url: `/reminder-deliveries/${deliveryId}/action`,
+        headers: { cookie },
+        payload: { action: "done" },
+      });
+      expect(again.statusCode).toBe(200);
+      expect(again.json()).toMatchObject({ ok: true, alreadyActed: true, status: "acked" });
+    });
+
+    it("POST action (snooze): creates a follow-up pending delivery the scheduler later dispatches", async () => {
+      const now = Date.now();
+      const { userId, ruleId, taskId } = await makeUserTaskAndRule(now);
+      const cookie = await makeSessionCookie(userId);
+      const deliveryId = await makeSentDelivery(ruleId, userId, taskId, now);
+
+      const res = await app.inject({
+        method: "POST",
+        url: `/reminder-deliveries/${deliveryId}/action`,
+        headers: { cookie },
+        payload: { action: "snooze", minutes: 10 },
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.json()).toMatchObject({ ok: true, status: "snoozed" });
+
+      const rows = await pool.query(
+        `SELECT status, channel, attempt_count FROM reminder_deliveries WHERE rule_id = $1 ORDER BY created_at`,
+        [ruleId],
+      );
+      expect(rows.rows).toHaveLength(2);
+      expect(rows.rows[0]).toMatchObject({ status: "snoozed" });
+      expect(rows.rows[1]).toMatchObject({ status: "pending", channel: "telegram", attempt_count: 0 });
+    });
+
+    it("POST action (reschedule): acks the delivery and returns taskId for navigation", async () => {
+      const now = Date.now();
+      const { userId, ruleId, taskId } = await makeUserTaskAndRule(now);
+      const cookie = await makeSessionCookie(userId);
+      const deliveryId = await makeSentDelivery(ruleId, userId, taskId, now);
+
+      const res = await app.inject({
+        method: "POST",
+        url: `/reminder-deliveries/${deliveryId}/action`,
+        headers: { cookie },
+        payload: { action: "reschedule" },
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.json()).toMatchObject({ ok: true, status: "acked", taskId });
+
+      // Reschedule doesn't deactivate the rule (unlike Done).
+      const rule = await pool.query(`SELECT active FROM reminder_rules WHERE id = $1`, [ruleId]);
+      expect(rule.rows[0]).toMatchObject({ active: 1 });
+    });
+
+    it("POST action: 404 for a delivery owned by someone else; 400 for an unknown action", async () => {
+      const now = Date.now();
+      const owner = await makeUserTaskAndRule(now);
+      const deliveryId = await makeSentDelivery(owner.ruleId, owner.userId, owner.taskId, now);
+      const stranger = await makeUserTaskAndRule(now);
+      const strangerCookie = await makeSessionCookie(stranger.userId);
+
+      const strangerRes = await app.inject({
+        method: "POST",
+        url: `/reminder-deliveries/${deliveryId}/action`,
+        headers: { cookie: strangerCookie },
+        payload: { action: "done" },
+      });
+      expect(strangerRes.statusCode).toBe(404);
+
+      const ownerCookie = await makeSessionCookie(owner.userId);
+      const badAction = await app.inject({
+        method: "POST",
+        url: `/reminder-deliveries/${deliveryId}/action`,
+        headers: { cookie: ownerCookie },
+        payload: { action: "not-a-real-action" },
+      });
+      expect(badAction.statusCode).toBe(400);
+    });
   },
 );

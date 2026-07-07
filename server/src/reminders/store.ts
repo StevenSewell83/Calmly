@@ -27,6 +27,21 @@ export interface PendingRetryCandidate {
   lastAttemptAt: number;
 }
 
+// TGR-11: a delivery row created by handleSnooze (actionsStore.ts) for a
+// future scheduled_for, deliberately left un-dispatched at creation time
+// (unlike processDueRules, which creates+dispatches synchronously in the
+// same tick). This candidate set is how the scheduler later discovers and
+// fires it — attempt_count=0 distinguishes it from a normal retry
+// candidate (findPendingRetryCandidates requires attempt_count > 0), so
+// the two queries never overlap.
+export interface DueFollowupCandidate {
+  id: string;
+  ruleId: string;
+  userId: string;
+  taskId: string;
+  scheduledFor: number;
+}
+
 export interface CreateDeliveryInput {
   id: string;
   ruleId: string;
@@ -54,6 +69,8 @@ export type CancelResult =
 export interface ReminderStore {
   findActiveRuleCandidates(): Promise<DueRuleCandidate[]>;
   findPendingRetryCandidates(): Promise<PendingRetryCandidate[]>;
+  /** TGR-11 — see DueFollowupCandidate's doc comment above. */
+  findDueFollowupDeliveries(now: number): Promise<DueFollowupCandidate[]>;
   /** Insert via ON CONFLICT(rule_id, scheduled_for) DO NOTHING — `created:
    * false` means another tick already owns this slot. */
   createDelivery(input: CreateDeliveryInput): Promise<{ created: boolean }>;
@@ -135,6 +152,28 @@ export function pgReminderStore(pool: pg.Pool): ReminderStore {
         scheduledFor: parseInt(row.scheduled_for, 10),
         attemptCount: row.attempt_count,
         lastAttemptAt: row.fired_at !== null ? parseInt(row.fired_at, 10) : 0,
+      }));
+    },
+
+    async findDueFollowupDeliveries(now) {
+      const r = await pool.query<{
+        id: string;
+        rule_id: string;
+        user_id: string;
+        task_id: string;
+        scheduled_for: string;
+      }>(
+        `SELECT id, rule_id, user_id, task_id, scheduled_for::text AS scheduled_for
+           FROM reminder_deliveries
+          WHERE status = 'pending' AND attempt_count = 0 AND scheduled_for <= $1`,
+        [now],
+      );
+      return r.rows.map((row) => ({
+        id: row.id,
+        ruleId: row.rule_id,
+        userId: row.user_id,
+        taskId: row.task_id,
+        scheduledFor: parseInt(row.scheduled_for, 10),
       }));
     },
 

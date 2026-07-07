@@ -42,6 +42,10 @@ export interface TickSummary {
   skippedTaskDone: number;
   skippedNotDue: number;
   skippedDuplicate: number;
+  // TGR-11: deliveries dispatched via findDueFollowupDeliveries (a snooze's
+  // deferred re-fire), as opposed to `created` (brand-new from a rule) or
+  // `retried` (backoff retry of an already-attempted delivery).
+  followupDispatched: number;
 }
 
 function emptySummary(): TickSummary {
@@ -53,6 +57,7 @@ function emptySummary(): TickSummary {
     skippedTaskDone: 0,
     skippedNotDue: 0,
     skippedDuplicate: 0,
+    followupDispatched: 0,
   };
 }
 
@@ -98,6 +103,7 @@ export class ReminderScheduler {
     const now = this.now();
     await this.processDueRules(now, summary);
     await this.processPendingRetries(now, summary);
+    await this.processFollowupDeliveries(now, summary);
     return summary;
   }
 
@@ -165,6 +171,21 @@ export class ReminderScheduler {
       if (!isRetryDue(r.attemptCount, r.lastAttemptAt, now)) continue;
       summary.retried++;
       await this.attemptDispatch(r, r.attemptCount, now, summary);
+    }
+  }
+
+  // TGR-11: fires deliveries handleSnooze pre-created for a future
+  // scheduled_for (see DueFollowupCandidate's doc comment in store.ts).
+  // These never went through attemptDispatch before, so — like a brand-new
+  // delivery from processDueRules — the first attempt is `priorAttempts: 0`.
+  private async processFollowupDeliveries(
+    now: number,
+    summary: TickSummary,
+  ): Promise<void> {
+    const candidates = await this.store.findDueFollowupDeliveries(now);
+    for (const c of candidates) {
+      summary.followupDispatched++;
+      await this.attemptDispatch(c, 0, now, summary);
     }
   }
 

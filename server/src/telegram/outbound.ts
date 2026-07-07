@@ -220,7 +220,12 @@ export async function editMessage(
   }
 
   const buttons = input.buttons ?? [];
-  const replyMarkup = buildReplyMarkup(outboundMessageId, buttons);
+  // Unlike sendMessage (buildReplyMarkup below), an edit always sends an
+  // explicit reply_markup — Telegram's editMessageText leaves the
+  // existing keyboard untouched when reply_markup is omitted from the
+  // request entirely, it does not clear it. TGR-11's Done/Snooze/
+  // Reschedule edits rely on `buttons: []` actually clearing the buttons.
+  const replyMarkup = buildInlineKeyboard(outboundMessageId, buttons);
   const telegramMessageId = parseInt(row.telegram_message_id, 10);
   const other = buildOther(replyMarkup, input.parseMode);
 
@@ -270,11 +275,22 @@ function buildOther(
   };
 }
 
+// sendMessage's variant: a brand-new message with no buttons has no prior
+// keyboard to preserve, so omitting reply_markup entirely (undefined) is
+// fine here — unlike editMessage's buildInlineKeyboard below, which must
+// always produce an explicit (possibly empty) markup.
 function buildReplyMarkup(
   rowId: string,
   buttons: SendMessageButton[],
 ): InlineKeyboardMarkup | undefined {
   if (buttons.length === 0) return undefined;
+  return buildInlineKeyboard(rowId, buttons);
+}
+
+function buildInlineKeyboard(
+  rowId: string,
+  buttons: SendMessageButton[],
+): InlineKeyboardMarkup {
   return {
     inline_keyboard: buttons.map((b) => {
       const callbackData = `${b.actionId}:${rowId}`;

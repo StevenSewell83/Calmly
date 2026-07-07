@@ -6,6 +6,7 @@
 import type {
   CancelResult,
   CreateDeliveryInput,
+  DueFollowupCandidate,
   DueRuleCandidate,
   PendingRetryCandidate,
   RecordAttemptInput,
@@ -27,6 +28,10 @@ export interface FakeTask {
   id: string;
   status: string;
   deletedAt: number | null;
+  // TGR-11: title lookup for action-handler tests (Done/Snooze/Reschedule
+  // message text); optional so TGR-08's scheduler tests, which never read
+  // it, don't need to supply one.
+  title?: string;
 }
 
 export interface FakeDelivery {
@@ -42,6 +47,10 @@ export interface FakeDelivery {
   lastError: string | null;
   outboundMessageId: string | null;
   createdAt: number;
+  // TGR-11 audit stamp (0015_reminder_deliveries_actions.cjs) — null until
+  // an action handler acks/snoozes this delivery.
+  actedAt: number | null;
+  actedVia: "telegram" | "desktop" | null;
 }
 
 export class FakeReminderStore implements ReminderStore {
@@ -113,8 +122,22 @@ export class FakeReminderStore implements ReminderStore {
       lastError: null,
       outboundMessageId: null,
       createdAt: input.createdAt,
+      actedAt: null,
+      actedVia: null,
     });
     return { created: true };
+  }
+
+  async findDueFollowupDeliveries(now: number): Promise<DueFollowupCandidate[]> {
+    return this.deliveries
+      .filter((d) => d.status === "pending" && d.attemptCount === 0 && d.scheduledFor <= now)
+      .map((d) => ({
+        id: d.id,
+        ruleId: d.ruleId,
+        userId: d.userId,
+        taskId: d.taskId,
+        scheduledFor: d.scheduledFor,
+      }));
   }
 
   async recordAttempt(deliveryId: string, input: RecordAttemptInput): Promise<void> {

@@ -211,6 +211,86 @@ describe("ReminderScheduler.tick — retries", () => {
   });
 });
 
+describe("ReminderScheduler.tick — snooze follow-ups (TGR-11)", () => {
+  it("dispatches a pending, un-attempted delivery once its scheduled_for is due", async () => {
+    const store = new FakeReminderStore();
+    store.addTask({ id: "task-1", status: "open", deletedAt: null });
+    store.addRule({
+      id: "rule-1",
+      taskId: "task-1",
+      userId: "user-1",
+      intervalSeconds: INTERVAL_SECONDS,
+      active: true,
+      updatedAt: 0,
+      deletedAt: null,
+    });
+    // Mimics what handleSnooze (actions.ts) creates: a delivery for a
+    // future scheduled_for, deliberately never dispatched at creation time.
+    store.deliveries.push({
+      id: "delivery-snoozed",
+      ruleId: "rule-1",
+      userId: "user-1",
+      taskId: "task-1",
+      scheduledFor: 5_000,
+      channel: "telegram",
+      status: "pending",
+      attemptCount: 0,
+      firedAt: null,
+      lastError: null,
+      outboundMessageId: null,
+      createdAt: 0,
+      actedAt: 4_000,
+      actedVia: "telegram",
+    });
+    const telegram = alwaysOkChannel("telegram");
+    const scheduler = new ReminderScheduler({
+      store,
+      router: routerWith(telegram, alwaysOkChannel("desktop")),
+      now: () => 5_000,
+    });
+
+    const summary = await scheduler.tick();
+
+    expect(summary.followupDispatched).toBe(1);
+    expect(summary.created).toBe(0); // no active-rule fire this tick (rule not due yet)
+    expect(telegram.deliver).toHaveBeenCalledTimes(1);
+    expect(store.deliveries.find((d) => d.id === "delivery-snoozed")).toMatchObject({
+      status: "sent",
+      attemptCount: 1,
+    });
+  });
+
+  it("does not dispatch a followup that isn't due yet", async () => {
+    const store = new FakeReminderStore();
+    store.deliveries.push({
+      id: "delivery-snoozed",
+      ruleId: "rule-1",
+      userId: "user-1",
+      taskId: "task-1",
+      scheduledFor: 10_000,
+      channel: "desktop",
+      status: "pending",
+      attemptCount: 0,
+      firedAt: null,
+      lastError: null,
+      outboundMessageId: null,
+      createdAt: 0,
+      actedAt: 1_000,
+      actedVia: "desktop",
+    });
+    const scheduler = new ReminderScheduler({
+      store,
+      router: routerWith(alwaysOkChannel("telegram"), alwaysOkChannel("desktop")),
+      now: () => 5_000,
+    });
+
+    const summary = await scheduler.tick();
+
+    expect(summary.followupDispatched).toBe(0);
+    expect(store.deliveries[0]).toMatchObject({ status: "pending", attemptCount: 0 });
+  });
+});
+
 describe("ReminderScheduler.stop — graceful shutdown", () => {
   it("waits for an in-flight tick to finish, and a fresh scheduler over the same store doesn't duplicate it", async () => {
     const store = new FakeReminderStore();

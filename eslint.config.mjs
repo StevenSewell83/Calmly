@@ -221,6 +221,10 @@ export default tseslint.config(
       // TGR-08: channel identifiers, same category as Source enum values —
       // defined once here so the rest of reminders/ imports the constants.
       "server/src/reminders/channels/types.ts",
+      // TGR-11: the action endpoint's "done" is a reminder-action kind, not
+      // a TaskStatus value — same coincidental-regex-match category as
+      // router.tsx's `path: "telegram"` above.
+      "server/src/reminders/actionRoutes.ts",
     ],
     rules: {
       "no-restricted-syntax": "off",
