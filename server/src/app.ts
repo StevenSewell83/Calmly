@@ -14,6 +14,7 @@ import { crashRoute } from "./routes/crash";
 import { syncRoutes } from "./sync/routes";
 import { initBot, telegramPlugin, loadTelegramConfig } from "./telegram";
 import { telegramLinkingRoutes } from "./telegram/linkingRoutes";
+import { reminderSchedulerPlugin } from "./reminders/plugin";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -78,6 +79,11 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(authRoutesPlugin({ email }));
   await app.register(syncRoutes);
   await app.register(telegramLinkingRoutes);
+  await app.register(
+    reminderSchedulerPlugin({
+      tickIntervalMs: deps.config.REMINDER_TICK_INTERVAL_MS,
+    }),
+  );
 
   // Telegram integration — optional; only wired when TELEGRAM_BOT_TOKEN is set.
   const tgConfig = loadTelegramConfig();

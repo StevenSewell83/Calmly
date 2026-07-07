@@ -216,6 +216,11 @@ export default tseslint.config(
       // React Router config — `path: "telegram"` is a route segment, not
       // a Source enum value (the regex match is coincidental).
       "desktop/src/renderer/router.tsx",
+      // TGR-08: pure task-status gate builds a typed TaskStatus const set.
+      "server/src/reminders/state.ts",
+      // TGR-08: channel identifiers, same category as Source enum values —
+      // defined once here so the rest of reminders/ imports the constants.
+      "server/src/reminders/channels/types.ts",
     ],
     rules: {
       "no-restricted-syntax": "off",

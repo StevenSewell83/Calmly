@@ -50,6 +50,10 @@ const ConfigSchema = z.object({
   OAUTH_TICKET_SECRET: z.string().min(32).optional(),
   OAUTH_STATE_TTL_SEC: z.coerce.number().int().positive().default(600),
   OAUTH_TICKET_TTL_SEC: z.coerce.number().int().positive().default(300),
+
+  // TGR-08 reminder scheduler tick interval. Overridable mainly for tests;
+  // production should stay at the 30s default from the spec.
+  REMINDER_TICK_INTERVAL_MS: z.coerce.number().int().positive().default(30_000),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
