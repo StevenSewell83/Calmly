@@ -17,3 +17,24 @@ export const ReminderRuleRecordSchema = ReminderRuleSchema.extend({
   deleted_at: z.number().int().nonnegative().nullable(),
 });
 export type ReminderRuleRecord = z.infer<typeof ReminderRuleRecordSchema>;
+
+// TGR-10 — wire shape for GET /reminder-deliveries/pending, the desktop
+// notification fallback's pull endpoint (no live push transport exists —
+// see server/src/reminders/desktopDeliveries.ts). Shared so the desktop
+// client's fetch parsing and the server's response both derive from one
+// canonical schema instead of two hand-written mirrors.
+export const PendingDesktopDeliverySchema = z.object({
+  id: uuid,
+  taskId: uuid,
+  taskTitle: z.string(),
+  importance: ReminderImportanceSchema,
+  scheduledFor: z.number().int().nonnegative(),
+});
+export type PendingDesktopDelivery = z.infer<typeof PendingDesktopDeliverySchema>;
+
+export const PendingDesktopDeliveriesResponseSchema = z.object({
+  deliveries: z.array(PendingDesktopDeliverySchema),
+});
+export type PendingDesktopDeliveriesResponse = z.infer<
+  typeof PendingDesktopDeliveriesResponseSchema
+>;

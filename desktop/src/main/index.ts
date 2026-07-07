@@ -21,6 +21,7 @@ import { createMainWindow } from "./bootstrap/window";
 import { createDeepLinkBootstrap } from "./bootstrap/deeplinks";
 import { registerAllIpc } from "./bootstrap/ipc-register";
 import { createSyncBootstrap } from "./bootstrap/sync-bootstrap";
+import { createNotifierBootstrap } from "./bootstrap/notifier-bootstrap";
 import { runSearchBackfill } from "./search/backfill";
 import { createCalendarRefresh } from "./calendar/refresh";
 import { startCalendarImportWorker, stopCalendarImportWorker } from "./calendar/importWorker";
@@ -59,6 +60,7 @@ logger.info("desktop boot", {
 const deepLinks = createDeepLinkBootstrap();
 let mainWindow: BrowserWindow | null = null;
 let activeSyncLoop: ReturnType<typeof createSyncBootstrap> | null = null;
+let notifierLoop: ReturnType<typeof createNotifierBootstrap> | null = null;
 const updateService = createUpdateService({
   autoUpdater,
   isPackaged: app.isPackaged,
@@ -133,6 +135,17 @@ if (!gotInstanceLock) {
     activeSyncLoop.start();
     updateService.start();
 
+    // Same cadence as the sync loop (default 30s) — see notifier.ts's
+    // header for why this is a separate timer rather than woven into
+    // runSyncOnce.
+    notifierLoop = createNotifierBootstrap({
+      apiClient,
+      getMainWindow: () => mainWindow,
+      isPackaged: app.isPackaged,
+      log: (msg, fields) => logger.info(`[calmly:reminders] ${msg}`, fields ?? {}),
+    });
+    notifierLoop.start();
+
     const calendarRefresh = createCalendarRefresh({
       apiClient,
       log: (msg, fields) => logger.info(`[calmly:calendar:refresh] ${msg}`, fields ?? {}),
@@ -198,6 +211,7 @@ app.on("window-all-closed", () => {
 
 app.on("before-quit", () => {
   activeSyncLoop?.stop();
+  notifierLoop?.stop();
   stopCalendarImportWorker();
   stopTelemetryWorker();
   updateService.stop();

@@ -30,6 +30,7 @@ function mockCalmly({ updateStatus, focusSession }: Options) {
       onStatusChanged: () => () => {},
     },
     focus: { current: () => Promise.resolve(focusSession) },
+    reminders: { onOpenTask: () => () => {} },
   };
 }
 

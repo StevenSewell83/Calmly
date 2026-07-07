@@ -1,14 +1,17 @@
 // TGR-08 — Fastify plugin: registers the cancel route and starts the
 // interval-tick scheduler, stopping it cleanly via Fastify's onClose hook
 // (index.ts's SIGTERM handler calls app.close(), which fires onClose).
+// TGR-10 additionally wires the real DesktopChannel (replacing the
+// LogChannel stand-in) and registers its pending/ack pull endpoints.
 import type { FastifyInstance } from "fastify";
 import { getLinkingStatus } from "../telegram/linking";
 import { getBot as getTelegramBot } from "../telegram/bot";
 import type { OutboundBotClient } from "../telegram/outbound";
-import { DESKTOP_CHANNEL_NAME } from "./channels/types";
-import { LogChannel } from "./channels/log";
+import { DesktopChannel } from "./channels/desktop";
 import { TelegramChannel } from "./channels/telegram";
 import { ChannelRouter } from "./router";
+import { desktopDeliveryRoutes } from "./desktopDeliveryRoutes";
+import { pgDesktopDeliveryStore } from "./desktopDeliveries";
 import { reminderDeliveryRoutes } from "./routes";
 import { ReminderScheduler } from "./scheduler";
 import { pgReminderStore } from "./store";
@@ -20,11 +23,10 @@ export interface ReminderSchedulerPluginOptions {
 export function reminderSchedulerPlugin(opts: ReminderSchedulerPluginOptions) {
   return async function plugin(app: FastifyInstance): Promise<void> {
     const store = pgReminderStore(app.pool);
+    const desktopStore = pgDesktopDeliveryStore(app.pool);
     const router = new ChannelRouter({
       isTelegramLinked: async (userId) =>
         (await getLinkingStatus(app.pool, userId)).linked,
-      // TGR-09 wires the real Telegram channel; desktop's real channel is
-      // TGR-10 — LogChannel stands in for it until then, see channels/types.ts.
       telegram: new TelegramChannel({
         pool: app.pool,
         // grammy's Bot.api is structurally richer than OutboundBotClient's
@@ -34,7 +36,9 @@ export function reminderSchedulerPlugin(opts: ReminderSchedulerPluginOptions) {
         // app.ts calls initBot) — see TelegramChannelDeps' getBot doc.
         getBot: () => getTelegramBot() as unknown as OutboundBotClient,
       }),
-      desktop: new LogChannel(DESKTOP_CHANNEL_NAME, app.log),
+      // TGR-10: real desktop channel — see desktopDeliveries.ts for how the
+      // desktop client actually discovers/acks this delivery.
+      desktop: new DesktopChannel(app.log),
     });
     const scheduler = new ReminderScheduler({ store, router, logger: app.log });
 
@@ -51,5 +55,6 @@ export function reminderSchedulerPlugin(opts: ReminderSchedulerPluginOptions) {
     });
 
     await app.register(reminderDeliveryRoutes({ store }));
+    await app.register(desktopDeliveryRoutes({ store: desktopStore }));
   };
 }

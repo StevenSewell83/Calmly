@@ -699,12 +699,22 @@ export type RemindersSetDefaultsResult =
   | { ok: true }
   | { ok: false; error: "NotSignedIn" | "InvalidArgs" };
 
+// TGR-10 — payload the main process sends when a desktop notification is
+// clicked (see main/reminders/notifier.ts's OPEN_TASK_CHANNEL).
+export interface ReminderOpenTaskPayload {
+  taskId: string;
+}
+
 export interface RemindersBridge {
   get(taskId: string): Promise<RemindersGetResult>;
   upsert(args: RemindersUpsertArgs): Promise<RemindersUpsertResult>;
   delete(taskId: string): Promise<RemindersDeleteResult>;
   getDefaults(): Promise<RemindersGetDefaultsResult>;
   setDefaults(patch: Partial<ReminderDefaults>): Promise<RemindersSetDefaultsResult>;
+  // Fires when the user clicks a desktop notification (main already
+  // focused the window before sending this). Returns an unsubscribe fn,
+  // same shape as focus.ts's onAdHocRequest/onFocusRequest.
+  onOpenTask(handler: (payload: ReminderOpenTaskPayload) => void): () => void;
 }
 
 // Telegram linking bridge (TGR-06). Mirrors server/src/telegram/linkingRoutes.ts

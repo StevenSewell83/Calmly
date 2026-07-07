@@ -212,5 +212,142 @@ describe.skipIf(!dockerAvailable)(
       });
       expect(res.statusCode).toBe(404);
     });
+
+    // TGR-10 — desktop notification fallback's pull endpoints.
+    async function makeSentDesktopDelivery(
+      ruleId: string,
+      userId: string,
+      taskId: string,
+      firedAt: number,
+    ): Promise<string> {
+      const deliveryId = randomUUID();
+      await pool.query(
+        `INSERT INTO reminder_deliveries
+           (id, rule_id, user_id, task_id, scheduled_for, fired_at, channel, status, attempt_count, created_at)
+         VALUES ($1, $2, $3, $4, $5, $5, 'desktop', 'sent', 1, $5)`,
+        [deliveryId, ruleId, userId, taskId, firedAt],
+      );
+      return deliveryId;
+    }
+
+    it("GET pending: requires auth, returns only this user's fresh desktop deliveries with title+importance", async () => {
+      const now = Date.now();
+      const { userId, ruleId, taskId } = await makeUserTaskAndRule(now);
+      const cookie = await makeSessionCookie(userId);
+      const deliveryId = await makeSentDesktopDelivery(ruleId, userId, taskId, now);
+
+      const unauth = await app.inject({ method: "GET", url: "/reminder-deliveries/pending" });
+      expect(unauth.statusCode).toBe(401);
+
+      const res = await app.inject({
+        method: "GET",
+        url: "/reminder-deliveries/pending",
+        headers: { cookie },
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.json()).toMatchObject({
+        deliveries: [
+          { id: deliveryId, taskId, taskTitle: "Integration task", importance: "important" },
+        ],
+      });
+    });
+
+    it("GET pending: excludes another user's desktop deliveries (ownership)", async () => {
+      const now = Date.now();
+      const owner = await makeUserTaskAndRule(now);
+      await makeSentDesktopDelivery(owner.ruleId, owner.userId, owner.taskId, now);
+      const stranger = await makeUserTaskAndRule(now);
+      const strangerCookie = await makeSessionCookie(stranger.userId);
+
+      const res = await app.inject({
+        method: "GET",
+        url: "/reminder-deliveries/pending",
+        headers: { cookie: strangerCookie },
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.json()).toMatchObject({ deliveries: [] });
+    });
+
+    it("GET pending: a delivery fired over 30 minutes ago is skipped, not returned", async () => {
+      const now = Date.now();
+      const { userId, ruleId, taskId } = await makeUserTaskAndRule(now);
+      const cookie = await makeSessionCookie(userId);
+      const staleFiredAt = now - 31 * 60_000;
+      const deliveryId = await makeSentDesktopDelivery(ruleId, userId, taskId, staleFiredAt);
+
+      const res = await app.inject({
+        method: "GET",
+        url: "/reminder-deliveries/pending",
+        headers: { cookie },
+      });
+      expect(res.json()).toMatchObject({ deliveries: [] });
+
+      const row = await pool.query(`SELECT status FROM reminder_deliveries WHERE id = $1`, [
+        deliveryId,
+      ]);
+      expect(row.rows[0]).toMatchObject({ status: "skipped" });
+    });
+
+    it("POST desktop-ack: sets desktop_acked_at, removes it from a subsequent pending fetch, and is idempotent", async () => {
+      const now = Date.now();
+      const { userId, ruleId, taskId } = await makeUserTaskAndRule(now);
+      const cookie = await makeSessionCookie(userId);
+      const deliveryId = await makeSentDesktopDelivery(ruleId, userId, taskId, now);
+
+      const unauth = await app.inject({
+        method: "POST",
+        url: `/reminder-deliveries/${deliveryId}/desktop-ack`,
+      });
+      expect(unauth.statusCode).toBe(401);
+
+      const ack = await app.inject({
+        method: "POST",
+        url: `/reminder-deliveries/${deliveryId}/desktop-ack`,
+        headers: { cookie },
+      });
+      expect(ack.statusCode).toBe(200);
+      expect(ack.json()).toMatchObject({ ok: true });
+
+      const row = await pool.query(
+        `SELECT desktop_acked_at FROM reminder_deliveries WHERE id = $1`,
+        [deliveryId],
+      );
+      expect(row.rows[0]?.desktop_acked_at).not.toBeNull();
+
+      const afterAck = await app.inject({
+        method: "GET",
+        url: "/reminder-deliveries/pending",
+        headers: { cookie },
+      });
+      expect(afterAck.json()).toMatchObject({ deliveries: [] });
+
+      // Second ack on an already-acked delivery is a no-op, not an error.
+      const again = await app.inject({
+        method: "POST",
+        url: `/reminder-deliveries/${deliveryId}/desktop-ack`,
+        headers: { cookie },
+      });
+      expect(again.statusCode).toBe(200);
+    });
+
+    it("POST desktop-ack: 404 for a delivery owned by someone else", async () => {
+      const now = Date.now();
+      const owner = await makeUserTaskAndRule(now);
+      const deliveryId = await makeSentDesktopDelivery(
+        owner.ruleId,
+        owner.userId,
+        owner.taskId,
+        now,
+      );
+      const stranger = await makeUserTaskAndRule(now);
+      const strangerCookie = await makeSessionCookie(stranger.userId);
+
+      const res = await app.inject({
+        method: "POST",
+        url: `/reminder-deliveries/${deliveryId}/desktop-ack`,
+        headers: { cookie: strangerCookie },
+      });
+      expect(res.statusCode).toBe(404);
+    });
   },
 );

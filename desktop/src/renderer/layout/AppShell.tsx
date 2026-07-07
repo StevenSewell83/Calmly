@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   CalendarDays,
   CheckCircle2,
@@ -87,6 +87,7 @@ function SidebarItem({ spec, active, showReadyBadge }: SidebarItemProps) {
 
 export function AppShell() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [searchOpen, setSearchOpen] = useState(false);
   const updateStatus = useUpdateStatus();
   const focusSessionActive = useActiveFocusSession(location.pathname);
@@ -97,6 +98,17 @@ export function AppShell() {
     openSearch: () => setSearchOpen(true),
     closeOverlay: () => setSearchOpen(false),
   });
+
+  // TGR-10: clicking a desktop notification sends this once main has
+  // already focused the window (see main/reminders/notifier.ts) — routing
+  // to Home with the task id is the same "land on the landscape, then find
+  // the task" flow the rest of the app uses; a dedicated task-detail route
+  // is out of this bead's scope.
+  useEffect(() => {
+    return window.calmly.reminders.onOpenTask(({ taskId }) => {
+      navigate(`/?openTask=${encodeURIComponent(taskId)}`);
+    });
+  }, [navigate]);
 
   const isActive = (to: string): boolean => {
     if (to === "/") return location.pathname === "/";
