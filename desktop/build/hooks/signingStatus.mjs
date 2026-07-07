@@ -4,7 +4,7 @@
 //
 // Kept dependency-free and side-effect-free (no fs/child_process) so it can be
 // unit-tested without invoking electron-builder or an OS-specific signing tool
-// — see desktop/test/release/signingStatus.spec.ts.
+// — see desktop/test/rel05/signingStatus.spec.ts.
 //
 // Env var contract (full lifecycle documented in docs/RELEASING.md):
 //   macOS codesign   CSC_LINK (base64-encoded .p12) + CSC_KEY_PASSWORD

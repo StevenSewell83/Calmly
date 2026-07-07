@@ -330,7 +330,9 @@ jobs:
       - run: corepack enable
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          # node:sqlite needs Node >= 22.5; the sweep test refuses to skip
+          # in CI, so this job pins 22 rather than env.NODE_VERSION (20).
+          node-version: "22"
       - uses: actions/cache@v4
         with:
           path: ~/.local/share/pnpm/store

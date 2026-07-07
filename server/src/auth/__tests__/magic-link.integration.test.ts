@@ -83,7 +83,6 @@ describe.skipIf(!dockerAvailable)(
          RETURNING id`,
         [email],
       );
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       return r.rows[0]!.id;
     }
 

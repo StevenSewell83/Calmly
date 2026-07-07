@@ -78,6 +78,12 @@ const migrationFileCount = readdirSync(migrationsDir).filter((f) =>
   /^\d+_.+\.sql$/.test(f),
 ).length;
 
+// In CI a missing node:sqlite must FAIL, not skip — a silently-skipped sweep
+// is exactly the un-run gate this bead exists to prevent (needs Node >= 22.5).
+it.runIf(process.env["CI"])("node:sqlite is available so the sweep gate can run", () => {
+  expect(nodeSqlite, "node:sqlite unavailable — pin the CI job to Node >= 22.5").not.toBeNull();
+});
+
 describe.skipIf(!nodeSqlite)("calmly-wv9 · full migration sweep", () => {
   it("applies every migration on a fresh DB with no version collisions", () => {
     const raw = new nodeSqlite!.DatabaseSync(":memory:");
