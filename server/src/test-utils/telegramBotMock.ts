@@ -43,6 +43,12 @@ export interface EditMessageTextOther {
   [k: string]: unknown;
 }
 
+export interface AnswerCallbackQueryOther {
+  text?: string;
+  show_alert?: boolean;
+  [k: string]: unknown;
+}
+
 export type RecordedCall =
   | {
       method: "sendMessage";
@@ -56,6 +62,11 @@ export type RecordedCall =
       message_id: number;
       text: string;
       other?: EditMessageTextOther;
+    }
+  | {
+      method: "answerCallbackQuery";
+      callback_query_id: string;
+      other?: AnswerCallbackQueryOther;
     };
 
 const DEFAULT_BOT_IDENTITY: UserFromGetMe = {
@@ -107,6 +118,10 @@ export class MockTelegramBotApi implements TelegramFileClient {
     ): Promise<true>;
     getMe(): Promise<UserFromGetMe>;
     getWebhookInfo(): Promise<WebhookInfo>;
+    answerCallbackQuery(
+      callback_query_id: string,
+      other?: AnswerCallbackQueryOther,
+    ): Promise<true>;
   };
 
   readonly fetchImpl: typeof fetch;
@@ -119,6 +134,9 @@ export class MockTelegramBotApi implements TelegramFileClient {
   private nextSendMessageId = 1000;
   private nextGetFile: TelegramFile | null = null;
   private nextGetFileError: Error | null = null;
+  // Queues so retry specs can fail N times then succeed (shift on each call).
+  private sendMessageErrors: Error[] = [];
+  private editMessageTextErrors: Error[] = [];
 
   constructor(opts: MockTelegramBotApiOptions = {}) {
     this.token = opts.token ?? TEST_BOT_TOKEN;
@@ -132,6 +150,7 @@ export class MockTelegramBotApi implements TelegramFileClient {
       getMe: this.getMe.bind(this),
       getWebhookInfo: this.getWebhookInfo.bind(this),
       getFile: this.getFile.bind(this),
+      answerCallbackQuery: this.answerCallbackQuery.bind(this),
     };
 
     this.fetchImpl = this.handleFetch.bind(this) as typeof fetch;
@@ -147,6 +166,8 @@ export class MockTelegramBotApi implements TelegramFileClient {
     this.nextSendMessageId = 1000;
     this.nextGetFile = null;
     this.nextGetFileError = null;
+    this.sendMessageErrors = [];
+    this.editMessageTextErrors = [];
   }
 
   setNextGetFile(file: TelegramFile): void {
@@ -163,11 +184,23 @@ export class MockTelegramBotApi implements TelegramFileClient {
     this.fileBytes.set(normalisePath(filePath), { bytes, mimeType });
   }
 
+  /** Next N sendMessage calls throw `err` (in order) before calls succeed again. */
+  enqueueSendMessageError(err: Error): void {
+    this.sendMessageErrors.push(err);
+  }
+
+  /** Next N editMessageText calls throw `err` (in order) before calls succeed again. */
+  enqueueEditMessageTextError(err: Error): void {
+    this.editMessageTextErrors.push(err);
+  }
+
   private async sendMessage(
     chat_id: number | string,
     text: string,
     other?: SendMessageOther,
   ): Promise<Message.TextMessage> {
+    const err = this.sendMessageErrors.shift();
+    if (err) throw err;
     this.recordings.push(
       other === undefined
         ? { method: "sendMessage", chat_id, text }
@@ -193,6 +226,8 @@ export class MockTelegramBotApi implements TelegramFileClient {
     text: string,
     other?: EditMessageTextOther,
   ): Promise<true> {
+    const err = this.editMessageTextErrors.shift();
+    if (err) throw err;
     this.recordings.push(
       other === undefined
         ? { method: "editMessageText", chat_id, message_id, text }
@@ -207,6 +242,18 @@ export class MockTelegramBotApi implements TelegramFileClient {
 
   private async getWebhookInfo(): Promise<WebhookInfo> {
     return this.webhookInfo;
+  }
+
+  private async answerCallbackQuery(
+    callback_query_id: string,
+    other?: AnswerCallbackQueryOther,
+  ): Promise<true> {
+    this.recordings.push(
+      other === undefined
+        ? { method: "answerCallbackQuery", callback_query_id }
+        : { method: "answerCallbackQuery", callback_query_id, other },
+    );
+    return true;
   }
 
   private async getFile(fileId: string): Promise<TelegramFile> {

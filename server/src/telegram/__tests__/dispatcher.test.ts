@@ -27,6 +27,7 @@ let mockBot: MockTelegramBotApi;
 let mockHandleStart: ReturnType<typeof vi.fn>;
 let mockHandleText: ReturnType<typeof vi.fn>;
 let mockHandleVoice: ReturnType<typeof vi.fn>;
+let mockHandleCallbackQuery: ReturnType<typeof vi.fn>;
 
 vi.mock("../bot", () => ({
   getBot: () => mockBot,
@@ -59,6 +60,15 @@ vi.mock("../handlers/voice", () => ({
   getDefaultTranscriptionProvider: () => ({ transcribe: vi.fn() }),
 }));
 
+vi.mock("../handlers/callback", () => ({
+  handleCallbackQuery: (
+    callbackQuery: unknown,
+    pool: unknown,
+    log: unknown,
+    deps: unknown,
+  ): unknown => mockHandleCallbackQuery(callbackQuery, pool, log, deps),
+}));
+
 // Imported after vi.mock so the dispatcher picks up the mocked modules.
 const { dispatchUpdate } = await import("../dispatcher");
 
@@ -86,6 +96,7 @@ describe("dispatchUpdate — hermetic routing + reply pipeline", () => {
     mockHandleStart = vi.fn();
     mockHandleText = vi.fn().mockResolvedValue(null);
     mockHandleVoice = vi.fn().mockResolvedValue(null);
+    mockHandleCallbackQuery = vi.fn().mockResolvedValue(undefined);
     resetUpdateCounters();
   });
 
@@ -229,13 +240,38 @@ describe("dispatchUpdate — hermetic routing + reply pipeline", () => {
     expect(mockBot.outbound).toEqual([]);
   });
 
-  it("non-message update (callback_query only) → early return, no outbound", async () => {
+  it("callback_query update → routed to handleCallbackQuery, no sendMessage/editMessageText call", async () => {
     const update = makeCallbackQueryUpdate("done:42");
 
     dispatchUpdate(update, makeStubLogger(), stubPool);
 
-    await new Promise((r) => setTimeout(r, 20));
+    await vi.waitFor(() => {
+      expect(mockHandleCallbackQuery).toHaveBeenCalledTimes(1);
+    });
     expect(mockHandleStart).not.toHaveBeenCalled();
+    expect(mockHandleText).not.toHaveBeenCalled();
+    expect(mockHandleVoice).not.toHaveBeenCalled();
+    expect(mockHandleCallbackQuery).toHaveBeenCalledWith(
+      update.callback_query,
+      stubPool,
+      expect.anything(),
+      expect.objectContaining({ bot: mockBot }),
+    );
+    // handleCallbackQuery itself is mocked out (it owns answerCallbackQuery),
+    // so the dispatcher shouldn't have sent/edited anything on its own.
+    expect(mockBot.outbound).toEqual([]);
+  });
+
+  it("callback_query update, handleCallbackQuery throws → dispatcher swallows the error", async () => {
+    mockHandleCallbackQuery.mockRejectedValue(new Error("db blew up"));
+    const update = makeCallbackQueryUpdate("done:99");
+
+    expect(() =>
+      dispatchUpdate(update, makeStubLogger(), stubPool),
+    ).not.toThrow();
+
+    await new Promise((r) => setTimeout(r, 20));
+    expect(mockHandleCallbackQuery).toHaveBeenCalledTimes(1);
     expect(mockBot.outbound).toEqual([]);
   });
 
@@ -262,6 +298,6 @@ describe("dispatchUpdate — hermetic routing + reply pipeline", () => {
     await vi.waitFor(() => {
       expect(mockBot.outbound).toHaveLength(1);
     });
-    expect(mockBot.outbound[0]?.chat_id).toBe(555);
+    expect((mockBot.outbound[0] as { chat_id?: number | string } | undefined)?.chat_id).toBe(555);
   });
 });
