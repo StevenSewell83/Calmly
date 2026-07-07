@@ -209,6 +209,22 @@ export async function getLinkingStatus(
   };
 }
 
+// Reverse lookup for inbound bot commands: given a Telegram chat_id,
+// resolve the linked Calmly user_id (if any). getLinkingStatus above
+// goes the other direction (userId -> chatId) for the HTTP settings
+// routes; handler code off an inbound Update only has the chat_id.
+// Shared by /now (TGR-04) and /today, /inbox (TGR-05).
+export async function getLinkedUserIdByChat(
+  pool: pg.Pool,
+  chatId: string,
+): Promise<string | null> {
+  const r = await pool.query<{ user_id: string }>(
+    `SELECT user_id FROM telegram_links WHERE chat_id = $1 AND deleted_at IS NULL LIMIT 1`,
+    [chatId],
+  );
+  return r.rows[0]?.user_id ?? null;
+}
+
 export async function unlinkTelegram(
   pool: pg.Pool,
   userId: string,

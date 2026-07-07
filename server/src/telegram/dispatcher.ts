@@ -2,18 +2,20 @@
 //
 // /start <CODE> — redeem a linking code (handleStart)
 // /start        — onboarding message (handleStart)
+// /now          — current focus task + next step (TGR-04, handleNow)
 // voice notes   — download + transcribe + inbox capture (handleVoice)
 // plain text / other media — inbox capture + fallback reply (handleText)
 // callback_query — inline button presses on outbound messages (TGR-03,
 //   handleCallbackQuery)
-// Slash commands other than /start (TGR-04/05) are still out of scope
-// here.
+// Slash commands other than /start and /now (TGR-05: /today, /inbox)
+// are still out of scope here.
 
 import type { Update } from "grammy/types";
 import type { FastifyBaseLogger } from "fastify";
 import type pg from "pg";
 import { getBot } from "./bot";
 import { handleStart } from "./handlers/start";
+import { handleNow } from "./handlers/commands/now";
 import { handleText } from "./handlers/text";
 import { handleVoice, getDefaultTranscriptionProvider } from "./handlers/voice";
 import { handleCallbackQuery, type CallbackBotClient } from "./handlers/callback";
@@ -61,6 +63,18 @@ export function dispatchUpdate(
       return bot.api.sendMessage(msg.chat.id, reply);
     }).catch((err: unknown) => {
       log.error({ err }, "[telegram] failed to reply to /start");
+    });
+    return;
+  }
+
+  if (text === "/now") {
+    // MarkdownV2 so handleNow's escaped task title/next-step interpolate
+    // safely; the fixed template text it returns is already hand-escaped.
+    void handleNow(msg, pool, log).then((reply) => {
+      const bot = getBot();
+      return bot.api.sendMessage(msg.chat.id, reply, { parse_mode: "MarkdownV2" });
+    }).catch((err: unknown) => {
+      log.error({ err }, "[telegram] failed to reply to /now");
     });
     return;
   }

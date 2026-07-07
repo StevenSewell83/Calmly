@@ -12,6 +12,7 @@
 // self-tests without a config change.
 
 import type {
+  BotCommand,
   File as TelegramFile,
   InlineKeyboardMarkup,
   ReplyKeyboardMarkup,
@@ -67,6 +68,10 @@ export type RecordedCall =
       method: "answerCallbackQuery";
       callback_query_id: string;
       other?: AnswerCallbackQueryOther;
+    }
+  | {
+      method: "setMyCommands";
+      commands: readonly BotCommand[];
     };
 
 const DEFAULT_BOT_IDENTITY: UserFromGetMe = {
@@ -122,6 +127,7 @@ export class MockTelegramBotApi implements TelegramFileClient {
       callback_query_id: string,
       other?: AnswerCallbackQueryOther,
     ): Promise<true>;
+    setMyCommands(commands: readonly BotCommand[]): Promise<true>;
   };
 
   readonly fetchImpl: typeof fetch;
@@ -151,6 +157,7 @@ export class MockTelegramBotApi implements TelegramFileClient {
       getWebhookInfo: this.getWebhookInfo.bind(this),
       getFile: this.getFile.bind(this),
       answerCallbackQuery: this.answerCallbackQuery.bind(this),
+      setMyCommands: this.setMyCommands.bind(this),
     };
 
     this.fetchImpl = this.handleFetch.bind(this) as typeof fetch;
@@ -253,6 +260,11 @@ export class MockTelegramBotApi implements TelegramFileClient {
         ? { method: "answerCallbackQuery", callback_query_id }
         : { method: "answerCallbackQuery", callback_query_id, other },
     );
+    return true;
+  }
+
+  private async setMyCommands(commands: readonly BotCommand[]): Promise<true> {
+    this.recordings.push({ method: "setMyCommands", commands });
     return true;
   }
 

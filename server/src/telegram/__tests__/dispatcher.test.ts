@@ -25,6 +25,7 @@ import {
 // bindings so each test sees the fresh instances.
 let mockBot: MockTelegramBotApi;
 let mockHandleStart: ReturnType<typeof vi.fn>;
+let mockHandleNow: ReturnType<typeof vi.fn>;
 let mockHandleText: ReturnType<typeof vi.fn>;
 let mockHandleVoice: ReturnType<typeof vi.fn>;
 let mockHandleCallbackQuery: ReturnType<typeof vi.fn>;
@@ -40,6 +41,14 @@ vi.mock("../handlers/start", () => ({
     pool: unknown,
     log: unknown,
   ): unknown => mockHandleStart(msg, pool, log),
+}));
+
+vi.mock("../handlers/commands/now", () => ({
+  handleNow: (
+    msg: unknown,
+    pool: unknown,
+    log: unknown,
+  ): unknown => mockHandleNow(msg, pool, log),
 }));
 
 vi.mock("../handlers/text", () => ({
@@ -94,6 +103,7 @@ describe("dispatchUpdate — hermetic routing + reply pipeline", () => {
   beforeEach(() => {
     mockBot = new MockTelegramBotApi();
     mockHandleStart = vi.fn();
+    mockHandleNow = vi.fn();
     mockHandleText = vi.fn().mockResolvedValue(null);
     mockHandleVoice = vi.fn().mockResolvedValue(null);
     mockHandleCallbackQuery = vi.fn().mockResolvedValue(undefined);
@@ -286,6 +296,68 @@ describe("dispatchUpdate — hermetic routing + reply pipeline", () => {
     // Give the rejected promise time to settle through .catch.
     await new Promise((r) => setTimeout(r, 20));
     expect(mockHandleStart).toHaveBeenCalledTimes(1);
+    expect(mockBot.outbound).toEqual([]);
+  });
+
+  it("/now → handleNow called, reply sent with MarkdownV2 parse_mode", async () => {
+    mockHandleNow.mockResolvedValue("Now: Write report\nNext: —");
+    const update = makeTextUpdate("/now", { chat_id: 9006 });
+
+    dispatchUpdate(update, makeStubLogger(), stubPool);
+
+    await vi.waitFor(() => {
+      expect(mockBot.outbound).toHaveLength(1);
+    });
+    expect(mockHandleStart).not.toHaveBeenCalled();
+    expect(mockHandleText).not.toHaveBeenCalled();
+    expect(mockHandleNow).toHaveBeenCalledTimes(1);
+    expect(mockHandleNow).toHaveBeenCalledWith(
+      update.message,
+      stubPool,
+      expect.anything(),
+    );
+    expect(mockBot.outbound[0]).toEqual({
+      method: "sendMessage",
+      chat_id: 9006,
+      text: "Now: Write report\nNext: —",
+      other: { parse_mode: "MarkdownV2" },
+    });
+  });
+
+  it("/now is routed before the text-capture branch — never reaches handleText", async () => {
+    mockHandleNow.mockResolvedValue("No focus task right now.");
+    const update = makeTextUpdate("/now");
+
+    dispatchUpdate(update, makeStubLogger(), stubPool);
+
+    await vi.waitFor(() => {
+      expect(mockHandleNow).toHaveBeenCalledTimes(1);
+    });
+    expect(mockHandleText).not.toHaveBeenCalled();
+  });
+
+  it("/now with trailing whitespace still routes to handleNow", async () => {
+    mockHandleNow.mockResolvedValue("No focus task right now.");
+    const update = makeTextUpdate("/now  ", { chat_id: 9007 });
+
+    dispatchUpdate(update, makeStubLogger(), stubPool);
+
+    await vi.waitFor(() => {
+      expect(mockHandleNow).toHaveBeenCalledTimes(1);
+    });
+    expect(mockHandleText).not.toHaveBeenCalled();
+  });
+
+  it("handleNow throws → dispatcher swallows the error, no outbound", async () => {
+    mockHandleNow.mockRejectedValue(new Error("db blew up"));
+    const update = makeTextUpdate("/now");
+
+    expect(() =>
+      dispatchUpdate(update, makeStubLogger(), stubPool),
+    ).not.toThrow();
+
+    await new Promise((r) => setTimeout(r, 20));
+    expect(mockHandleNow).toHaveBeenCalledTimes(1);
     expect(mockBot.outbound).toEqual([]);
   });
 
