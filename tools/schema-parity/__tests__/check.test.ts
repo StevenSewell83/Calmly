@@ -96,6 +96,47 @@ describe("parseSqliteSql", () => {
     const tables = parseSqliteSql(sql);
     expect(Object.keys(tables)).toEqual(["c"]);
   });
+
+  it("resolves the x_new rebuild idiom (CREATE new; DROP old; RENAME)", () => {
+    const sql = `
+      CREATE TABLE t (id TEXT PRIMARY KEY, old_col TEXT) STRICT;
+      CREATE TABLE t_new (id TEXT PRIMARY KEY, new_col TEXT) STRICT;
+      INSERT INTO t_new (id) SELECT id FROM t;
+      DROP TABLE t;
+      ALTER TABLE t_new RENAME TO t;
+    `;
+    const tables = parseSqliteSql(sql);
+    expect(tables.t_new).toBeUndefined();
+    expect(Object.keys(tables.t!).sort()).toEqual(["id", "new_col"]);
+  });
+
+  it("resolves the x_old rebuild idiom (RENAME old; CREATE; DROP old)", () => {
+    const sql = `
+      CREATE TABLE t (id TEXT PRIMARY KEY, old_col TEXT) STRICT;
+      ALTER TABLE t RENAME TO t_old;
+      CREATE TABLE t (id TEXT PRIMARY KEY, new_col TEXT) STRICT;
+      INSERT INTO t (id) SELECT id FROM t_old;
+      DROP TABLE t_old;
+    `;
+    const tables = parseSqliteSql(sql);
+    expect(tables.t_old).toBeUndefined();
+    expect(Object.keys(tables.t!).sort()).toEqual(["id", "new_col"]);
+  });
+
+  it("survives repeated rebuilds of the same table", () => {
+    const sql = `
+      CREATE TABLE t (id TEXT PRIMARY KEY) STRICT;
+      CREATE TABLE t_new (id TEXT PRIMARY KEY, a TEXT) STRICT;
+      DROP TABLE t;
+      ALTER TABLE t_new RENAME TO t;
+      CREATE TABLE t_new (id TEXT PRIMARY KEY, a TEXT, b TEXT) STRICT;
+      DROP TABLE t;
+      ALTER TABLE t_new RENAME TO t;
+    `;
+    const tables = parseSqliteSql(sql);
+    expect(tables.t_new).toBeUndefined();
+    expect(Object.keys(tables.t!).sort()).toEqual(["a", "b", "id"]);
+  });
 });
 
 describe("parsePgSource", () => {

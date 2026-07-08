@@ -55,6 +55,54 @@
       "presentIn": ["server"],
       "absentIn": ["shared", "desktop"],
       "reason": "CAL-01 server-only one-shot pickup table for OAuth completion (refresh + access tokens, deleted on redeem). Never replicates."
+    },
+    {
+      "table": "_search_meta",
+      "presentIn": ["desktop"],
+      "absentIn": ["shared", "server"],
+      "reason": "SRCH-02 FTS backfill bookkeeping (status, timings, row count). Local search infrastructure; never syncs."
+    },
+    {
+      "table": "ai_usage",
+      "presentIn": ["desktop"],
+      "absentIn": ["shared", "server"],
+      "reason": "Local AI usage metering backing Settings > AI usage panel. Per-device counters; never syncs."
+    },
+    {
+      "table": "daily_reflections",
+      "presentIn": ["desktop"],
+      "absentIn": ["shared", "server"],
+      "reason": "CL-13 daily shutdown reflections. Carries the sync trio in anticipation of review sync, but is not in the sync registry, has no DTO, and does not replicate yet (see calmly-aa3 audit)."
+    },
+    {
+      "table": "replan_events",
+      "presentIn": ["desktop"],
+      "absentIn": ["shared", "server"],
+      "reason": "CL-12 replan telemetry events. Local-only per the migration header."
+    },
+    {
+      "table": "stuck_sessions",
+      "presentIn": ["desktop"],
+      "absentIn": ["shared", "server"],
+      "reason": "CL-10 stuck rescue sessions. Local-only per-device focus working state (no sync columns)."
+    },
+    {
+      "table": "telemetry_outbox",
+      "presentIn": ["desktop"],
+      "absentIn": ["shared", "server"],
+      "reason": "POL-01 client-side outbox buffering allow-listed telemetry events for batch flush to /telemetry/ingest. Local-only (op_queue pattern)."
+    },
+    {
+      "table": "telegram_linking_codes",
+      "presentIn": ["server"],
+      "absentIn": ["shared", "desktop"],
+      "reason": "TG-02a server-only one-time linking codes; short-lived auth state that never replicates."
+    },
+    {
+      "table": "telemetry_events",
+      "presentIn": ["server"],
+      "absentIn": ["shared", "desktop"],
+      "reason": "POL-01 server-side telemetry ingest store; append-only analytics with no client DTO."
     }
   ],
   "divergences": [
@@ -266,7 +314,7 @@
       "column": "updated_at",
       "presentIn": ["desktop", "server"],
       "absentIn": ["shared"],
-      "reason": "F-11 sync mtime — desktop and server both track; the public DTO uses created_at as its single timestamp."
+      "reason": "F-11 sync mtime \u2014 desktop and server both track; the public DTO uses created_at as its single timestamp."
     },
     {
       "table": "daily_reflections",
@@ -274,6 +322,20 @@
       "presentIn": ["desktop", "server"],
       "absentIn": ["shared"],
       "reason": "F-11 sync tombstone."
+    },
+    {
+      "table": "ai_suggestions",
+      "column": "accepted_at",
+      "presentIn": ["desktop"],
+      "absentIn": ["shared", "server"],
+      "reason": "ai_suggestions v2 local lifecycle timestamp (when the user accepted the suggestion); UX state, not part of the DTO."
+    },
+    {
+      "table": "ai_suggestions",
+      "column": "edited_json",
+      "presentIn": ["desktop"],
+      "absentIn": ["shared", "server"],
+      "reason": "ai_suggestions v2 local storage of the user-edited suggestion payload; UX state, not part of the DTO."
     }
   ]
 }

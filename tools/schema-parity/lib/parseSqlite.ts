@@ -103,7 +103,20 @@ function stripIfNotExists(s: string): string {
 
 export function parseSqliteSql(sql: string): SourceTables {
   const stripped = stripComments(sql);
-  const tables: SourceTables = {};
+
+  // Statements are collected per kind (each with its own tested regex), then
+  // applied in DOCUMENT ORDER. Ordering matters because the migrations use
+  // two table-rebuild idioms —
+  //   CREATE TABLE x_new (…); DROP TABLE x; ALTER TABLE x_new RENAME TO x;
+  //   ALTER TABLE x RENAME TO x_old; CREATE TABLE x (…); DROP TABLE x_old;
+  // — and a per-kind multi-pass either leaves a stale `x` plus a phantom
+  // `x_new` (this hid the inbox_items.external_ref and user_settings.id
+  // parity drifts) or deletes the rebuilt table outright.
+  interface Stmt {
+    index: number;
+    apply: (tables: SourceTables) => void;
+  }
+  const stmts: Stmt[] = [];
 
   // CREATE TABLE [IF NOT EXISTS] name ( body ) [STRICT];
   const createRe =
@@ -129,7 +142,12 @@ export function parseSqliteSql(sql: string): SourceTables {
         nullable: parsed.nullable,
       };
     }
-    tables[name] = cols;
+    stmts.push({
+      index: m.index ?? 0,
+      apply: (tables) => {
+        tables[name] = cols;
+      },
+    });
   }
 
   // CREATE VIRTUAL TABLE [IF NOT EXISTS] name USING fts5(...) — ignored.
@@ -142,27 +160,71 @@ export function parseSqliteSql(sql: string): SourceTables {
     const rawType = ((m[3] ?? "") as string).trim();
     const rest = (m[4] ?? "") as string;
     const isNotNull = /\bNOT\s+NULL\b/i.test(rest);
-    if (!tables[tableName]) tables[tableName] = {};
-    tables[tableName][colName] = {
-      bucket: bucketForSqliteType(rawType),
-      rawType: rawType.toUpperCase(),
-      nullable: !isNotNull,
-    };
+    stmts.push({
+      index: m.index ?? 0,
+      apply: (tables) => {
+        const tbl = tables[tableName] ?? (tables[tableName] = {});
+        tbl[colName] = {
+          bucket: bucketForSqliteType(rawType),
+          rawType: rawType.toUpperCase(),
+          nullable: !isNotNull,
+        };
+      },
+    });
   }
 
   // ALTER TABLE name DROP COLUMN col — remove the column from the
   // accumulated schema. Without this, a follow-up DROP migration
   // (e.g. 0010_drop_user_magic_link_cols.sql) would still surface
   // the dropped column in the parity check.
-  const dropRe =
+  const dropColRe =
     /ALTER\s+TABLE\s+([A-Za-z_][A-Za-z0-9_]*)\s+DROP\s+COLUMN\s+([A-Za-z_][A-Za-z0-9_]*)\s*;/gi;
-  for (const m of stripped.matchAll(dropRe)) {
+  for (const m of stripped.matchAll(dropColRe)) {
     const tableName = (m[1] ?? "") as string;
     const colName = (m[2] ?? "") as string;
-    const tbl = tables[tableName];
-    if (tbl && colName in tbl) delete tbl[colName];
+    stmts.push({
+      index: m.index ?? 0,
+      apply: (tables) => {
+        const tbl = tables[tableName];
+        if (tbl && colName in tbl) delete tbl[colName];
+      },
+    });
   }
 
+  // DROP TABLE [IF EXISTS] name;
+  const dropTableRe =
+    /DROP\s+TABLE\s+(?:IF\s+EXISTS\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*;/gi;
+  for (const m of stripped.matchAll(dropTableRe)) {
+    const name = (m[1] ?? "") as string;
+    stmts.push({
+      index: m.index ?? 0,
+      apply: (tables) => {
+        delete tables[name];
+      },
+    });
+  }
+
+  // ALTER TABLE name RENAME TO newName;
+  const renameRe =
+    /ALTER\s+TABLE\s+([A-Za-z_][A-Za-z0-9_]*)\s+RENAME\s+TO\s+([A-Za-z_][A-Za-z0-9_]*)\s*;/gi;
+  for (const m of stripped.matchAll(renameRe)) {
+    const from = (m[1] ?? "") as string;
+    const to = (m[2] ?? "") as string;
+    stmts.push({
+      index: m.index ?? 0,
+      apply: (tables) => {
+        const def = tables[from];
+        if (def) {
+          tables[to] = def;
+          delete tables[from];
+        }
+      },
+    });
+  }
+
+  stmts.sort((a, b) => a.index - b.index);
+  const tables: SourceTables = {};
+  for (const s of stmts) s.apply(tables);
   return tables;
 }
 
