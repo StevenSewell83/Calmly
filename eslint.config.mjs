@@ -253,15 +253,29 @@ export default tseslint.config(
       "max-lines": ["off"],
     },
   },
+  // Caps below reflect post-prettier sizes: the repo-wide `prettier --write`
+  // (calmly-aa3.30) split long lines, so these files' true formatted length
+  // is what the cap now pins. Each shrinks back via the cited bead.
   {
     files: ["desktop/src/main/triage/store.ts"],
     rules: {
       // TODO(calmly-aa3.11): withOwnedMutation() collapses the four resolve
       // functions and brings this file back under the default cap — remove
-      // this override then. (Grew to 378 while CI was red.)
+      // this override then.
       "max-lines": [
         "error",
-        { max: 380, skipBlankLines: true, skipComments: true },
+        { max: 390, skipBlankLines: true, skipComments: true },
+      ],
+    },
+  },
+  {
+    files: ["desktop/src/main/plan/store.ts"],
+    rules: {
+      // TODO(calmly-aa3.11): withOwnedMutation() removes the repeated
+      // transaction/found/catch envelopes — remove this override then.
+      "max-lines": [
+        "error",
+        { max: 360, skipBlankLines: true, skipComments: true },
       ],
     },
   },
@@ -272,7 +286,7 @@ export default tseslint.config(
       // this panel below the default cap — remove this override then.
       "max-lines": [
         "error",
-        { max: 330, skipBlankLines: true, skipComments: true },
+        { max: 370, skipBlankLines: true, skipComments: true },
       ],
     },
   },
@@ -283,7 +297,7 @@ export default tseslint.config(
       // the hand-rolled state chrome here — remove this override then.
       "max-lines": [
         "error",
-        { max: 350, skipBlankLines: true, skipComments: true },
+        { max: 390, skipBlankLines: true, skipComments: true },
       ],
     },
   },
@@ -294,7 +308,29 @@ export default tseslint.config(
       // the hand-rolled state chrome here — remove this override then.
       "max-lines": [
         "error",
+        { max: 370, skipBlankLines: true, skipComments: true },
+      ],
+    },
+  },
+  {
+    files: ["desktop/src/renderer/pages/Review/Review.tsx"],
+    rules: {
+      // TODO(calmly-aa3.21): useResource/PageStateView migration removes the
+      // hand-rolled loading/error triad — remove this override then.
+      "max-lines": [
+        "error",
         { max: 330, skipBlankLines: true, skipComments: true },
+      ],
+    },
+  },
+  {
+    files: ["desktop/src/renderer/pages/Plan/Plan.tsx"],
+    rules: {
+      // 369 LOC post-prettier, no dedicated bead — cap at current size so the
+      // rule lands today; revisit when the Plan page is next touched.
+      "max-lines": [
+        "error",
+        { max: 375, skipBlankLines: true, skipComments: true },
       ],
     },
   },
