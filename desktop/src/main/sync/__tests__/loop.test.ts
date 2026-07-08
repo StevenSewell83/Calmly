@@ -10,6 +10,7 @@ interface FakeRow {
   payload_json: string;
   created_at: number;
   attempts: number;
+  last_attempted_at: number | null;
   last_error: string | null;
 }
 
@@ -44,11 +45,13 @@ function makeFakeDb(initialRows: FakeRow[], initialState: FakeState) {
             return;
           }
           if (s.startsWith("update op_queue")) {
-            const error = args[0] as string | null;
-            const id = args[1] as string;
+            const attemptedAt = args[0] as number;
+            const error = args[1] as string | null;
+            const id = args[2] as string;
             const r = rows.find((r) => r.id === id);
             if (r) {
               r.attempts += 1;
+              r.last_attempted_at = attemptedAt;
               r.last_error = error;
             }
             return;
@@ -108,6 +111,7 @@ function makeRow(overrides: Partial<FakeRow> = {}): FakeRow {
     payload_json: JSON.stringify(SAMPLE_OP.payload),
     created_at: Date.now() - 60_000,
     attempts: 0,
+    last_attempted_at: null,
     last_error: null,
     ...overrides,
   };
@@ -239,6 +243,85 @@ describe("runSyncOnce — push phase", () => {
     expect(r.error).toContain("network");
     expect(db.rows.length).toBe(1);
     expect(db.rows[0]?.attempts).toBe(1);
+    // Backoff must anchor on this attempt, so the time is recorded.
+    expect(db.rows[0]?.last_attempted_at).toBeGreaterThan(Date.now() - 5000);
+  });
+
+  it("does not retry a failing op until backoff from the LAST attempt elapses", async () => {
+    // attempts=3 → jittered backoff is 6.4–9.6s. The op is far older than
+    // any backoff (created 10 min ago) but was attempted 1s ago — under the
+    // old created_at anchoring this op retried on EVERY tick.
+    const db = makeFakeDb(
+      [
+        makeRow({
+          created_at: Date.now() - 10 * 60_000,
+          attempts: 3,
+          last_attempted_at: Date.now() - 1000,
+        }),
+      ],
+      { last_pulled_version: 0, last_pushed_at: null },
+    );
+    const client = makeClient();
+
+    const r = await runSyncOnce({ getDb: () => db as never, client });
+
+    expect(r.ok).toBe(true);
+    expect(client.push).not.toHaveBeenCalled();
+    expect(db.rows[0]?.attempts).toBe(3);
+  });
+
+  it("retries once backoff from the last attempt has elapsed", async () => {
+    // 9.7s ago > the 9.6s jitter upper bound for attempts=3.
+    const db = makeFakeDb(
+      [
+        makeRow({
+          attempts: 3,
+          last_attempted_at: Date.now() - 9700,
+        }),
+      ],
+      { last_pulled_version: 0, last_pushed_at: null },
+    );
+    const client = makeClient({
+      push: vi.fn(async () => ({
+        results: [
+          {
+            index: 0,
+            status: "accepted" as const,
+            table: "tasks" as const,
+            id: SAMPLE_OP.payload.id as string,
+            version: 1,
+            reason: null,
+          },
+        ],
+        version: 1,
+      })),
+    });
+
+    const r = await runSyncOnce({ getDb: () => db as never, client });
+
+    expect(r.ok).toBe(true);
+    expect(client.push).toHaveBeenCalledOnce();
+    expect(db.rows.length).toBe(0);
+  });
+
+  it("falls back to created_at for rows enqueued before the migration", async () => {
+    // Pre-migration row: attempts>0 but last_attempted_at is NULL.
+    const db = makeFakeDb(
+      [
+        makeRow({
+          created_at: Date.now() - 500,
+          attempts: 1,
+          last_attempted_at: null,
+        }),
+      ],
+      { last_pulled_version: 0, last_pushed_at: null },
+    );
+    const client = makeClient();
+
+    await runSyncOnce({ getDb: () => db as never, client });
+
+    // 500ms < the 1.6s jitter lower bound for attempts=1 — not ready yet.
+    expect(client.push).not.toHaveBeenCalled();
   });
 });
 

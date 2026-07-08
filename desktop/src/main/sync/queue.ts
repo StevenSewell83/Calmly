@@ -9,6 +9,10 @@ export interface QueuedOp {
   payload_json: string;
   created_at: number;
   attempts: number;
+  /** When the op was last pushed (and failed). NULL until the first attempt;
+   * backoff is computed from this, not created_at — an op older than the
+   * backoff cap would otherwise always read as ready. */
+  last_attempted_at: number | null;
   last_error: string | null;
 }
 
@@ -32,6 +36,7 @@ export function enqueueOp(db: Database.Database, args: EnqueueArgs): QueuedOp {
     payload_json: json,
     created_at: Date.now(),
     attempts: 0,
+    last_attempted_at: null,
     last_error: null,
   };
 }
@@ -39,7 +44,7 @@ export function enqueueOp(db: Database.Database, args: EnqueueArgs): QueuedOp {
 export function pendingOps(db: Database.Database, limit = 100): QueuedOp[] {
   return db
     .prepare(
-      `SELECT id, table_name, op, payload_json, created_at, attempts, last_error
+      `SELECT id, table_name, op, payload_json, created_at, attempts, last_attempted_at, last_error
          FROM op_queue
         ORDER BY created_at ASC
         LIMIT ?`,
@@ -51,13 +56,15 @@ export function markAttempted(
   db: Database.Database,
   id: string,
   error: string | null,
+  now: number,
 ): void {
   db.prepare(
     `UPDATE op_queue
         SET attempts = attempts + 1,
+            last_attempted_at = ?,
             last_error = ?
       WHERE id = ?`,
-  ).run(error, id);
+  ).run(now, error, id);
 }
 
 export function removeOp(db: Database.Database, id: string): void {

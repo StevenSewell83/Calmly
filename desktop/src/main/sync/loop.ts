@@ -43,7 +43,12 @@ interface OpsToPush {
 function readyToPush(rows: QueuedOp[], now: number): QueuedOp[] {
   return rows.filter((r) => {
     if (r.attempts === 0) return true;
-    return r.created_at + backoffDelayMs(r.attempts) <= now;
+    // Backoff anchors on the LAST attempt (falling back to created_at for
+    // rows enqueued before the last_attempted_at migration). Anchoring on
+    // created_at meant any op older than the backoff cap was always ready,
+    // so persistently-failing ops retried on every tick forever.
+    const anchor = r.last_attempted_at ?? r.created_at;
+    return anchor + backoffDelayMs(r.attempts) <= now;
   });
 }
 
@@ -89,13 +94,19 @@ export async function runSyncOnce(deps: LoopDeps): Promise<SyncResult> {
           removeOp(db, opId);
           if (r.status === "accepted") pushed++;
         } else {
-          markAttempted(db, opId, `invalid:${r.reason ?? "unknown"}`);
+          markAttempted(
+            db,
+            opId,
+            `invalid:${r.reason ?? "unknown"}`,
+            Date.now(),
+          );
         }
       }
       updateLastPushedAt(db, Date.now());
     } catch (e) {
       const msg = e instanceof SyncHttpError ? `http:${e.status}` : String(e);
-      for (const id of batch.ids) markAttempted(db, id, msg);
+      const attemptedAt = Date.now();
+      for (const id of batch.ids) markAttempted(db, id, msg, attemptedAt);
       deps.log?.("sync push failed", { error: msg });
       return {
         ok: false,
