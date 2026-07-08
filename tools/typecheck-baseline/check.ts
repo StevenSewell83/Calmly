@@ -17,6 +17,7 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { groupErrors, parseTypecheckOutput } from "./lib/parse";
 import { diff, isCleanDiff, type BaselineEntry } from "./lib/diff";
+import { outputTail, typecheckFailedToRun } from "./lib/guard";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -67,6 +68,18 @@ function main(): void {
   const tc = runTypecheck();
   const combined = `${tc.stdout}\n${tc.stderr}`;
   const errors = parseTypecheckOutput(combined);
+
+  if (typecheckFailedToRun(tc.status, errors.length)) {
+    console.error(
+      "[typecheck-baseline] FAIL — `pnpm -r typecheck` exited non-zero but produced no parseable TS errors.",
+    );
+    console.error(
+      "The typecheck itself did not run (missing node_modules? tsc/tsx not found?). Raw output tail:",
+    );
+    console.error(outputTail(combined, 30));
+    process.exit(2);
+  }
+
   const buckets = groupErrors(errors);
   const d = diff(buckets, baseline);
 

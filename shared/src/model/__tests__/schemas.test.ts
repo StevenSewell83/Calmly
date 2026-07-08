@@ -416,6 +416,7 @@ describe("UserSettingsSchema", () => {
   it("accepts a valid JSON blob", () => {
     expect(
       UserSettingsSchema.parse({
+        id: otherId,
         user_id: userId,
         settings_json: '{"version":1}',
         updated_at: now,
@@ -426,6 +427,7 @@ describe("UserSettingsSchema", () => {
   it("rejects invalid JSON", () => {
     expect(() =>
       UserSettingsSchema.parse({
+        id: otherId,
         user_id: userId,
         settings_json: "{not-json",
         updated_at: now,
