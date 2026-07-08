@@ -11,6 +11,7 @@ import { healthRoute } from "./routes/health";
 import { versionRoute } from "./routes/version";
 import { telemetryRoute } from "./routes/telemetry";
 import { crashRoute } from "./routes/crash";
+import { startSweeper } from "./maintenance/sweeper";
 import { syncRoutes } from "./sync/routes";
 import { initBot, telegramPlugin, loadTelegramConfig } from "./telegram";
 import { telegramLinkingRoutes } from "./telegram/linkingRoutes";
@@ -68,6 +69,18 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
 
   app.decorate("pool", deps.pool);
   app.decorate("appConfig", deps.config);
+
+  // Periodic expiry sweeper for short-lived auth rows (calmly-aa3.6).
+  if (deps.config.SWEEP_INTERVAL_SEC > 0) {
+    const stopSweeper = startSweeper(
+      deps.pool,
+      deps.config.SWEEP_INTERVAL_SEC * 1000,
+      app.log,
+    );
+    app.addHook("onClose", async () => {
+      stopSweeper();
+    });
+  }
 
   await app.register(fastifyCookie, { secret: deps.config.COOKIE_SECRET });
   await app.register(healthRoute);

@@ -50,6 +50,10 @@ const ConfigSchema = z.object({
   OAUTH_TICKET_SECRET: z.string().min(32).optional(),
   OAUTH_STATE_TTL_SEC: z.coerce.number().int().positive().default(600),
   OAUTH_TICKET_TTL_SEC: z.coerce.number().int().positive().default(300),
+  // Periodic expiry sweeper for short-lived auth rows (magic_link_tokens,
+  // sessions, oauth_states, oauth_tickets, telegram_linking_codes).
+  // 0 disables it (integration tests manage their own lifecycle).
+  SWEEP_INTERVAL_SEC: z.coerce.number().int().nonnegative().default(3600),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
