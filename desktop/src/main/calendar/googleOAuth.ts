@@ -25,6 +25,8 @@ export interface ConnectGoogleDeps {
 
 export type ConnectGoogleStarter = ConnectStarter;
 
-export function createConnectGoogle(deps: ConnectGoogleDeps): ConnectGoogleStarter {
+export function createConnectGoogle(
+  deps: ConnectGoogleDeps,
+): ConnectGoogleStarter {
   return createConnectProvider({ provider: "google", ...deps });
 }

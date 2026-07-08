@@ -11,7 +11,10 @@ export class AnthropicProvider implements AIProvider {
     this.client = new Anthropic({ apiKey, timeout: TIMEOUT_MS });
   }
 
-  async complete(systemPrompt: string, userPrompt: string): Promise<Result<string>> {
+  async complete(
+    systemPrompt: string,
+    userPrompt: string,
+  ): Promise<Result<string>> {
     try {
       const msg = await this.client.messages.create({
         model: MODEL,
@@ -22,7 +25,10 @@ export class AnthropicProvider implements AIProvider {
 
       const block = msg.content[0];
       if (block?.type !== "text") {
-        return { ok: false, error: { kind: "invalid_response", raw: JSON.stringify(msg.content) } };
+        return {
+          ok: false,
+          error: { kind: "invalid_response", raw: JSON.stringify(msg.content) },
+        };
       }
       return { ok: true, value: block.text };
     } catch (err) {
@@ -36,7 +42,8 @@ function categorizeError(err: unknown): AIError {
     if (err.status === 401) return { kind: "auth" };
     if (err.status === 429) return { kind: "quota" };
   }
-  if (err instanceof Anthropic.APIConnectionTimeoutError) return { kind: "timeout" };
+  if (err instanceof Anthropic.APIConnectionTimeoutError)
+    return { kind: "timeout" };
   if (err instanceof Anthropic.APIConnectionError) return { kind: "network" };
   return { kind: "unknown", cause: err };
 }

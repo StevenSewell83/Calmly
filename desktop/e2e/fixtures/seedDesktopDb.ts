@@ -76,7 +76,11 @@ export function seedDesktopDb(
     events?: SeedEventArgs[];
     inboxItems?: SeedInboxItemArgs[];
   },
-): { tasks: SeededTask[]; events: SeededEvent[]; inboxItems: SeededInboxItem[] } {
+): {
+  tasks: SeededTask[];
+  events: SeededEvent[];
+  inboxItems: SeededInboxItem[];
+} {
   const dbPath = join(userDataDir, "calmly.db");
   const db = new Database(dbPath, { readonly: false });
 
@@ -111,26 +115,65 @@ export function seedDesktopDb(
         const dueAt = t.dueAt ?? null;
         const scheduledStart = t.scheduledStart ?? null;
         const scheduledEnd = t.scheduledEnd ?? null;
-        insertTask.run(id, t.userId, t.title, status, dueAt, scheduledStart, scheduledEnd, now, now);
-        insertedTasks.push({ id, title: t.title, status, dueAt, scheduledStart, scheduledEnd });
+        insertTask.run(
+          id,
+          t.userId,
+          t.title,
+          status,
+          dueAt,
+          scheduledStart,
+          scheduledEnd,
+          now,
+          now,
+        );
+        insertedTasks.push({
+          id,
+          title: t.title,
+          status,
+          dueAt,
+          scheduledStart,
+          scheduledEnd,
+        });
       }
       for (const e of events ?? []) {
         const id = randomUUID();
         insertEvent.run(id, e.userId, e.title, e.startAt, e.endAt, now);
-        insertedEvents.push({ id, title: e.title, startAt: e.startAt, endAt: e.endAt });
+        insertedEvents.push({
+          id,
+          title: e.title,
+          startAt: e.startAt,
+          endAt: e.endAt,
+        });
       }
       for (const i of inboxItems ?? []) {
         const id = randomUUID();
         const source = i.source ?? "desktop";
         const snoozedUntil = i.snoozedUntil ?? null;
         const resolvedAt = i.resolvedAt ?? null;
-        insertInboxItem.run(id, i.userId, i.rawText, source, now, snoozedUntil, resolvedAt);
-        insertedInboxItems.push({ id, rawText: i.rawText, snoozedUntil, resolvedAt });
+        insertInboxItem.run(
+          id,
+          i.userId,
+          i.rawText,
+          source,
+          now,
+          snoozedUntil,
+          resolvedAt,
+        );
+        insertedInboxItems.push({
+          id,
+          rawText: i.rawText,
+          snoozedUntil,
+          resolvedAt,
+        });
       }
     });
     run();
 
-    return { tasks: insertedTasks, events: insertedEvents, inboxItems: insertedInboxItems };
+    return {
+      tasks: insertedTasks,
+      events: insertedEvents,
+      inboxItems: insertedInboxItems,
+    };
   } finally {
     db.close();
   }

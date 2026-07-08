@@ -26,13 +26,9 @@ describe("useResource", () => {
       resolve({ kind: "ok", data: { name: "Alice" } });
     });
 
-    await waitFor(() =>
-      expect(result.current.state.kind).toBe("ready"),
-    );
+    await waitFor(() => expect(result.current.state.kind).toBe("ready"));
     expect(
-      result.current.state.kind === "ready"
-        ? result.current.state.data
-        : null,
+      result.current.state.kind === "ready" ? result.current.state.data : null,
     ).toEqual({ name: "Alice" });
   });
 
@@ -45,9 +41,7 @@ describe("useResource", () => {
       resolve({ kind: "signed-out" });
     });
 
-    await waitFor(() =>
-      expect(result.current.state.kind).toBe("signed-out"),
-    );
+    await waitFor(() => expect(result.current.state.kind).toBe("signed-out"));
   });
 
   it("loading → error when fetcher returns error result", async () => {
@@ -59,9 +53,7 @@ describe("useResource", () => {
       resolve({ kind: "error", message: "oops" });
     });
 
-    await waitFor(() =>
-      expect(result.current.state.kind).toBe("error"),
-    );
+    await waitFor(() => expect(result.current.state.kind).toBe("error"));
     expect(
       result.current.state.kind === "error"
         ? result.current.state.message
@@ -78,9 +70,7 @@ describe("useResource", () => {
       reject(new Error("network failure"));
     });
 
-    await waitFor(() =>
-      expect(result.current.state.kind).toBe("error"),
-    );
+    await waitFor(() => expect(result.current.state.kind).toBe("error"));
     expect(
       result.current.state.kind === "error"
         ? result.current.state.message
@@ -90,12 +80,11 @@ describe("useResource", () => {
 
   it("refresh re-fetches and updates state", async () => {
     let call = 0;
-    const fetcher = vi.fn(
-      () =>
-        Promise.resolve<FetcherResult<number>>({
-          kind: "ok",
-          data: ++call,
-        }),
+    const fetcher = vi.fn(() =>
+      Promise.resolve<FetcherResult<number>>({
+        kind: "ok",
+        data: ++call,
+      }),
     );
     const { result } = renderHook(() => useResource(fetcher, []));
 

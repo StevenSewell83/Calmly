@@ -4,10 +4,7 @@ import type { EmailAdapter } from "../email/adapter";
 import { requireSession } from "../middleware/requireSession";
 import { checkMagicLinkRateLimit } from "./rate-limit";
 import { redeemMagicLink } from "./redeem";
-import {
-  deleteSessionByToken,
-  resolveSessionByToken,
-} from "./session";
+import { deleteSessionByToken, resolveSessionByToken } from "./session";
 import { generateToken, hashToken, isWellFormedToken } from "./tokens";
 
 const RequestBody = z.object({
@@ -133,11 +130,25 @@ export function authRoutesPlugin(deps: AuthRoutesDeps) {
         userAgent: req.headers["user-agent"] ?? null,
       });
       if (!result.ok) {
-        reply.code(result.status).send({ error: result.error, ...(result.status === 429 && result.reason ? { reason: result.reason } : {}) });
+        reply.code(result.status).send({
+          error: result.error,
+          ...(result.status === 429 && result.reason
+            ? { reason: result.reason }
+            : {}),
+        });
         return;
       }
-      setSessionCookie(reply, cookieName, result.rawToken, result.expiresAt, isProd);
-      return { user: result.user, session: { expiresAt: result.expiresAt.toISOString() } };
+      setSessionCookie(
+        reply,
+        cookieName,
+        result.rawToken,
+        result.expiresAt,
+        isProd,
+      );
+      return {
+        user: result.user,
+        session: { expiresAt: result.expiresAt.toISOString() },
+      };
     });
 
     app.post("/auth/logout", async (req, reply) => {
@@ -170,11 +181,25 @@ export function authRoutesPlugin(deps: AuthRoutesDeps) {
           userAgent: req.headers["user-agent"] ?? null,
         });
         if (!result.ok) {
-          reply.code(result.status).send({ error: result.error, ...(result.status === 429 && result.reason ? { reason: result.reason } : {}) });
+          reply.code(result.status).send({
+            error: result.error,
+            ...(result.status === 429 && result.reason
+              ? { reason: result.reason }
+              : {}),
+          });
           return;
         }
-        setSessionCookie(reply, cookieName, result.rawToken, result.expiresAt, isProd);
-        return { user: result.user, session: { expiresAt: result.expiresAt.toISOString() } };
+        setSessionCookie(
+          reply,
+          cookieName,
+          result.rawToken,
+          result.expiresAt,
+          isProd,
+        );
+        return {
+          user: result.user,
+          session: { expiresAt: result.expiresAt.toISOString() },
+        };
       },
     );
 

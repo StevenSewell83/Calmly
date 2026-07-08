@@ -2,7 +2,13 @@
 // Displays connected Google and Microsoft calendar accounts with connect,
 // disconnect, and refresh controls.
 import { useState, useEffect, useCallback } from "react";
-import { CalendarDays, Loader2, RefreshCw, Unlink, AlertTriangle } from "lucide-react";
+import {
+  CalendarDays,
+  Loader2,
+  RefreshCw,
+  Unlink,
+  AlertTriangle,
+} from "lucide-react";
 import type { CalendarAccount } from "@calmly/shared";
 
 type DisconnectState =
@@ -48,15 +54,19 @@ function AccountRow({
   onReconnect,
 }: AccountRowProps) {
   const isRemoving =
-    disconnectState.kind === "removing" && disconnectState.accountId === account.id;
+    disconnectState.kind === "removing" &&
+    disconnectState.accountId === account.id;
   const isConfirming =
-    disconnectState.kind === "confirm" && disconnectState.accountId === account.id;
+    disconnectState.kind === "confirm" &&
+    disconnectState.accountId === account.id;
 
   return (
     <div className="flex flex-col gap-2 rounded-2xl border border-stone-200 bg-stone-50/60 px-4 py-3">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-stone-800 truncate">{account.email}</p>
+          <p className="text-sm font-medium text-stone-800 truncate">
+            {account.email}
+          </p>
           <span
             className={[
               "mt-0.5 inline-block text-[10px] font-medium px-2 py-0.5 rounded-full border",
@@ -109,7 +119,8 @@ function AccountRow({
         <div className="flex items-center gap-3 pt-1 border-t border-stone-200">
           <AlertTriangle size={12} className="text-red-400 shrink-0" />
           <p className="text-xs text-stone-500 flex-1">
-            Disconnect <span className="font-medium">{account.email}</span>? Imported events will be removed.
+            Disconnect <span className="font-medium">{account.email}</span>?
+            Imported events will be removed.
           </p>
           <button
             type="button"
@@ -168,7 +179,9 @@ export function SettingsCalendar() {
   const [loading, setLoading] = useState(true);
   const [connectingGoogle, setConnectingGoogle] = useState(false);
   const [connectingMicrosoft, setConnectingMicrosoft] = useState(false);
-  const [disconnectState, setDisconnectState] = useState<DisconnectState>({ kind: "idle" });
+  const [disconnectState, setDisconnectState] = useState<DisconnectState>({
+    kind: "idle",
+  });
   const [refreshStates, setRefreshStates] = useState<RefreshState>({});
   const [error, setError] = useState<string | null>(null);
 
@@ -198,7 +211,10 @@ export function SettingsCalendar() {
     setError(null);
     try {
       const r = await window.calmly.calendar.connectGoogle();
-      if (!r.ok) setError(r.error === "not_signed_in" ? "Sign in first." : "Connection failed.");
+      if (!r.ok)
+        setError(
+          r.error === "not_signed_in" ? "Sign in first." : "Connection failed.",
+        );
       else await loadAccounts();
     } finally {
       setConnectingGoogle(false);
@@ -210,7 +226,10 @@ export function SettingsCalendar() {
     setError(null);
     try {
       const r = await window.calmly.calendar.connectMicrosoft();
-      if (!r.ok) setError(r.error === "not_signed_in" ? "Sign in first." : "Connection failed.");
+      if (!r.ok)
+        setError(
+          r.error === "not_signed_in" ? "Sign in first." : "Connection failed.",
+        );
       else await loadAccounts();
     } finally {
       setConnectingMicrosoft(false);
@@ -238,7 +257,12 @@ export function SettingsCalendar() {
       await window.calmly.calendar.refresh(accountId);
       setRefreshStates((s) => ({ ...s, [accountId]: "done" }));
       setTimeout(
-        () => setRefreshStates((s) => { const n = { ...s }; delete n[accountId]; return n; }),
+        () =>
+          setRefreshStates((s) => {
+            const n = { ...s };
+            delete n[accountId];
+            return n;
+          }),
         2000,
       );
     } catch {
@@ -262,16 +286,16 @@ export function SettingsCalendar() {
           <CalendarDays size={18} className="text-stone-600" />
         </div>
         <div>
-          <h1 className="font-serif italic text-2xl text-stone-800 leading-tight">Calendar</h1>
+          <h1 className="font-serif italic text-2xl text-stone-800 leading-tight">
+            Calendar
+          </h1>
           <p className="text-xs text-stone-400 mt-0.5">
             See your existing commitments alongside your tasks in Plan.
           </p>
         </div>
       </div>
 
-      {error && (
-        <p className="mb-4 text-sm text-red-500">{error}</p>
-      )}
+      {error && <p className="mb-4 text-sm text-red-500">{error}</p>}
 
       {loading ? (
         <div className="flex items-center gap-2 text-stone-400 text-sm">
@@ -281,9 +305,12 @@ export function SettingsCalendar() {
       ) : isEmpty ? (
         <div className="bg-white border border-stone-100 rounded-[1.8rem] p-8 shadow-sm text-center">
           <CalendarDays size={32} className="mx-auto text-stone-300 mb-4" />
-          <p className="text-sm font-medium text-stone-700 mb-1">No calendar connected</p>
+          <p className="text-sm font-medium text-stone-700 mb-1">
+            No calendar connected
+          </p>
           <p className="text-xs text-stone-400 mb-6">
-            Connect Google or Microsoft to see your existing commitments in Plan.
+            Connect Google or Microsoft to see your existing commitments in
+            Plan.
           </p>
           <div className="flex justify-center gap-3">
             <ConnectButton
@@ -302,11 +329,16 @@ export function SettingsCalendar() {
         <div className="flex flex-col gap-6">
           {(["google", "microsoft"] as const).map((provider) => {
             const providerAccounts = grouped[provider];
-            const label = provider === "google" ? "Google Calendar" : "Microsoft 365";
-            const isConnecting = provider === "google" ? connectingGoogle : connectingMicrosoft;
+            const label =
+              provider === "google" ? "Google Calendar" : "Microsoft 365";
+            const isConnecting =
+              provider === "google" ? connectingGoogle : connectingMicrosoft;
 
             return (
-              <div key={provider} className="bg-white border border-stone-100 rounded-[1.8rem] p-6 shadow-sm">
+              <div
+                key={provider}
+                className="bg-white border border-stone-100 rounded-[1.8rem] p-6 shadow-sm"
+              >
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-stone-400">
                     {label}
@@ -323,7 +355,9 @@ export function SettingsCalendar() {
                 </div>
 
                 {providerAccounts.length === 0 ? (
-                  <p className="text-xs text-stone-400 py-1">No accounts connected.</p>
+                  <p className="text-xs text-stone-400 py-1">
+                    No accounts connected.
+                  </p>
                 ) : (
                   <div className="flex flex-col gap-2">
                     {providerAccounts.map((account) => (
@@ -334,8 +368,12 @@ export function SettingsCalendar() {
                         disconnectState={disconnectState}
                         onRefresh={(id) => void handleRefresh(id)}
                         onDisconnectRequest={handleDisconnectRequest}
-                        onDisconnectConfirm={(id) => void handleDisconnectConfirm(id)}
-                        onDisconnectCancel={() => setDisconnectState({ kind: "idle" })}
+                        onDisconnectConfirm={(id) =>
+                          void handleDisconnectConfirm(id)
+                        }
+                        onDisconnectCancel={() =>
+                          setDisconnectState({ kind: "idle" })
+                        }
                         onReconnect={handleReconnect}
                       />
                     ))}

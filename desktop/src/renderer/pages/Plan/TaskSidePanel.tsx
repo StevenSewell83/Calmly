@@ -77,7 +77,10 @@ export function TaskSidePanel({ task, day, onClose, onSaved }: Props) {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) { setError("Title is required."); return; }
+    if (!title.trim()) {
+      setError("Title is required.");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -91,7 +94,10 @@ export function TaskSidePanel({ task, day, onClose, onSaved }: Props) {
         scheduledStart: startMs,
         scheduledEnd: endMs,
       });
-      if (!r.ok) { setError(`Save failed: ${r.error}`); return; }
+      if (!r.ok) {
+        setError(`Save failed: ${r.error}`);
+        return;
+      }
       await onSaved();
     } finally {
       setSaving(false);
@@ -103,7 +109,10 @@ export function TaskSidePanel({ task, day, onClose, onSaved }: Props) {
     setError(null);
     try {
       const r = await window.calmly.plan.unschedule(task.id);
-      if (!r.ok) { setError(`Failed: ${r.error}`); return; }
+      if (!r.ok) {
+        setError(`Failed: ${r.error}`);
+        return;
+      }
       await onSaved();
     } finally {
       setSaving(false);
@@ -149,12 +158,17 @@ export function TaskSidePanel({ task, day, onClose, onSaved }: Props) {
 
         {/* Form */}
         <form
-          onSubmit={(e) => { void handleSave(e); }}
+          onSubmit={(e) => {
+            void handleSave(e);
+          }}
           className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-4 px-5 py-5"
         >
           {/* Title */}
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="sp-title" className="text-[10px] font-semibold tracking-[0.15em] uppercase text-stone-500">
+            <label
+              htmlFor="sp-title"
+              className="text-[10px] font-semibold tracking-[0.15em] uppercase text-stone-500"
+            >
               Title
             </label>
             <input
@@ -169,7 +183,10 @@ export function TaskSidePanel({ task, day, onClose, onSaved }: Props) {
 
           {/* Notes */}
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="sp-notes" className="text-[10px] font-semibold tracking-[0.15em] uppercase text-stone-500">
+            <label
+              htmlFor="sp-notes"
+              className="text-[10px] font-semibold tracking-[0.15em] uppercase text-stone-500"
+            >
               Notes
             </label>
             <textarea
@@ -183,7 +200,10 @@ export function TaskSidePanel({ task, day, onClose, onSaved }: Props) {
 
           {/* Due date */}
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="sp-due" className="text-[10px] font-semibold tracking-[0.15em] uppercase text-stone-500">
+            <label
+              htmlFor="sp-due"
+              className="text-[10px] font-semibold tracking-[0.15em] uppercase text-stone-500"
+            >
               Due date
             </label>
             <input
@@ -201,7 +221,10 @@ export function TaskSidePanel({ task, day, onClose, onSaved }: Props) {
               Scheduled time
             </p>
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="sp-start" className="text-[10px] text-stone-400 tracking-wide">
+              <label
+                htmlFor="sp-start"
+                className="text-[10px] text-stone-400 tracking-wide"
+              >
                 Start
               </label>
               <input
@@ -213,7 +236,10 @@ export function TaskSidePanel({ task, day, onClose, onSaved }: Props) {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="sp-end" className="text-[10px] text-stone-400 tracking-wide">
+              <label
+                htmlFor="sp-end"
+                className="text-[10px] text-stone-400 tracking-wide"
+              >
                 End
               </label>
               <input
@@ -230,7 +256,9 @@ export function TaskSidePanel({ task, day, onClose, onSaved }: Props) {
           </div>
 
           {error ? (
-            <p role="alert" className="text-xs text-red-500 font-medium px-1">{error}</p>
+            <p role="alert" className="text-xs text-red-500 font-medium px-1">
+              {error}
+            </p>
           ) : null}
         </form>
 
@@ -244,7 +272,9 @@ export function TaskSidePanel({ task, day, onClose, onSaved }: Props) {
           <button
             type="submit"
             form="sp-form"
-            onClick={(e) => { void handleSave(e); }}
+            onClick={(e) => {
+              void handleSave(e);
+            }}
             disabled={saving}
             className="w-full py-2.5 rounded-2xl bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white text-sm font-semibold tracking-wide transition-colors"
           >
@@ -253,7 +283,9 @@ export function TaskSidePanel({ task, day, onClose, onSaved }: Props) {
           {isPlaced ? (
             <button
               type="button"
-              onClick={() => { void handleUnschedule(); }}
+              onClick={() => {
+                void handleUnschedule();
+              }}
               disabled={saving}
               className="w-full py-2 rounded-2xl border border-stone-200 text-stone-500 hover:border-red-200 hover:text-red-500 disabled:opacity-50 text-xs font-medium tracking-wide flex items-center justify-center gap-2 transition-colors"
             >

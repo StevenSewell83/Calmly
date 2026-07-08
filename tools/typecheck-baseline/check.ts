@@ -38,12 +38,18 @@ function loadBaseline(): BaselineEntry[] {
     ) as BaselineFile;
     return raw.errors ?? [];
   } catch (e) {
-    console.error(`[typecheck-baseline] failed to read ${BASELINE_PATH}: ${String(e)}`);
+    console.error(
+      `[typecheck-baseline] failed to read ${BASELINE_PATH}: ${String(e)}`,
+    );
     process.exit(2);
   }
 }
 
-function runTypecheck(): { stdout: string; stderr: string; status: number | null } {
+function runTypecheck(): {
+  stdout: string;
+  stderr: string;
+  status: number | null;
+} {
   // pnpm.cmd on Windows requires shell:true so cmd.exe resolves the .cmd
   // extension; on POSIX `pnpm` is a regular executable. Run via shell on
   // both for behavioural symmetry.
@@ -101,7 +107,9 @@ function main(): void {
       `[typecheck-baseline] ${d.fixed.length} baseline entry/entries no longer report errors — prune from baseline.json:`,
     );
     for (const f of d.fixed) {
-      console.log(`  • ${f.workspace} ${f.file} ${f.code} (was count=${f.count})`);
+      console.log(
+        `  • ${f.workspace} ${f.file} ${f.code} (was count=${f.count})`,
+      );
     }
   }
   if (d.decreased.length > 0) {
@@ -118,7 +126,9 @@ function main(): void {
 
   if (isCleanDiff(d)) {
     if (totalCurrent === 0 && baseline.length === 0) {
-      console.log("[typecheck-baseline] zero errors. Delete this tool when convenient.");
+      console.log(
+        "[typecheck-baseline] zero errors. Delete this tool when convenient.",
+      );
     }
     process.exit(0);
   }

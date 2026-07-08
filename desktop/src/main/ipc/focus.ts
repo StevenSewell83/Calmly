@@ -56,7 +56,11 @@ export function registerFocusIpc(): void {
   }));
 
   authedHandler<FocusStartResult>("focus:start", (ctx, raw) => {
-    if (!isObject(raw) || !isStringId(raw.taskId) || !isFocusSource(raw.source)) {
+    if (
+      !isObject(raw) ||
+      !isStringId(raw.taskId) ||
+      !isFocusSource(raw.source)
+    ) {
       return { ok: false, error: "InvalidArgs" };
     }
     return startFocus(ctx.db, ctx.userId, raw.taskId, raw.source, ctx.now);
@@ -71,7 +75,11 @@ export function registerFocusIpc(): void {
   );
 
   authedHandler<FocusSwitchResult>("focus:switch", (ctx, raw) => {
-    if (!isObject(raw) || !isStringId(raw.taskId) || !isFocusSource(raw.source)) {
+    if (
+      !isObject(raw) ||
+      !isStringId(raw.taskId) ||
+      !isFocusSource(raw.source)
+    ) {
       return { ok: false, error: "InvalidArgs" };
     }
     return switchFocus(ctx.db, ctx.userId, raw.taskId, raw.source, ctx.now);
@@ -89,20 +97,19 @@ export function registerFocusIpc(): void {
     return startAdHocFocus(ctx.db, ctx.userId, raw, ctx.now);
   });
 
-  authedHandler<{ ok: true; stuckSessionId: string } | { ok: false; error: string }>(
-    "focus:startStuck",
-    (ctx) => {
-      const session = currentFocus(ctx.db, ctx.userId);
-      if (!session) return { ok: false, error: "NoActiveSession" };
-      const id = randomUUID();
-      ctx.db
-        .prepare(
-          `INSERT INTO stuck_sessions (id, focus_session_id, started_at, answers_json) VALUES (?, ?, ?, '[]')`,
-        )
-        .run(id, session.id, ctx.now);
-      return { ok: true, stuckSessionId: id };
-    },
-  );
+  authedHandler<
+    { ok: true; stuckSessionId: string } | { ok: false; error: string }
+  >("focus:startStuck", (ctx) => {
+    const session = currentFocus(ctx.db, ctx.userId);
+    if (!session) return { ok: false, error: "NoActiveSession" };
+    const id = randomUUID();
+    ctx.db
+      .prepare(
+        `INSERT INTO stuck_sessions (id, focus_session_id, started_at, answers_json) VALUES (?, ?, ?, '[]')`,
+      )
+      .run(id, session.id, ctx.now);
+    return { ok: true, stuckSessionId: id };
+  });
 
   authedHandler<{ ok: true } | { ok: false; error: string }>(
     "focus:endStuck",
@@ -127,7 +134,9 @@ export function registerFocusIpc(): void {
           const ts = new Date(ctx.now).toISOString();
           const block = `\n\n--- Stuck rescue (${ts}) ---\n${answers.map((a) => `Q: ${a.question}\nA: ${a.answer}`).join("\n")}`;
           ctx.db
-            .prepare(`UPDATE tasks SET notes = COALESCE(notes, '') || ? WHERE id = ? AND user_id = ?`)
+            .prepare(
+              `UPDATE tasks SET notes = COALESCE(notes, '') || ? WHERE id = ? AND user_id = ?`,
+            )
             .run(block, session.task_id, ctx.userId);
         }
       }

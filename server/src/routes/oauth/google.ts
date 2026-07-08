@@ -6,10 +6,7 @@ import {
   GOOGLE_SCOPES,
   refreshGoogleAccessToken,
 } from "../../oauth/googleProvider";
-import {
-  oauthProviderPlugin,
-  type OAuthProviderConfig,
-} from "./plugin";
+import { oauthProviderPlugin, type OAuthProviderConfig } from "./plugin";
 
 export interface GoogleOAuthDeps {
   clientId: string;

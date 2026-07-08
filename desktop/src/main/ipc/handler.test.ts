@@ -33,10 +33,14 @@ beforeEach(() => {
 
 type HandleCallback = (event: unknown, ...args: unknown[]) => Promise<unknown>;
 
-function captureHandler(): { invoke: (...args: unknown[]) => Promise<unknown> } {
+function captureHandler(): {
+  invoke: (...args: unknown[]) => Promise<unknown>;
+} {
   let captured: HandleCallback | null = null;
   (ipcMain.handle as ReturnType<typeof vi.fn>).mockImplementation(
-    (_ch: string, fn: HandleCallback) => { captured = fn; },
+    (_ch: string, fn: HandleCallback) => {
+      captured = fn;
+    },
   );
   return {
     invoke: async (...args: unknown[]) => {
@@ -98,7 +102,10 @@ describe("authedHandler", () => {
 
     const h = captureHandler();
     let got: unknown;
-    authedHandler("test:multi-arg", (_ctx, raw) => { got = raw; return { ok: true }; });
+    authedHandler("test:multi-arg", (_ctx, raw) => {
+      got = raw;
+      return { ok: true };
+    });
     await h.invoke("id-1", 99999);
     expect(got).toEqual(["id-1", 99999]);
   });
@@ -110,7 +117,10 @@ describe("authedHandler", () => {
     mockHandle.mockClear();
 
     authedHandler("test:no-dup", () => ({ ok: true }));
-    authedHandler("test:no-dup", () => ({ ok: false, error: "InternalError" as const }));
+    authedHandler("test:no-dup", () => ({
+      ok: false,
+      error: "InternalError" as const,
+    }));
 
     expect(mockHandle).toHaveBeenCalledTimes(1);
   });

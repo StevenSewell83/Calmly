@@ -46,7 +46,10 @@ export function useSearchStore() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (loadingTimerRef.current) clearTimeout(loadingTimerRef.current);
 
-    loadingTimerRef.current = setTimeout(() => setLoading(true), LOADING_THRESHOLD_MS);
+    loadingTimerRef.current = setTimeout(
+      () => setLoading(true),
+      LOADING_THRESHOLD_MS,
+    );
 
     debounceRef.current = setTimeout(async () => {
       try {

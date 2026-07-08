@@ -99,11 +99,9 @@ describe("buildTodayList", () => {
       due_at: T0 + 2 * ONE_HR,
     });
     const items = buildTodayList([afternoon, noon], [morning]);
-    expect(items.map((i) => (i.kind === "task" ? i.task.id : i.event.id))).toEqual([
-      "m",
-      "n",
-      "a",
-    ]);
+    expect(
+      items.map((i) => (i.kind === "task" ? i.task.id : i.event.id)),
+    ).toEqual(["m", "n", "a"]);
   });
 
   it("anchors a no-due in_progress task by its updated_at", () => {

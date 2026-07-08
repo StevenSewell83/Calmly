@@ -13,7 +13,9 @@ const { mockComplete, mockGet, mockHas } = vi.hoisted(() => ({
 
 vi.mock("../../../src/main/ai/providers/anthropic", () => ({
   AnthropicProvider: class {
-    complete(...args: unknown[]) { return mockComplete(...args); }
+    complete(...args: unknown[]) {
+      return mockComplete(...args);
+    }
   },
 }));
 
@@ -30,7 +32,11 @@ vi.mock("../../../src/main/ai/rateLimiter", () => ({
 
 vi.mock("../../../src/main/db", () => ({
   getDb: vi.fn(() => ({
-    prepare: vi.fn(() => ({ run: vi.fn(), get: vi.fn(), all: vi.fn(() => []) })),
+    prepare: vi.fn(() => ({
+      run: vi.fn(),
+      get: vi.fn(),
+      all: vi.fn(() => []),
+    })),
   })),
 }));
 
@@ -47,7 +53,10 @@ describe("AI failure modes", () => {
 
   it("missing key → auth error", async () => {
     mockGet.mockReturnValue(null);
-    const r = await runAI({ action: "triage_cleanup", payload: { rawText: "thing" } });
+    const r = await runAI({
+      action: "triage_cleanup",
+      payload: { rawText: "thing" },
+    });
     expect(r.ok).toBe(false);
     if (r.ok) return;
     expect(r.error.kind).toBe("auth");
@@ -55,7 +64,10 @@ describe("AI failure modes", () => {
 
   it("401 from provider → auth error", async () => {
     mockComplete.mockResolvedValue({ ok: false, error: { kind: "auth" } });
-    const r = await runAI({ action: "triage_cleanup", payload: { rawText: "thing" } });
+    const r = await runAI({
+      action: "triage_cleanup",
+      payload: { rawText: "thing" },
+    });
     expect(r.ok).toBe(false);
     if (r.ok) return;
     expect(r.error.kind).toBe("auth");
@@ -63,7 +75,10 @@ describe("AI failure modes", () => {
 
   it("429 from provider → quota error", async () => {
     mockComplete.mockResolvedValue({ ok: false, error: { kind: "quota" } });
-    const r = await runAI({ action: "triage_cleanup", payload: { rawText: "thing" } });
+    const r = await runAI({
+      action: "triage_cleanup",
+      payload: { rawText: "thing" },
+    });
     expect(r.ok).toBe(false);
     if (r.ok) return;
     expect(r.error.kind).toBe("quota");
@@ -71,7 +86,10 @@ describe("AI failure modes", () => {
 
   it("timeout → timeout error", async () => {
     mockComplete.mockResolvedValue({ ok: false, error: { kind: "timeout" } });
-    const r = await runAI({ action: "make_startable", payload: { title: "Task" } });
+    const r = await runAI({
+      action: "make_startable",
+      payload: { title: "Task" },
+    });
     expect(r.ok).toBe(false);
     if (r.ok) return;
     expect(r.error.kind).toBe("timeout");
@@ -79,7 +97,10 @@ describe("AI failure modes", () => {
 
   it("network error → network error", async () => {
     mockComplete.mockResolvedValue({ ok: false, error: { kind: "network" } });
-    const r = await runAI({ action: "brain_dump_split", payload: { text: "stuff" } });
+    const r = await runAI({
+      action: "brain_dump_split",
+      payload: { text: "stuff" },
+    });
     expect(r.ok).toBe(false);
     if (r.ok) return;
     expect(r.error.kind).toBe("network");
@@ -87,7 +108,10 @@ describe("AI failure modes", () => {
 
   it("invalid JSON from provider → invalid_response", async () => {
     mockComplete.mockResolvedValue({ ok: true, value: "not json at all" });
-    const r = await runAI({ action: "triage_cleanup", payload: { rawText: "thing" } });
+    const r = await runAI({
+      action: "triage_cleanup",
+      payload: { rawText: "thing" },
+    });
     expect(r.ok).toBe(false);
     if (r.ok) return;
     expect(r.error.kind).toBe("invalid_response");
@@ -95,8 +119,14 @@ describe("AI failure modes", () => {
 
   it("schema mismatch from provider → invalid_response", async () => {
     // Missing required fields
-    mockComplete.mockResolvedValue({ ok: true, value: JSON.stringify({ wrong_field: "oops" }) });
-    const r = await runAI({ action: "triage_cleanup", payload: { rawText: "thing" } });
+    mockComplete.mockResolvedValue({
+      ok: true,
+      value: JSON.stringify({ wrong_field: "oops" }),
+    });
+    const r = await runAI({
+      action: "triage_cleanup",
+      payload: { rawText: "thing" },
+    });
     expect(r.ok).toBe(false);
     if (r.ok) return;
     expect(r.error.kind).toBe("invalid_response");

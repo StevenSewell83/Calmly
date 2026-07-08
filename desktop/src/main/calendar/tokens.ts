@@ -14,7 +14,11 @@ export function refreshTokenKey(
 }
 
 export const calendarTokens = {
-  set(provider: CalendarProvider, accountId: string, refreshToken: string): void {
+  set(
+    provider: CalendarProvider,
+    accountId: string,
+    refreshToken: string,
+  ): void {
     secretStore.set(refreshTokenKey(provider, accountId), refreshToken);
   },
 

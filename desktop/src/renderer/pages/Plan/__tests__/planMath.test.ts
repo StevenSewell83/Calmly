@@ -132,9 +132,9 @@ describe("snapAndClampStartForDuration", () => {
     const dur = 30;
     expect(snapAndClampStartForDuration(7, dur)).toBe(0);
     expect(snapAndClampStartForDuration(8, dur)).toBe(15);
-    expect(
-      snapAndClampStartForDuration(GRID_HOURS * 60 - 10, dur),
-    ).toBe(GRID_HOURS * 60 - dur);
+    expect(snapAndClampStartForDuration(GRID_HOURS * 60 - 10, dur)).toBe(
+      GRID_HOURS * 60 - dur,
+    );
   });
 });
 

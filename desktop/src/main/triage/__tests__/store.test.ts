@@ -1,10 +1,6 @@
 import type Database from "better-sqlite3";
 import { describe, expect, it } from "vitest";
-import {
-  discardInboxItem,
-  resolveAsEvent,
-  resolveAsTask,
-} from "../store";
+import { discardInboxItem, resolveAsEvent, resolveAsTask } from "../store";
 
 interface PreparedCall {
   sql: string;
@@ -262,7 +258,9 @@ describe("discardInboxItem", () => {
     const sqls = fake.prepared.map((p) => p.sql);
     expect(sqls.some((s) => s.startsWith("insert into tasks"))).toBe(false);
     expect(sqls.some((s) => s.startsWith("insert into events"))).toBe(false);
-    expect(findOpPayload(fake.prepared, "inbox_items")?.resolved_at).toBe(1_000);
+    expect(findOpPayload(fake.prepared, "inbox_items")?.resolved_at).toBe(
+      1_000,
+    );
   });
 
   it("returns AlreadyResolved when the inbox is already done", () => {

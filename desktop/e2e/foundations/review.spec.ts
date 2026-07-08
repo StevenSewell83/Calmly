@@ -44,7 +44,10 @@ test.describe("CL-13-e2e · Daily Shutdown — carry, drop, mark done, reflectio
     const userDataDir = await mkdtemp(join(tmpdir(), "calmly-e2e-review-"));
     try {
       // ── Phase 1: sign in ──────────────────────────────────────────────────
-      const firstLaunch = await launchElectronApp({ syncUrl: server!.url, userDataDir });
+      const firstLaunch = await launchElectronApp({
+        syncUrl: server!.url,
+        userDataDir,
+      });
       let userId: string;
       try {
         const result = await signInAsTestUser({
@@ -83,7 +86,14 @@ test.describe("CL-13-e2e · Daily Shutdown — carry, drop, mark done, reflectio
         const { randomUUID } = await import("node:crypto");
         const id = randomUUID();
         doneIds.push(id);
-        insertDone.run(id, userId, `Done task ${i}`, dueToday, now - 60_000, now);
+        insertDone.run(
+          id,
+          userId,
+          `Done task ${i}`,
+          dueToday,
+          now - 60_000,
+          now,
+        );
       }
       db.close();
 
@@ -100,7 +110,10 @@ test.describe("CL-13-e2e · Daily Shutdown — carry, drop, mark done, reflectio
       const doneTaskId = seeded.tasks[2]!.id;
 
       // ── Phase 3: navigate to /review, action rows ─────────────────────────
-      const secondLaunch = await launchElectronApp({ syncUrl: server!.url, userDataDir });
+      const secondLaunch = await launchElectronApp({
+        syncUrl: server!.url,
+        userDataDir,
+      });
       const win = secondLaunch.window;
 
       try {
@@ -110,12 +123,16 @@ test.describe("CL-13-e2e · Daily Shutdown — carry, drop, mark done, reflectio
         await win.getByRole("link", { name: "Review" }).click();
 
         // Should see review page with header
-        await expect(win.getByRole("region", { name: "Daily shutdown review" })).toBeVisible({
+        await expect(
+          win.getByRole("region", { name: "Daily shutdown review" }),
+        ).toBeVisible({
           timeout: 10_000,
         });
 
         // "4 things done" prominent count
-        await expect(win.getByText(/4 things done/)).toBeVisible({ timeout: 8_000 });
+        await expect(win.getByText(/4 things done/)).toBeVisible({
+          timeout: 8_000,
+        });
 
         // All 3 unfinished task titles visible
         await expect(win.getByText("Carry forward task")).toBeVisible();
@@ -123,19 +140,32 @@ test.describe("CL-13-e2e · Daily Shutdown — carry, drop, mark done, reflectio
         await expect(win.getByText("Mark done task")).toBeVisible();
 
         // Action row 1: Carry forward
-        const carryRow = win.getByText("Carry forward task").locator("..").locator("..");
+        const carryRow = win
+          .getByText("Carry forward task")
+          .locator("..")
+          .locator("..");
         await carryRow.getByRole("button", { name: /Carry forward/i }).click();
-        await expect(win.getByText("Carried to tomorrow")).toBeVisible({ timeout: 5_000 });
+        await expect(win.getByText("Carried to tomorrow")).toBeVisible({
+          timeout: 5_000,
+        });
 
         // Action row 2: Drop
-        const dropRow = win.getByText("Drop this task").locator("..").locator("..");
+        const dropRow = win
+          .getByText("Drop this task")
+          .locator("..")
+          .locator("..");
         await dropRow.getByRole("button", { name: /Drop/i }).click();
         await expect(win.getByText("Dropped")).toBeVisible({ timeout: 5_000 });
 
         // Action row 3: Mark done
-        const doneRow = win.getByText("Mark done task").locator("..").locator("..");
+        const doneRow = win
+          .getByText("Mark done task")
+          .locator("..")
+          .locator("..");
         await doneRow.getByRole("button", { name: /Mark done/i }).click();
-        await expect(win.getByText("Marked done")).toBeVisible({ timeout: 5_000 });
+        await expect(win.getByText("Marked done")).toBeVisible({
+          timeout: 5_000,
+        });
 
         // Write reflection
         await win.getByPlaceholder(/One word/).fill("long day");
@@ -178,9 +208,14 @@ test.describe("CL-13-e2e · Daily Shutdown — carry, drop, mark done, reflectio
 
           // last_shutdown_date written to settings
           const settings = verifyDb
-            .prepare("SELECT settings_json FROM user_settings WHERE user_id = ?")
+            .prepare(
+              "SELECT settings_json FROM user_settings WHERE user_id = ?",
+            )
             .get(userId) as { settings_json: string } | undefined;
-          const parsed = JSON.parse(settings?.settings_json ?? "{}") as Record<string, unknown>;
+          const parsed = JSON.parse(settings?.settings_json ?? "{}") as Record<
+            string,
+            unknown
+          >;
           expect(typeof parsed.last_shutdown_date).toBe("string");
         } finally {
           verifyDb.close();

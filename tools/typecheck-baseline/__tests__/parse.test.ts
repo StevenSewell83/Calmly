@@ -24,12 +24,15 @@ describe("parseTypecheckOutput", () => {
       line: 23,
       column: 24,
       code: "TS2307",
-      message: "Cannot find module '../focus/store' or its corresponding type declarations.",
+      message:
+        "Cannot find module '../focus/store' or its corresponding type declarations.",
     });
   });
 
   it("ignores Done banners and progress lines", () => {
-    const errors = parseTypecheckOutput("desktop typecheck: Done\nrandom noise\n");
+    const errors = parseTypecheckOutput(
+      "desktop typecheck: Done\nrandom noise\n",
+    );
     expect(errors).toEqual([]);
   });
 

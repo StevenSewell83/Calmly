@@ -27,7 +27,9 @@ export function EmptyState({
     >
       <div>
         <p className="text-base font-medium text-stone-700">{title}</p>
-        <p className="mt-1 text-sm text-stone-400 font-light leading-relaxed">{body}</p>
+        <p className="mt-1 text-sm text-stone-400 font-light leading-relaxed">
+          {body}
+        </p>
       </div>
       {(primaryAction ?? secondaryAction) && (
         <div className="flex items-center gap-3 flex-wrap">

@@ -18,11 +18,20 @@ interface Props {
   busy: boolean;
 }
 
-export function QuickPlanRow({ task, index, total, onMove, onDrop, onShrink, busy }: Props) {
+export function QuickPlanRow({
+  task,
+  index,
+  total,
+  onMove,
+  onDrop,
+  onShrink,
+  busy,
+}: Props) {
   const start = task.scheduled_start;
   const end = task.scheduled_end;
   const durationMs = start !== null && end !== null ? end - start : null;
-  const durationMins = durationMs !== null ? Math.round(durationMs / 60_000) : null;
+  const durationMins =
+    durationMs !== null ? Math.round(durationMs / 60_000) : null;
 
   return (
     <li className="flex items-start gap-3 p-3 rounded-2xl bg-white border border-stone-100 shadow-sm">
@@ -48,7 +57,9 @@ export function QuickPlanRow({ task, index, total, onMove, onDrop, onShrink, bus
 
       {/* Task info */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-stone-800 truncate">{task.title}</p>
+        <p className="text-sm font-medium text-stone-800 truncate">
+          {task.title}
+        </p>
         <div className="mt-1 flex items-center gap-2 flex-wrap">
           {start !== null && (
             <span className="inline-flex items-center gap-1 text-xs text-stone-500">
@@ -62,16 +73,18 @@ export function QuickPlanRow({ task, index, total, onMove, onDrop, onShrink, bus
           {/* Shrink presets */}
           {start !== null && durationMins !== null && (
             <span className="flex gap-1">
-              {SHRINK_PRESETS.filter((p) => p.mins < durationMins).map(({ label, mins }) => (
-                <button
-                  key={label}
-                  onClick={() => onShrink(mins)}
-                  disabled={busy}
-                  className="text-[10px] px-1.5 py-0.5 rounded-md bg-stone-100 hover:bg-stone-200 text-stone-600 disabled:opacity-40"
-                >
-                  {label}
-                </button>
-              ))}
+              {SHRINK_PRESETS.filter((p) => p.mins < durationMins).map(
+                ({ label, mins }) => (
+                  <button
+                    key={label}
+                    onClick={() => onShrink(mins)}
+                    disabled={busy}
+                    className="text-[10px] px-1.5 py-0.5 rounded-md bg-stone-100 hover:bg-stone-200 text-stone-600 disabled:opacity-40"
+                  >
+                    {label}
+                  </button>
+                ),
+              )}
             </span>
           )}
         </div>

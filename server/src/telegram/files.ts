@@ -118,7 +118,10 @@ export async function downloadTelegramFile(
   } catch (err) {
     clearTimeout(timer);
     if (isAbortError(err)) {
-      throw new TelegramDownloadError("timeout", "file download aborted (timeout)");
+      throw new TelegramDownloadError(
+        "timeout",
+        "file download aborted (timeout)",
+      );
     }
     throw new TelegramDownloadError(
       "network",
@@ -166,14 +169,19 @@ function mapHttpError(status: number): TelegramDownloadError {
     return new TelegramDownloadError("auth", `file HTTP ${status}`, { status });
   }
   if (status === 415) {
-    return new TelegramDownloadError("unsupported", `file HTTP 415`, { status });
+    return new TelegramDownloadError("unsupported", `file HTTP 415`, {
+      status,
+    });
   }
-  return new TelegramDownloadError("network", `file HTTP ${status}`, { status });
+  return new TelegramDownloadError("network", `file HTTP ${status}`, {
+    status,
+  });
 }
 
 function isAbortError(err: unknown): boolean {
   return (
-    err instanceof Error && (err.name === "AbortError" || /aborted/i.test(err.message))
+    err instanceof Error &&
+    (err.name === "AbortError" || /aborted/i.test(err.message))
   );
 }
 

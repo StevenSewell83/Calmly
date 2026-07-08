@@ -11,7 +11,10 @@ export function Highlight({ segments, className }: HighlightProps) {
     <span className={className}>
       {segments.map((seg, i) =>
         seg.highlighted ? (
-          <strong key={i} className="font-semibold underline underline-offset-2">
+          <strong
+            key={i}
+            className="font-semibold underline underline-offset-2"
+          >
             {seg.text}
           </strong>
         ) : (

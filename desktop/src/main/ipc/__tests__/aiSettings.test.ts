@@ -19,7 +19,10 @@ vi.mock("../../security/secretStore", () => ({
 // Mock safeStorage error class
 vi.mock("../../security/safeStorage", () => ({
   EncryptionUnavailableError: class EncryptionUnavailableError extends Error {
-    constructor() { super("EncryptionUnavailable"); this.name = "EncryptionUnavailableError"; }
+    constructor() {
+      super("EncryptionUnavailable");
+      this.name = "EncryptionUnavailableError";
+    }
   },
 }));
 
@@ -43,10 +46,13 @@ beforeAll(() => {
     return ipcMain;
   });
   // Lazy import so mocks are in place first
-  return import("../aiSettings").then(({ registerAiSettingsIpc }) => registerAiSettingsIpc());
+  return import("../aiSettings").then(({ registerAiSettingsIpc }) =>
+    registerAiSettingsIpc(),
+  );
 });
 
-const call = (ch: string, ...args: unknown[]) => handlers.get(ch)!(null, ...args);
+const call = (ch: string, ...args: unknown[]) =>
+  handlers.get(ch)!(null, ...args);
 
 // ── ai:hasKey ──────────────────────────────────────────────────────────────
 
@@ -81,13 +87,19 @@ describe("ai:setKey", () => {
     vi.mocked(secretStore.set).mockImplementation(() => {});
     const r = await call("ai:setKey", "sk-ant-api03-validkey");
     expect(r).toEqual({ ok: true });
-    expect(secretStore.set).toHaveBeenCalledWith("ai.anthropic.key", "sk-ant-api03-validkey");
+    expect(secretStore.set).toHaveBeenCalledWith(
+      "ai.anthropic.key",
+      "sk-ant-api03-validkey",
+    );
   });
 
   it("trims whitespace from key before saving", async () => {
     vi.mocked(secretStore.set).mockImplementation(() => {});
     await call("ai:setKey", "  sk-ant-api03-trimmed  ");
-    expect(secretStore.set).toHaveBeenCalledWith("ai.anthropic.key", "sk-ant-api03-trimmed");
+    expect(secretStore.set).toHaveBeenCalledWith(
+      "ai.anthropic.key",
+      "sk-ant-api03-trimmed",
+    );
   });
 });
 
@@ -112,7 +124,9 @@ describe("ai:getSettings", () => {
 
   it("reads ai.enabled and ai.mode from settings_json", () => {
     const json = JSON.stringify({ "ai.enabled": true, "ai.mode": "cloud" });
-    mockDb.prepare.mockReturnValue({ get: vi.fn().mockReturnValue({ settings_json: json }) });
+    mockDb.prepare.mockReturnValue({
+      get: vi.fn().mockReturnValue({ settings_json: json }),
+    });
     const r = call("ai:getSettings") as { enabled: boolean; mode: string };
     expect(r).toEqual({ enabled: true, mode: "cloud" });
   });
@@ -135,7 +149,10 @@ describe("ai:setSettings", () => {
     const r = await call("ai:setSettings", { enabled: true, mode: "cloud" });
     expect(r).toEqual({ ok: true });
     expect(mockRun).toHaveBeenCalled();
-    const written = JSON.parse(mockRun.mock.calls[0]![0] as string) as Record<string, unknown>;
+    const written = JSON.parse(mockRun.mock.calls[0]![0] as string) as Record<
+      string,
+      unknown
+    >;
     expect(written["ai.enabled"]).toBe(true);
     expect(written["ai.mode"]).toBe("cloud");
     expect(written["syncServerUrl"]).toBe("https://example.com");
@@ -162,8 +179,13 @@ describe("ai:testConnection", () => {
   it("returns InvalidKey on 401 response", async () => {
     vi.mocked(secretStore.has).mockReturnValue(true);
     vi.mocked(secretStore.get).mockReturnValue("sk-ant-api03-bad");
-    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 401, text: async () => "" });
-    const r = await call("ai:testConnection") as { ok: boolean; error: string };
+    global.fetch = vi
+      .fn()
+      .mockResolvedValue({ ok: false, status: 401, text: async () => "" });
+    const r = (await call("ai:testConnection")) as {
+      ok: boolean;
+      error: string;
+    };
     expect(r.ok).toBe(false);
     expect(r.error).toBe("InvalidKey");
   });
@@ -172,7 +194,10 @@ describe("ai:testConnection", () => {
     vi.mocked(secretStore.has).mockReturnValue(true);
     vi.mocked(secretStore.get).mockReturnValue("sk-ant-api03-test");
     global.fetch = vi.fn().mockRejectedValue(new Error("ECONNREFUSED"));
-    const r = await call("ai:testConnection") as { ok: boolean; error: string };
+    const r = (await call("ai:testConnection")) as {
+      ok: boolean;
+      error: string;
+    };
     expect(r.ok).toBe(false);
     expect(r.error).toBe("NetworkError");
   });

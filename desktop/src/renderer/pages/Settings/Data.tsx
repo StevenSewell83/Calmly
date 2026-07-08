@@ -27,7 +27,8 @@ export function SettingsData() {
           Search index
         </span>
         <p className="mt-2 text-sm text-stone-600">
-          If search results seem incomplete, re-index to rebuild the full-text index from scratch.
+          If search results seem incomplete, re-index to rebuild the full-text
+          index from scratch.
         </p>
         <div className="mt-4 flex items-center gap-3">
           <button
@@ -47,7 +48,9 @@ export function SettingsData() {
             <span className="text-xs text-emerald-600">Re-index started</span>
           )}
           {reindex === "error" && (
-            <span className="text-xs text-red-500">Re-index failed — check logs</span>
+            <span className="text-xs text-red-500">
+              Re-index failed — check logs
+            </span>
           )}
         </div>
       </div>

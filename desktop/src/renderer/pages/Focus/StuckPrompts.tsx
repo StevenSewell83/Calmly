@@ -24,7 +24,13 @@ interface Answer {
   answer: string;
 }
 
-export function StuckPrompts({ stuckSessionId, onContinue, onSwitch, onBreak, onClose }: Props) {
+export function StuckPrompts({
+  stuckSessionId,
+  onContinue,
+  onSwitch,
+  onBreak,
+  onClose,
+}: Props) {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [busy, setBusy] = useState(false);
@@ -81,11 +87,15 @@ export function StuckPrompts({ stuckSessionId, onContinue, onSwitch, onBreak, on
           ))}
         </div>
 
-        <h2 className="text-lg font-medium text-stone-800 leading-snug mb-4">{question}</h2>
+        <h2 className="text-lg font-medium text-stone-800 leading-snug mb-4">
+          {question}
+        </h2>
 
         <textarea
           value={answers[step] ?? ""}
-          onChange={(e) => setAnswers((prev) => ({ ...prev, [step]: e.target.value }))}
+          onChange={(e) =>
+            setAnswers((prev) => ({ ...prev, [step]: e.target.value }))
+          }
           placeholder="Type something, or skip…"
           rows={3}
           className="w-full text-sm rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-emerald-300 mb-4"
@@ -119,7 +129,9 @@ export function StuckPrompts({ stuckSessionId, onContinue, onSwitch, onBreak, on
           </div>
         ) : (
           <div className="space-y-2">
-            <p className="text-xs text-stone-500 text-center mb-3">What would you like to do?</p>
+            <p className="text-xs text-stone-500 text-center mb-3">
+              What would you like to do?
+            </p>
             <button
               onClick={() => void finish("continue")}
               disabled={busy}

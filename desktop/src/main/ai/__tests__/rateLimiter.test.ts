@@ -15,7 +15,9 @@ describe("RateLimiter", () => {
 
   it("returns wait time when limit exceeded", () => {
     const rl = new RateLimiter({ maxRequests: 3, windowMs: 10_000 });
-    rl.check(); rl.check(); rl.check(); // fill up
+    rl.check();
+    rl.check();
+    rl.check(); // fill up
     const wait = rl.check();
     expect(wait).toBeGreaterThan(0);
     expect(wait).toBeLessThanOrEqual(10_000);
@@ -34,7 +36,8 @@ describe("RateLimiter", () => {
   it("allows requests after window expires", () => {
     vi.useFakeTimers();
     const rl = new RateLimiter({ maxRequests: 2, windowMs: 1_000 });
-    rl.check(); rl.check(); // fill
+    rl.check();
+    rl.check(); // fill
     expect(rl.check()).toBeGreaterThan(0); // blocked
 
     vi.advanceTimersByTime(1_001);

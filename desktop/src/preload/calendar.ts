@@ -12,13 +12,19 @@ const STATUS_CHANNEL = "calendar:account-status-changed";
 
 export const calendarBridge: CalendarBridge = {
   connectGoogle(): Promise<CalendarConnectResult> {
-    return ipcRenderer.invoke("calendar:connectGoogle") as Promise<CalendarConnectResult>;
+    return ipcRenderer.invoke(
+      "calendar:connectGoogle",
+    ) as Promise<CalendarConnectResult>;
   },
   connectMicrosoft(): Promise<CalendarConnectResult> {
-    return ipcRenderer.invoke("calendar:connectMicrosoft") as Promise<CalendarConnectResult>;
+    return ipcRenderer.invoke(
+      "calendar:connectMicrosoft",
+    ) as Promise<CalendarConnectResult>;
   },
   listAccounts(): Promise<ListCalendarAccountsResult> {
-    return ipcRenderer.invoke("calendar:listAccounts") as Promise<ListCalendarAccountsResult>;
+    return ipcRenderer.invoke(
+      "calendar:listAccounts",
+    ) as Promise<ListCalendarAccountsResult>;
   },
   disconnect(accountId: string): Promise<DisconnectCalendarResult> {
     return ipcRenderer.invoke(
@@ -27,10 +33,9 @@ export const calendarBridge: CalendarBridge = {
     ) as Promise<DisconnectCalendarResult>;
   },
   refresh(accountId?: string): Promise<{ ok: boolean }> {
-    return ipcRenderer.invoke(
-      "calendar:refresh",
-      accountId,
-    ) as Promise<{ ok: boolean }>;
+    return ipcRenderer.invoke("calendar:refresh", accountId) as Promise<{
+      ok: boolean;
+    }>;
   },
   listEventsForDay(dayIso: string): Promise<ListCalendarDayEventsResult> {
     return ipcRenderer.invoke(

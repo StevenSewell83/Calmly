@@ -45,7 +45,10 @@ function truncate(text: string, maxChars: number): string {
 }
 
 /** Truncate segments so total visible length stays within maxChars. */
-function truncateSegments(segs: TextSegment[], maxChars: number): TextSegment[] {
+function truncateSegments(
+  segs: TextSegment[],
+  maxChars: number,
+): TextSegment[] {
   const out: TextSegment[] = [];
   let remaining = maxChars;
   for (const seg of segs) {
@@ -54,7 +57,10 @@ function truncateSegments(segs: TextSegment[], maxChars: number): TextSegment[] 
       out.push(seg);
       remaining -= seg.text.length;
     } else {
-      out.push({ text: seg.text.slice(0, remaining - 1) + "…", highlighted: seg.highlighted });
+      out.push({
+        text: seg.text.slice(0, remaining - 1) + "…",
+        highlighted: seg.highlighted,
+      });
       remaining = 0;
     }
   }
@@ -93,7 +99,10 @@ export function searchTasks(
     }>;
 
     return rows.map((r) => {
-      const titleSegs = truncateSegments(parseSegments(r.title_snip || r.title), 80);
+      const titleSegs = truncateSegments(
+        parseSegments(r.title_snip || r.title),
+        80,
+      );
       const notesSegs = truncateSegments(parseSegments(r.notes_snip), 120);
       return {
         id: r.id,
@@ -140,7 +149,10 @@ export function searchInbox(
     }>;
 
     return rows.map((r) => {
-      const textSegs = truncateSegments(parseSegments(r.text_snip || r.raw_text), 120);
+      const textSegs = truncateSegments(
+        parseSegments(r.text_snip || r.raw_text),
+        120,
+      );
       const titleText = truncate(r.raw_text, 80);
       return {
         id: r.id,
@@ -165,7 +177,5 @@ export function searchAll(
 ): SearchHit[] {
   const tasks = searchTasks(db, userId, raw, limit);
   const inbox = searchInbox(db, userId, raw, limit);
-  return [...tasks, ...inbox]
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit);
+  return [...tasks, ...inbox].sort((a, b) => b.score - a.score).slice(0, limit);
 }

@@ -42,11 +42,7 @@ export type ResolveResult =
   | { ok: true; id: string }
   | {
       ok: false;
-      error:
-        | "NotFound"
-        | "AlreadyResolved"
-        | "InvalidArgs"
-        | "InternalError";
+      error: "NotFound" | "AlreadyResolved" | "InvalidArgs" | "InternalError";
     };
 
 export type DiscardResult =
@@ -437,7 +433,13 @@ export function resolveWithBreakdown(
         );
       }
 
-      markInboxResolved(args.db, args.userId, args.inboxId, loaded.row, args.now);
+      markInboxResolved(
+        args.db,
+        args.userId,
+        args.inboxId,
+        loaded.row,
+        args.now,
+      );
       outcome = "ok";
     });
     tx();
@@ -446,6 +448,7 @@ export function resolveWithBreakdown(
   }
 
   if (outcome === "missing") return { ok: false, error: "NotFound" };
-  if (outcome === "already-resolved") return { ok: false, error: "AlreadyResolved" };
+  if (outcome === "already-resolved")
+    return { ok: false, error: "AlreadyResolved" };
   return { ok: true, parentId, subtaskIds };
 }

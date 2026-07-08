@@ -8,7 +8,10 @@ import { describe, it, expect } from "vitest";
 const MARK_OPEN = "<b>";
 const MARK_CLOSE = "</b>";
 
-interface TextSegment { text: string; highlighted: boolean }
+interface TextSegment {
+  text: string;
+  highlighted: boolean;
+}
 
 function parseSegments(raw: string | null): TextSegment[] {
   if (!raw) return [];
@@ -16,11 +19,18 @@ function parseSegments(raw: string | null): TextSegment[] {
   let rest = raw;
   while (rest.length > 0) {
     const openIdx = rest.indexOf(MARK_OPEN);
-    if (openIdx === -1) { segments.push({ text: rest, highlighted: false }); break; }
-    if (openIdx > 0) segments.push({ text: rest.slice(0, openIdx), highlighted: false });
+    if (openIdx === -1) {
+      segments.push({ text: rest, highlighted: false });
+      break;
+    }
+    if (openIdx > 0)
+      segments.push({ text: rest.slice(0, openIdx), highlighted: false });
     rest = rest.slice(openIdx + MARK_OPEN.length);
     const closeIdx = rest.indexOf(MARK_CLOSE);
-    if (closeIdx === -1) { segments.push({ text: rest, highlighted: true }); break; }
+    if (closeIdx === -1) {
+      segments.push({ text: rest, highlighted: true });
+      break;
+    }
     segments.push({ text: rest.slice(0, closeIdx), highlighted: true });
     rest = rest.slice(closeIdx + MARK_CLOSE.length);
   }

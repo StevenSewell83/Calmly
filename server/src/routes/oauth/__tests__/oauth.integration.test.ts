@@ -174,7 +174,9 @@ describe.skipIf(!dockerAvailable)(
     }
 
     function ticketFromCallbackHtml(html: string): string {
-      const match = html.match(/calmly:\/\/oauth\/[^/]+\/done\?ticket=([^"&\s]+)/);
+      const match = html.match(
+        /calmly:\/\/oauth\/[^/]+\/done\?ticket=([^"&\s]+)/,
+      );
       expect(match, "callback HTML missing ticket deep-link").toBeTruthy();
       return decodeURIComponent(match![1]!);
     }
@@ -355,7 +357,10 @@ describe.skipIf(!dockerAvailable)(
         expect(cbRes.statusCode).toBe(200);
         const ticket = ticketFromCallbackHtml(cbRes.body);
 
-        const acct = await pool.query<{ external_account_id: string; status: string }>(
+        const acct = await pool.query<{
+          external_account_id: string;
+          status: string;
+        }>(
           `SELECT external_account_id, status FROM calendar_accounts
              WHERE user_id = $1 AND provider = 'microsoft'`,
           [userId],
@@ -392,7 +397,12 @@ describe.skipIf(!dockerAvailable)(
              (user_id, provider, external_account_id, email, status)
            VALUES ($1, $2, $3, $4, 'connected')
            RETURNING id`,
-          [userId, provider, `${provider}-extid-refresh`, `r-${Date.now()}@e.com`],
+          [
+            userId,
+            provider,
+            `${provider}-extid-refresh`,
+            `r-${Date.now()}@e.com`,
+          ],
         );
         return r.rows[0]!.id;
       }
@@ -435,7 +445,9 @@ describe.skipIf(!dockerAvailable)(
       });
 
       it("invalid_grant from provider → 410 with code 'invalid_grant'", async () => {
-        const { userId, cookie } = await signInAs("refresh-revoked@example.com");
+        const { userId, cookie } = await signInAs(
+          "refresh-revoked@example.com",
+        );
         const accountId = await seedAccount(userId, "google");
 
         mock.expect({
@@ -477,7 +489,10 @@ describe.skipIf(!dockerAvailable)(
           payload: { account_id: accountId, refresh_token: "valid" },
         });
         expect(res.statusCode).toBe(502);
-        expect(res.json()).toMatchObject({ ok: false, error: "provider_error" });
+        expect(res.json()).toMatchObject({
+          ok: false,
+          error: "provider_error",
+        });
       });
 
       it("refresh against a different user's account → 404", async () => {
@@ -492,7 +507,10 @@ describe.skipIf(!dockerAvailable)(
           payload: { account_id: accountId, refresh_token: "anything" },
         });
         expect(res.statusCode).toBe(404);
-        expect(res.json()).toMatchObject({ ok: false, error: "account_not_found" });
+        expect(res.json()).toMatchObject({
+          ok: false,
+          error: "account_not_found",
+        });
       });
     });
 

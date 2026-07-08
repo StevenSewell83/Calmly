@@ -28,16 +28,25 @@ export function ResultRow({ hit, selected, onSelect }: ResultRowProps) {
       onClick={onSelect}
       className={[
         "flex items-start gap-3 px-4 py-3 cursor-pointer rounded-2xl transition-colors",
-        selected ? "bg-emerald-50 text-emerald-900" : "hover:bg-stone-50 text-stone-700",
+        selected
+          ? "bg-emerald-50 text-emerald-900"
+          : "hover:bg-stone-50 text-stone-700",
       ].join(" ")}
     >
       <Icon
         size={14}
-        className={["mt-0.5 shrink-0", selected ? "text-emerald-600" : "text-stone-400"].join(" ")}
+        className={[
+          "mt-0.5 shrink-0",
+          selected ? "text-emerald-600" : "text-stone-400",
+        ].join(" ")}
       />
       <div className="flex-1 min-w-0">
         <Highlight
-          segments={hit.titleSegments.length > 0 ? hit.titleSegments : [{ text: hit.title, highlighted: false }]}
+          segments={
+            hit.titleSegments.length > 0
+              ? hit.titleSegments
+              : [{ text: hit.title, highlighted: false }]
+          }
           className="block text-sm truncate"
         />
         {hasSnippet && (

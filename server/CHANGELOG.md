@@ -10,6 +10,7 @@ Versioning: [Semantic Versioning](https://semver.org/).
 ## [0.1.0] — 2026-05-01
 
 ### Added
+
 - Magic-link authentication (no passwords)
 - Append-only sync protocol (`/sync/push`, `/sync/pull`)
 - PostgreSQL-backed persistence with automatic migrations on startup

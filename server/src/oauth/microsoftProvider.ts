@@ -215,7 +215,10 @@ export async function fetchMicrosoftUserInfo(args: {
 }): Promise<MicrosoftUserInfo> {
   const fetchFn = args.fetchImpl ?? fetch;
   const res = await fetchFn(ME_URL, {
-    headers: { authorization: `Bearer ${args.accessToken}`, accept: "application/json" },
+    headers: {
+      authorization: `Bearer ${args.accessToken}`,
+      accept: "application/json",
+    },
   });
   if (!res.ok) {
     throw new OAuthExchangeError(

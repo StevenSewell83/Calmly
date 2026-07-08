@@ -28,11 +28,7 @@ export type DisconnectCalendarResult =
   | { ok: true }
   | {
       ok: false;
-      error:
-        | "NotSignedIn"
-        | "NotFound"
-        | "InvalidArgs"
-        | "InternalError";
+      error: "NotSignedIn" | "NotFound" | "InvalidArgs" | "InternalError";
     };
 
 const STATUS_CHANNEL = "calendar:account-status-changed";
@@ -131,7 +127,13 @@ export function registerCalendarIpc(deps: CalendarIpcDeps): void {
 
   ipcMain.handle(
     "calendar:listEventsForDay",
-    async (_e, dayIso: unknown): Promise<{ ok: true; events: CalendarDayEvent[] } | { ok: false; error: "NotSignedIn" | "InvalidArgs" }> => {
+    async (
+      _e,
+      dayIso: unknown,
+    ): Promise<
+      | { ok: true; events: CalendarDayEvent[] }
+      | { ok: false; error: "NotSignedIn" | "InvalidArgs" }
+    > => {
       const user = getCurrentUser();
       if (!user) return { ok: false, error: "NotSignedIn" };
       if (typeof dayIso !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(dayIso)) {
@@ -149,7 +151,8 @@ export function registerCalendarIpc(deps: CalendarIpcDeps): void {
         const loc =
           row.provider === "google"
             ? (raw["location"] as string | undefined)
-            : ((raw["location"] as { displayName?: string } | undefined)?.displayName);
+            : (raw["location"] as { displayName?: string } | undefined)
+                ?.displayName;
         const isAllDay =
           row.provider === "google"
             ? !!(raw["start"] as { date?: string } | undefined)?.date
@@ -173,9 +176,10 @@ export function registerCalendarIpc(deps: CalendarIpcDeps): void {
     async (_e, accountId: unknown): Promise<{ ok: boolean }> => {
       const user = getCurrentUser();
       if (!user) return { ok: false };
-      const id = typeof accountId === "string" && accountId.length > 0
-        ? accountId
-        : undefined;
+      const id =
+        typeof accountId === "string" && accountId.length > 0
+          ? accountId
+          : undefined;
       await triggerImport(id);
       return { ok: true };
     },

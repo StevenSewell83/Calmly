@@ -103,7 +103,10 @@ export function createCalendarRefresh(
   }
 
   function markReauthRequired(accountId: string): void {
-    const changed = markLocalCalendarAccountStatus(accountId, "reauth_required");
+    const changed = markLocalCalendarAccountStatus(
+      accountId,
+      "reauth_required",
+    );
     if (changed) {
       calendarStatusEvents.notify({ accountId, status: "reauth_required" });
     }
@@ -170,11 +173,14 @@ export function createCalendarRefresh(
           // 5xx and other 4xx → transient. Backoff.
           const state = recordFailure(accountId);
           if (state.consecutive >= MAX_TRANSIENT_FAILURES) {
-            log("calendar refresh: too many transient failures, marking reauth", {
-              provider,
-              accountId,
-              consecutive: state.consecutive,
-            });
+            log(
+              "calendar refresh: too many transient failures, marking reauth",
+              {
+                provider,
+                accountId,
+                consecutive: state.consecutive,
+              },
+            );
             markReauthRequired(accountId);
             return { ok: false, error: "reauth_required" };
           }

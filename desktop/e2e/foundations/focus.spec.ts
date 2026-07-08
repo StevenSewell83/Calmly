@@ -76,7 +76,13 @@ test.describe("CL-09-e2e · Focus mode — start, mark done", () => {
 
       seedDesktopDb(userDataDir, {
         tasks: [
-          { userId, title: ALPHA, dueAt: dueToday, scheduledStart: nineAmMs, scheduledEnd: tenAmMs },
+          {
+            userId,
+            title: ALPHA,
+            dueAt: dueToday,
+            scheduledStart: nineAmMs,
+            scheduledEnd: tenAmMs,
+          },
           { userId, title: BETA, dueAt: dueToday },
         ],
       });
@@ -104,7 +110,9 @@ test.describe("CL-09-e2e · Focus mode — start, mark done", () => {
         await win.getByRole("button", { name: new RegExp(ALPHA) }).click();
 
         // ActiveSession should render with the task title.
-        const activeSection = win.getByRole("region", { name: "Active focus session" });
+        const activeSection = win.getByRole("region", {
+          name: "Active focus session",
+        });
         await expect(activeSection).toBeVisible({ timeout: 10_000 });
         await expect(win.getByText(ALPHA)).toBeVisible();
 
@@ -116,13 +124,20 @@ test.describe("CL-09-e2e · Focus mode — start, mark done", () => {
 
         // ── Phase 4: reload and verify session is cleared ──────────────────
         await secondLaunch.dispose();
-        const thirdLaunch = await launchElectronApp({ syncUrl: server!.url, userDataDir });
+        const thirdLaunch = await launchElectronApp({
+          syncUrl: server!.url,
+          userDataDir,
+        });
         const win2 = thirdLaunch.window;
         try {
-          await expect(win2.getByText(/Peace,/)).toBeVisible({ timeout: 20_000 });
+          await expect(win2.getByText(/Peace,/)).toBeVisible({
+            timeout: 20_000,
+          });
           await win2.getByRole("link", { name: "Focus" }).click();
           // Should be back to chooser (no active session).
-          await expect(win2.getByRole("region", { name: "Focus chooser" })).toBeVisible({
+          await expect(
+            win2.getByRole("region", { name: "Focus chooser" }),
+          ).toBeVisible({
             timeout: 10_000,
           });
         } finally {

@@ -33,11 +33,7 @@ import {
   snoozeOneHour,
   snoozeTomorrowMorning,
 } from "../../utils/snooze";
-import {
-  chipThisWeek,
-  chipToday,
-  chipTomorrow,
-} from "./triageDates";
+import { chipThisWeek, chipToday, chipTomorrow } from "./triageDates";
 
 type TriageType = "task" | "event" | "discard";
 
@@ -116,9 +112,12 @@ export function Triage() {
 
   // Load AI enabled state once on mount
   useEffect(() => {
-    void window.calmly.ai.getSettings().then((s) => {
-      setAiEnabled(s.enabled);
-    }).catch(() => {});
+    void window.calmly.ai
+      .getSettings()
+      .then((s) => {
+        setAiEnabled(s.enabled);
+      })
+      .catch(() => {});
   }, []);
 
   // Each new item resets form defaults. Title defaults to raw_text,
@@ -354,9 +353,7 @@ export function Triage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [current, type, skip, confirmPrimary]);
 
-  const queueIndex = current
-    ? queue.findIndex((i) => i.id === current.id)
-    : -1;
+  const queueIndex = current ? queue.findIndex((i) => i.id === current.id) : -1;
 
   return (
     <section className="flex-1 px-12 pt-8 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -378,208 +375,213 @@ export function Triage() {
             queue.length === 0 ? (
               <InboxClear onHome={() => navigate("/")} />
             ) : current ? (
-          <>
-            <header className="mb-6 flex items-center justify-between">
-              <h1 className="font-serif italic text-4xl tracking-tight text-stone-800">
-                Triage.
-              </h1>
-              <span className="text-[11px] font-bold tracking-[0.22em] uppercase text-stone-400">
-                Item {queueIndex + 1} of {queue.length}
-              </span>
-            </header>
+              <>
+                <header className="mb-6 flex items-center justify-between">
+                  <h1 className="font-serif italic text-4xl tracking-tight text-stone-800">
+                    Triage.
+                  </h1>
+                  <span className="text-[11px] font-bold tracking-[0.22em] uppercase text-stone-400">
+                    Item {queueIndex + 1} of {queue.length}
+                  </span>
+                </header>
 
-            <article
-              key={current.id}
-              className="rounded-[2.5rem] bg-white border border-stone-200/60 shadow-sm px-8 py-7 animate-in fade-in slide-in-from-right-4 duration-300"
-              aria-live="polite"
-            >
-              <div className="flex items-center gap-3 text-[10px] font-bold tracking-[0.22em] uppercase text-stone-400">
-                <InboxIcon className="w-3.5 h-3.5" aria-hidden="true" />
-                <span>From {sourceLabel(current.source)}</span>
-                <span aria-hidden="true">·</span>
-                <span className="normal-case tracking-wide font-medium">
-                  {formatRelativePast(current.created_at, Date.now())}
-                </span>
-              </div>
-              <p className="mt-3 text-2xl text-stone-800 leading-snug font-light">
-                {current.raw_text}
-              </p>
-            </article>
+                <article
+                  key={current.id}
+                  className="rounded-[2.5rem] bg-white border border-stone-200/60 shadow-sm px-8 py-7 animate-in fade-in slide-in-from-right-4 duration-300"
+                  aria-live="polite"
+                >
+                  <div className="flex items-center gap-3 text-[10px] font-bold tracking-[0.22em] uppercase text-stone-400">
+                    <InboxIcon className="w-3.5 h-3.5" aria-hidden="true" />
+                    <span>From {sourceLabel(current.source)}</span>
+                    <span aria-hidden="true">·</span>
+                    <span className="normal-case tracking-wide font-medium">
+                      {formatRelativePast(current.created_at, Date.now())}
+                    </span>
+                  </div>
+                  <p className="mt-3 text-2xl text-stone-800 leading-snug font-light">
+                    {current.raw_text}
+                  </p>
+                </article>
 
-            <TypeClassifier value={type} onChange={setType} />
+                <TypeClassifier value={type} onChange={setType} />
 
-            <div className="mt-6">
-              <label
-                htmlFor="triage-title"
-                className="block text-[10px] font-bold tracking-[0.22em] uppercase text-stone-500 mb-2"
-              >
-                Title
-              </label>
-              <input
-                id="triage-title"
-                ref={titleInputRef}
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full bg-white border border-stone-200 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100 outline-none rounded-2xl px-5 py-3 text-base text-stone-800"
-                aria-label="Title"
-              />
-            </div>
-
-            {type === "task" ? (
-              <DueDateChips
-                value={dateChoice}
-                onChange={setDateChoice}
-              />
-            ) : null}
-
-            {type === "event" ? (
-              <div className="mt-6 grid grid-cols-2 gap-4">
-                <TimeInput
-                  id="triage-event-start"
-                  label="Starts"
-                  value={eventStart}
-                  onChange={setEventStart}
-                />
-                <TimeInput
-                  id="triage-event-end"
-                  label="Ends"
-                  value={eventEnd}
-                  onChange={setEventEnd}
-                />
-              </div>
-            ) : null}
-
-            {errorMsg ? (
-              <p
-                role="alert"
-                className="mt-5 text-sm text-rose-600 font-medium tracking-wide"
-              >
-                {errorMsg}
-              </p>
-            ) : null}
-
-            <div className="mt-8 flex items-center gap-3 flex-wrap">
-              {type === "task" ? (
-                <>
-                  <PrimaryButton
-                    label="Today"
-                    icon={CheckCircle2}
-                    onClick={() => {
-                      setDateChoice({ kind: "today" });
-                      void submitTask();
-                    }}
-                    disabled={submitting || title.trim().length === 0}
+                <div className="mt-6">
+                  <label
+                    htmlFor="triage-title"
+                    className="block text-[10px] font-bold tracking-[0.22em] uppercase text-stone-500 mb-2"
+                  >
+                    Title
+                  </label>
+                  <input
+                    id="triage-title"
+                    ref={titleInputRef}
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="w-full bg-white border border-stone-200 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100 outline-none rounded-2xl px-5 py-3 text-base text-stone-800"
+                    aria-label="Title"
                   />
-                  <PrimaryButton
-                    label="This Week"
-                    icon={CheckCircle2}
-                    onClick={() => {
-                      setDateChoice({ kind: "thisWeek" });
-                      void submitTask();
-                    }}
-                    disabled={submitting || title.trim().length === 0}
+                </div>
+
+                {type === "task" ? (
+                  <DueDateChips value={dateChoice} onChange={setDateChoice} />
+                ) : null}
+
+                {type === "event" ? (
+                  <div className="mt-6 grid grid-cols-2 gap-4">
+                    <TimeInput
+                      id="triage-event-start"
+                      label="Starts"
+                      value={eventStart}
+                      onChange={setEventStart}
+                    />
+                    <TimeInput
+                      id="triage-event-end"
+                      label="Ends"
+                      value={eventEnd}
+                      onChange={setEventEnd}
+                    />
+                  </div>
+                ) : null}
+
+                {errorMsg ? (
+                  <p
+                    role="alert"
+                    className="mt-5 text-sm text-rose-600 font-medium tracking-wide"
+                  >
+                    {errorMsg}
+                  </p>
+                ) : null}
+
+                <div className="mt-8 flex items-center gap-3 flex-wrap">
+                  {type === "task" ? (
+                    <>
+                      <PrimaryButton
+                        label="Today"
+                        icon={CheckCircle2}
+                        onClick={() => {
+                          setDateChoice({ kind: "today" });
+                          void submitTask();
+                        }}
+                        disabled={submitting || title.trim().length === 0}
+                      />
+                      <PrimaryButton
+                        label="This Week"
+                        icon={CheckCircle2}
+                        onClick={() => {
+                          setDateChoice({ kind: "thisWeek" });
+                          void submitTask();
+                        }}
+                        disabled={submitting || title.trim().length === 0}
+                      />
+                      <PrimaryButton
+                        label="Later"
+                        icon={CheckCircle2}
+                        onClick={() => {
+                          setDateChoice({ kind: "later" });
+                          void submitTask();
+                        }}
+                        disabled={submitting || title.trim().length === 0}
+                      />
+                    </>
+                  ) : null}
+                  {type === "event" ? (
+                    <PrimaryButton
+                      label="Schedule event"
+                      icon={CalendarClock}
+                      onClick={submitEvent}
+                      disabled={submitting || title.trim().length === 0}
+                    />
+                  ) : null}
+                  {type === "discard" ? (
+                    <PrimaryButton
+                      label="Discard"
+                      icon={Trash2}
+                      onClick={submitDiscard}
+                      disabled={submitting}
+                      tone="rose"
+                    />
+                  ) : null}
+
+                  <span className="ml-auto flex items-center gap-2">
+                    <SecondaryAction
+                      label="Snooze"
+                      hint="S"
+                      icon={ClockArrowDown}
+                      onClick={() => setSnoozeOpen((v) => !v)}
+                    />
+                    <SecondaryAction
+                      label="Skip"
+                      hint="X"
+                      icon={X}
+                      onClick={skip}
+                    />
+                    <SecondaryAction
+                      label="Break down"
+                      hint=""
+                      icon={ListTree}
+                      onClick={() => {
+                        setBreakdownOpen((v) => !v);
+                        setSnoozeOpen(false);
+                      }}
+                    />
+                    {aiEnabled && (
+                      <SecondaryAction
+                        label="AI cleanup"
+                        hint=""
+                        icon={Sparkles}
+                        onClick={() => {
+                          setAiPanelOpen((v) => !v);
+                          setSnoozeOpen(false);
+                          setBreakdownOpen(false);
+                        }}
+                      />
+                    )}
+                  </span>
+                </div>
+
+                {snoozeOpen ? (
+                  <SnoozeMenu
+                    onPick={(untilMs) => void snooze(untilMs)}
+                    onClose={() => setSnoozeOpen(false)}
                   />
-                  <PrimaryButton
-                    label="Later"
-                    icon={CheckCircle2}
-                    onClick={() => {
-                      setDateChoice({ kind: "later" });
-                      void submitTask();
+                ) : null}
+
+                {aiPanelOpen && current ? (
+                  <AICleanupPanel
+                    rawText={current.raw_text}
+                    state={aiTriage.state}
+                    onRun={() => void aiTriage.run(current.raw_text)}
+                    onCancel={aiTriage.cancel}
+                    onApplyAll={handleAiApplyAll}
+                    onDiscard={handleAiDiscard}
+                    onClose={() => {
+                      setAiPanelOpen(false);
+                      aiTriage.reset();
                     }}
-                    disabled={submitting || title.trim().length === 0}
+                    aiEnabled={aiEnabled}
                   />
-                </>
-              ) : null}
-              {type === "event" ? (
-                <PrimaryButton
-                  label="Schedule event"
-                  icon={CalendarClock}
-                  onClick={submitEvent}
-                  disabled={submitting || title.trim().length === 0}
-                />
-              ) : null}
-              {type === "discard" ? (
-                <PrimaryButton
-                  label="Discard"
-                  icon={Trash2}
-                  onClick={submitDiscard}
-                  disabled={submitting}
-                  tone="rose"
-                />
-              ) : null}
+                ) : null}
 
-              <span className="ml-auto flex items-center gap-2">
-                <SecondaryAction
-                  label="Snooze"
-                  hint="S"
-                  icon={ClockArrowDown}
-                  onClick={() => setSnoozeOpen((v) => !v)}
-                />
-                <SecondaryAction
-                  label="Skip"
-                  hint="X"
-                  icon={X}
-                  onClick={skip}
-                />
-                <SecondaryAction
-                  label="Break down"
-                  hint=""
-                  icon={ListTree}
-                  onClick={() => { setBreakdownOpen((v) => !v); setSnoozeOpen(false); }}
-                />
-                {aiEnabled && (
-                  <SecondaryAction
-                    label="AI cleanup"
-                    hint=""
-                    icon={Sparkles}
-                    onClick={() => {
-                      setAiPanelOpen((v) => !v);
-                      setSnoozeOpen(false);
-                      setBreakdownOpen(false);
-                    }}
+                {breakdownOpen && current ? (
+                  <BreakdownPanel
+                    rawText={current.raw_text}
+                    dueAt={dueAt}
+                    onConfirm={(parentTitle, subtasks) =>
+                      void handleBreakdown(parentTitle, subtasks)
+                    }
+                    onCancel={() => setBreakdownOpen(false)}
                   />
-                )}
-              </span>
-            </div>
+                ) : null}
 
-            {snoozeOpen ? (
-              <SnoozeMenu
-                onPick={(untilMs) => void snooze(untilMs)}
-                onClose={() => setSnoozeOpen(false)}
-              />
-            ) : null}
-
-            {aiPanelOpen && current ? (
-              <AICleanupPanel
-                rawText={current.raw_text}
-                state={aiTriage.state}
-                onRun={() => void aiTriage.run(current.raw_text)}
-                onCancel={aiTriage.cancel}
-                onApplyAll={handleAiApplyAll}
-                onDiscard={handleAiDiscard}
-                onClose={() => { setAiPanelOpen(false); aiTriage.reset(); }}
-                aiEnabled={aiEnabled}
-              />
-            ) : null}
-
-            {breakdownOpen && current ? (
-              <BreakdownPanel
-                rawText={current.raw_text}
-                dueAt={dueAt}
-                onConfirm={(parentTitle, subtasks) =>
-                  void handleBreakdown(parentTitle, subtasks)
-                }
-                onCancel={() => setBreakdownOpen(false)}
-              />
-            ) : null}
-
-            <p className="mt-8 text-[11px] text-stone-400 tracking-wide">
-              <span className="font-bold tracking-[0.18em] uppercase">Keys</span>{" "}
-              · 1 Task · 2 Event · 3 Discard · T Today · W This Week · L Later
-              · S Snooze · X Skip · Enter Confirm
-            </p>
-          </>
+                <p className="mt-8 text-[11px] text-stone-400 tracking-wide">
+                  <span className="font-bold tracking-[0.18em] uppercase">
+                    Keys
+                  </span>{" "}
+                  · 1 Task · 2 Event · 3 Discard · T Today · W This Week · L
+                  Later · S Snooze · X Skip · Enter Confirm
+                </p>
+              </>
             ) : null
           }
         />
@@ -593,7 +595,12 @@ interface TypeClassifierProps {
   onChange: (next: TriageType) => void;
 }
 
-const TYPE_OPTIONS: { value: TriageType; label: string; hint: string; icon: typeof Sparkles }[] = [
+const TYPE_OPTIONS: {
+  value: TriageType;
+  label: string;
+  hint: string;
+  icon: typeof Sparkles;
+}[] = [
   { value: "task", label: "Task", hint: "1", icon: CheckCircle2 },
   { value: "event", label: "Event", hint: "2", icon: CalendarClock },
   { value: "discard", label: "Discard", hint: "3", icon: Trash2 },
@@ -706,7 +713,9 @@ function PickDateButton({ value, onChange }: PickDateButtonProps) {
     <span className="relative">
       <button
         type="button"
-        onClick={() => inputRef.current?.showPicker?.() ?? inputRef.current?.click()}
+        onClick={() =>
+          inputRef.current?.showPicker?.() ?? inputRef.current?.click()
+        }
         className={[
           "px-4 py-2 rounded-2xl text-xs font-medium tracking-wide transition-colors",
           active
@@ -898,7 +907,11 @@ function InboxClear({ onHome }: { onHome: () => void }) {
 
 function LoadingShell() {
   return (
-    <div role="status" aria-label="Loading triage" className="flex flex-col gap-4">
+    <div
+      role="status"
+      aria-label="Loading triage"
+      className="flex flex-col gap-4"
+    >
       <div className="rounded-[2.5rem] bg-stone-100/60 h-32 animate-pulse" />
       <div className="rounded-2xl bg-stone-100/60 h-12 animate-pulse" />
       <div className="rounded-2xl bg-stone-100/60 h-12 animate-pulse" />

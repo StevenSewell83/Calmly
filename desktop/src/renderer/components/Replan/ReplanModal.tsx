@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { TaskStatusSchema } from "@calmly/shared";
-import type { PlanTaskItem, ReplanAction, ReplanReason } from "../../../preload/api-types";
+import type {
+  PlanTaskItem,
+  ReplanAction,
+  ReplanReason,
+} from "../../../preload/api-types";
 import { ReplanRow } from "./ReplanRow";
 
 const stillActionable = (t: PlanTaskItem) =>
-  t.status !== TaskStatusSchema.enum.done && t.status !== TaskStatusSchema.enum.dropped;
+  t.status !== TaskStatusSchema.enum.done &&
+  t.status !== TaskStatusSchema.enum.dropped;
 
 const REASONS: { value: ReplanReason; label: string }[] = [
   { value: null, label: "No reason selected" },
@@ -59,7 +64,8 @@ export function ReplanModal({ open, onClose }: Props) {
   async function handleApplySelected(type: "push" | "drop") {
     if (selected.size === 0) return;
     const actions: ReplanAction[] = Array.from(selected).map((id) => {
-      if (type === "push") return { type: "push", taskId: id, offsetMs: 30 * 60_000 };
+      if (type === "push")
+        return { type: "push", taskId: id, offsetMs: 30 * 60_000 };
       return { type: "drop", taskId: id };
     });
     setBusy(true);
@@ -75,7 +81,8 @@ export function ReplanModal({ open, onClose }: Props) {
   function toggleSelect(id: string, v: boolean) {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (v) next.add(id); else next.delete(id);
+      if (v) next.add(id);
+      else next.delete(id);
       return next;
     });
   }
@@ -88,16 +95,25 @@ export function ReplanModal({ open, onClose }: Props) {
       aria-modal="true"
       aria-label="Replan"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div className="relative w-full max-w-lg max-h-[85vh] flex flex-col bg-white rounded-[2rem] shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="flex items-start justify-between px-6 pt-6 pb-4">
           <div>
-            <h2 className="font-serif italic text-2xl text-stone-800">Your day shifted.</h2>
-            <p className="text-xs text-stone-400 mt-0.5">Let's adjust without losing your footing.</p>
+            <h2 className="font-serif italic text-2xl text-stone-800">
+              Your day shifted.
+            </h2>
+            <p className="text-xs text-stone-400 mt-0.5">
+              Let's adjust without losing your footing.
+            </p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-xl hover:bg-stone-100 text-stone-400">
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-xl hover:bg-stone-100 text-stone-400"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -106,11 +122,15 @@ export function ReplanModal({ open, onClose }: Props) {
         <div className="px-6 pb-4">
           <select
             value={reason ?? ""}
-            onChange={(e) => void handleReasonChange((e.target.value || null) as ReplanReason)}
+            onChange={(e) =>
+              void handleReasonChange((e.target.value || null) as ReplanReason)
+            }
             className="w-full text-xs px-3 py-2 rounded-xl border border-stone-200 text-stone-600 focus:outline-none focus:ring-2 focus:ring-emerald-300 bg-stone-50"
           >
             {REASONS.map(({ value, label }) => (
-              <option key={String(value)} value={value ?? ""}>{label}</option>
+              <option key={String(value)} value={value ?? ""}>
+                {label}
+              </option>
             ))}
           </select>
         </div>
@@ -118,33 +138,43 @@ export function ReplanModal({ open, onClose }: Props) {
         {/* Task list */}
         <ul className="flex-1 overflow-y-auto px-6 pb-2 space-y-2">
           {tasks.length === 0 ? (
-            <li className="text-xs text-stone-400 text-center py-8">No remaining scheduled tasks for today.</li>
-          ) : tasks.map((t) => (
-            <ReplanRow
-              key={t.id}
-              task={t}
-              selected={selected.has(t.id)}
-              onSelect={(v) => toggleSelect(t.id, v)}
-              onAction={handleAction}
-              busy={busy}
-            />
-          ))}
+            <li className="text-xs text-stone-400 text-center py-8">
+              No remaining scheduled tasks for today.
+            </li>
+          ) : (
+            tasks.map((t) => (
+              <ReplanRow
+                key={t.id}
+                task={t}
+                selected={selected.has(t.id)}
+                onSelect={(v) => toggleSelect(t.id, v)}
+                onAction={handleAction}
+                busy={busy}
+              />
+            ))
+          )}
         </ul>
 
         {/* Batch bar */}
         {selected.size > 0 && (
           <div className="flex items-center gap-2 px-6 py-3 bg-emerald-50 border-t border-emerald-100">
-            <span className="text-xs text-emerald-700 font-medium flex-1">{selected.size} selected</span>
+            <span className="text-xs text-emerald-700 font-medium flex-1">
+              {selected.size} selected
+            </span>
             <button
               disabled={busy}
               onClick={() => void handleApplySelected("push")}
               className="text-xs px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-600 disabled:opacity-40"
-            >Push +30m</button>
+            >
+              Push +30m
+            </button>
             <button
               disabled={busy}
               onClick={() => void handleApplySelected("drop")}
               className="text-xs px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 disabled:opacity-40"
-            >→ Backlog</button>
+            >
+              → Backlog
+            </button>
           </div>
         )}
 

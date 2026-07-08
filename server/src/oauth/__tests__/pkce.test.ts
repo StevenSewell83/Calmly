@@ -11,7 +11,9 @@ describe("createPkcePair", () => {
 
   it("computes challenge as base64url(SHA256(verifier))", () => {
     const p = createPkcePair();
-    const expected = createHash("sha256").update(p.verifier).digest("base64url");
+    const expected = createHash("sha256")
+      .update(p.verifier)
+      .digest("base64url");
     expect(p.challenge).toBe(expected);
     expect(p.method).toBe("S256");
   });

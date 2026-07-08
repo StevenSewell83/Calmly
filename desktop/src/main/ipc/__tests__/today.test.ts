@@ -33,9 +33,16 @@ const call = (ch: string) => reg.get(ch)!(CTX, undefined);
 describe("tasks:listToday", () => {
   it("passes ctx fields to listTodayTasks and wraps result", () => {
     const tasks = [{ id: "t1" }];
-    vi.mocked(store.listTodayTasks).mockReturnValue(tasks as ReturnType<typeof store.listTodayTasks>);
+    vi.mocked(store.listTodayTasks).mockReturnValue(
+      tasks as ReturnType<typeof store.listTodayTasks>,
+    );
     const r = call("tasks:listToday");
-    expect(store.listTodayTasks).toHaveBeenCalledWith(CTX.db, CTX.userId, CTX.now, CTX.tz);
+    expect(store.listTodayTasks).toHaveBeenCalledWith(
+      CTX.db,
+      CTX.userId,
+      CTX.now,
+      CTX.tz,
+    );
     expect(r).toEqual({ ok: true, tasks });
   });
 });
@@ -43,9 +50,16 @@ describe("tasks:listToday", () => {
 describe("events:listToday", () => {
   it("passes ctx fields to listTodayEvents and wraps result", () => {
     const events = [{ id: "e1" }];
-    vi.mocked(store.listTodayEvents).mockReturnValue(events as ReturnType<typeof store.listTodayEvents>);
+    vi.mocked(store.listTodayEvents).mockReturnValue(
+      events as ReturnType<typeof store.listTodayEvents>,
+    );
     const r = call("events:listToday");
-    expect(store.listTodayEvents).toHaveBeenCalledWith(CTX.db, CTX.userId, CTX.now, CTX.tz);
+    expect(store.listTodayEvents).toHaveBeenCalledWith(
+      CTX.db,
+      CTX.userId,
+      CTX.now,
+      CTX.tz,
+    );
     expect(r).toEqual({ ok: true, events });
   });
 });
@@ -54,7 +68,11 @@ describe("inbox:unresolvedCount", () => {
   it("delegates to countUnresolvedInbox and returns count", () => {
     vi.mocked(store.countUnresolvedInbox).mockReturnValue(7);
     const r = call("inbox:unresolvedCount");
-    expect(store.countUnresolvedInbox).toHaveBeenCalledWith(CTX.db, CTX.userId, CTX.now);
+    expect(store.countUnresolvedInbox).toHaveBeenCalledWith(
+      CTX.db,
+      CTX.userId,
+      CTX.now,
+    );
     expect(r).toEqual({ ok: true, count: 7 });
   });
 });

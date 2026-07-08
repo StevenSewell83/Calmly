@@ -18,20 +18,28 @@ export const inboxBridge: InboxBridge = {
     return ipcRenderer.invoke("inbox:list") as Promise<InboxListResult>;
   },
   snooze(id: string, untilMs: number): Promise<InboxSnoozeResult> {
-    return ipcRenderer.invoke("inbox:snooze", id, untilMs) as Promise<
-      InboxSnoozeResult
-    >;
+    return ipcRenderer.invoke(
+      "inbox:snooze",
+      id,
+      untilMs,
+    ) as Promise<InboxSnoozeResult>;
   },
   skip(id: string): Promise<InboxSkipResult> {
     return ipcRenderer.invoke("inbox:skip", id) as Promise<InboxSkipResult>;
   },
   unresolvedCount(): Promise<UnresolvedInboxCountResult> {
-    return ipcRenderer.invoke("inbox:unresolvedCount") as Promise<
-      UnresolvedInboxCountResult
-    >;
+    return ipcRenderer.invoke(
+      "inbox:unresolvedCount",
+    ) as Promise<UnresolvedInboxCountResult>;
   },
-  bulkAdd(texts: string[]): Promise<{ ok: boolean; count: number; error?: string }> {
-    return ipcRenderer.invoke("inbox:bulkAdd", texts) as Promise<{ ok: boolean; count: number; error?: string }>;
+  bulkAdd(
+    texts: string[],
+  ): Promise<{ ok: boolean; count: number; error?: string }> {
+    return ipcRenderer.invoke("inbox:bulkAdd", texts) as Promise<{
+      ok: boolean;
+      count: number;
+      error?: string;
+    }>;
   },
   onFocusRequest(handler: () => void): () => void {
     const wrapped = (): void => handler();

@@ -12,11 +12,22 @@
  * Update with: UPDATE_GOLDEN=1 pnpm --filter desktop test:perf
  */
 import { describe, it, beforeAll, afterAll, expect } from "vitest";
-import { readFileSync, readdirSync, mkdtempSync, rmSync, writeFileSync, existsSync } from "node:fs";
+import {
+  readFileSync,
+  readdirSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+  existsSync,
+} from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { createRequire } from "node:module";
-import { searchAll, searchTasks, searchInbox } from "../../../src/main/search/index";
+import {
+  searchAll,
+  searchTasks,
+  searchInbox,
+} from "../../../src/main/search/index";
 
 const SKIP = !process.env["PERF_TEST"];
 
@@ -66,39 +77,99 @@ function applyMigrations(db: import("better-sqlite3").Database): void {
 }
 
 function loadCorpus() {
-  return JSON.parse(readFileSync(join(FIXTURES_DIR, "corpus.json"), "utf8")) as {
-    tasks: Array<{ id: string; title: string; notes: string; updated_at: number }>;
+  return JSON.parse(
+    readFileSync(join(FIXTURES_DIR, "corpus.json"), "utf8"),
+  ) as {
+    tasks: Array<{
+      id: string;
+      title: string;
+      notes: string;
+      updated_at: number;
+    }>;
     inbox: Array<{ id: string; text: string; updated_at: number }>;
   };
 }
 
-const TEST_QUERIES: Array<{ label: string; query: string; mustContainId?: string; mustBeEmpty?: boolean }> = [
+const TEST_QUERIES: Array<{
+  label: string;
+  query: string;
+  mustContainId?: string;
+  mustBeEmpty?: boolean;
+}> = [
   // Exact match queries
-  { label: "exact: permission slip", query: "permission slip", mustContainId: "t-004" },
-  { label: "exact: pay phone bill", query: "phone bill", mustContainId: "t-049" },
+  {
+    label: "exact: permission slip",
+    query: "permission slip",
+    mustContainId: "t-004",
+  },
+  {
+    label: "exact: pay phone bill",
+    query: "phone bill",
+    mustContainId: "t-049",
+  },
   { label: "exact: buy milk", query: "buy milk", mustContainId: "t-001" },
-  { label: "exact: dentist appointment", query: "dentist appointment", mustContainId: "t-005" },
+  {
+    label: "exact: dentist appointment",
+    query: "dentist appointment",
+    mustContainId: "t-005",
+  },
   { label: "exact: NDIS", query: "NDIS", mustContainId: "t-081" },
   // Stemming / morphological variation
-  { label: "stemming: draft → drafting", query: "draft", mustContainId: "t-026" },
-  { label: "stemming: renew → renewal/renewing", query: "renew", mustContainId: "t-012" },
-  { label: "stemming: organise → organising/organised", query: "organise", mustContainId: "t-050" },
+  {
+    label: "stemming: draft → drafting",
+    query: "draft",
+    mustContainId: "t-026",
+  },
+  {
+    label: "stemming: renew → renewal/renewing",
+    query: "renew",
+    mustContainId: "t-012",
+  },
+  {
+    label: "stemming: organise → organising/organised",
+    query: "organise",
+    mustContainId: "t-050",
+  },
   // Multi-word ranked above single-word hits
-  { label: "multi-word: Q3 review", query: "Q3 review", mustContainId: "t-003" },
-  { label: "multi-word: expense report", query: "expense report", mustContainId: "t-008" },
-  { label: "multi-word: car insurance", query: "car insurance", mustContainId: "t-012" },
-  { label: "multi-word: smoke detector", query: "smoke detector", mustContainId: "t-128" },
+  {
+    label: "multi-word: Q3 review",
+    query: "Q3 review",
+    mustContainId: "t-003",
+  },
+  {
+    label: "multi-word: expense report",
+    query: "expense report",
+    mustContainId: "t-008",
+  },
+  {
+    label: "multi-word: car insurance",
+    query: "car insurance",
+    mustContainId: "t-012",
+  },
+  {
+    label: "multi-word: smoke detector",
+    query: "smoke detector",
+    mustContainId: "t-128",
+  },
   // Prefix wildcard (buildFtsQuery appends *)
   { label: "prefix: medi", query: "medi", mustContainId: "t-039" },
   { label: "prefix: pharma", query: "pharma", mustContainId: "t-025" },
   { label: "prefix: adhd", query: "adhd", mustContainId: "t-028" },
   // Inbox hits
   { label: "inbox: plumber", query: "plumber", mustContainId: "i-010" },
-  { label: "inbox: boarding pass", query: "boarding pass", mustContainId: "i-042" },
+  {
+    label: "inbox: boarding pass",
+    query: "boarding pass",
+    mustContainId: "i-042",
+  },
   { label: "inbox: npm audit", query: "npm audit", mustContainId: "i-110" },
   // Mixed task+inbox — result set must be non-empty
   { label: "mixed: database", query: "database", mustContainId: "t-022" },
-  { label: "mixed: prescription", query: "prescription", mustContainId: "t-025" },
+  {
+    label: "mixed: prescription",
+    query: "prescription",
+    mustContainId: "t-025",
+  },
   { label: "mixed: budget", query: "budget", mustContainId: "t-007" },
   { label: "mixed: invoice", query: "invoice", mustContainId: "t-084" },
   { label: "mixed: flight", query: "flight", mustContainId: "t-034" },
@@ -108,8 +179,16 @@ const TEST_QUERIES: Array<{ label: string; query: string; mustContainId?: string
   { label: "mixed: refactor", query: "refactor", mustContainId: "t-038" },
   // Edge cases
   { label: "edge: empty query returns nothing", query: "", mustBeEmpty: true },
-  { label: "edge: single-char ignored or returned stable", query: "a", mustBeEmpty: false },
-  { label: "edge: special chars stripped", query: 'pay "phone" bill', mustContainId: "t-049" },
+  {
+    label: "edge: single-char ignored or returned stable",
+    query: "a",
+    mustBeEmpty: false,
+  },
+  {
+    label: "edge: special chars stripped",
+    query: 'pay "phone" bill',
+    mustContainId: "t-049",
+  },
 ];
 
 describe.skipIf(SKIP_ALL)("FTS5 accuracy + ranking", () => {
@@ -129,9 +208,12 @@ describe.skipIf(SKIP_ALL)("FTS5 accuracy + ranking", () => {
 
     try {
       db.prepare("INSERT OR IGNORE INTO users (id, email) VALUES (?, ?)").run(
-        userId, "accuracy@test.local",
+        userId,
+        "accuracy@test.local",
       );
-    } catch { /* no users table */ }
+    } catch {
+      /* no users table */
+    }
 
     const corpus = loadCorpus();
     const now = Date.now();
@@ -147,7 +229,14 @@ describe.skipIf(SKIP_ALL)("FTS5 accuracy + ranking", () => {
 
     db.transaction(() => {
       for (const t of corpus.tasks) {
-        insertTask.run(t.id, userId, t.title, t.notes ?? "", t.updated_at, t.updated_at);
+        insertTask.run(
+          t.id,
+          userId,
+          t.title,
+          t.notes ?? "",
+          t.updated_at,
+          t.updated_at,
+        );
       }
       for (const i of corpus.inbox) {
         insertInbox.run(i.id, userId, i.text, i.updated_at, i.updated_at);
@@ -166,8 +255,12 @@ describe.skipIf(SKIP_ALL)("FTS5 accuracy + ranking", () => {
   // ── Corpus loading ─────────────────────────────────────────────────────────
 
   it("corpus row counts are correct", () => {
-    const tasks = (db.prepare("SELECT COUNT(*) as n FROM tasks").get() as { n: number }).n;
-    const inbox = (db.prepare("SELECT COUNT(*) as n FROM inbox_items").get() as { n: number }).n;
+    const tasks = (
+      db.prepare("SELECT COUNT(*) as n FROM tasks").get() as { n: number }
+    ).n;
+    const inbox = (
+      db.prepare("SELECT COUNT(*) as n FROM inbox_items").get() as { n: number }
+    ).n;
     expect(tasks).toBe(200);
     expect(inbox).toBe(200);
   });
@@ -179,7 +272,9 @@ describe.skipIf(SKIP_ALL)("FTS5 accuracy + ranking", () => {
     ({ query, mustContainId }) => {
       const results = searchAll(db, userId, query, 20);
       const ids = results.map((r) => r.id);
-      expect(ids, `"${query}" should include ${mustContainId}`).toContain(mustContainId);
+      expect(ids, `"${query}" should include ${mustContainId}`).toContain(
+        mustContainId,
+      );
     },
   );
 
@@ -227,7 +322,9 @@ describe.skipIf(SKIP_ALL)("FTS5 accuracy + ranking", () => {
     const hasHighlight =
       t004!.titleSegments.some((s) => s.highlighted) ||
       t004!.snippetSegments.some((s) => s.highlighted);
-    expect(hasHighlight, "expected at least one highlighted segment").toBe(true);
+    expect(hasHighlight, "expected at least one highlighted segment").toBe(
+      true,
+    );
   });
 
   it("no raw <mark> or <b> tags appear in segment text", () => {
@@ -243,7 +340,9 @@ describe.skipIf(SKIP_ALL)("FTS5 accuracy + ranking", () => {
     const results = searchAll(db, userId, "tax", 20);
     expect(results.length).toBeGreaterThan(0);
     for (const hit of results) {
-      expect(hit.title.length, `hit ${hit.id} has empty title`).toBeGreaterThan(0);
+      expect(hit.title.length, `hit ${hit.id} has empty title`).toBeGreaterThan(
+        0,
+      );
     }
   });
 
@@ -290,7 +389,9 @@ describe.skipIf(SKIP_ALL)("FTS5 accuracy + ranking", () => {
     const goldenQueries = TEST_QUERIES.filter((q) => q.mustContainId);
     const actual: GoldenEntry[] = goldenQueries.map(({ query }) => ({
       query,
-      topIds: searchAll(db, userId, query, 20).slice(0, 3).map((r) => r.id),
+      topIds: searchAll(db, userId, query, 20)
+        .slice(0, 3)
+        .map((r) => r.id),
     }));
 
     if (UPDATE_GOLDEN || !existsSync(GOLDEN_PATH)) {
@@ -315,14 +416,19 @@ describe.skipIf(SKIP_ALL)("FTS5 accuracy + ranking", () => {
     if (mismatches.length > 0) {
       throw new Error(
         `Golden file mismatch — run UPDATE_GOLDEN=1 pnpm --filter desktop test:perf to update:\n\n` +
-        mismatches.join("\n\n"),
+          mismatches.join("\n\n"),
       );
     }
   });
 });
 
-describe.skipIf(!SKIP_ALL || SKIP)("FTS5 accuracy (binding unavailable)", () => {
-  it("skipped — run `npm rebuild better-sqlite3` then retry", () => {
-    console.warn(`better-sqlite3 binding unavailable: ${bindingError ?? "PERF_TEST not set"}`);
-  });
-});
+describe.skipIf(!SKIP_ALL || SKIP)(
+  "FTS5 accuracy (binding unavailable)",
+  () => {
+    it("skipped — run `npm rebuild better-sqlite3` then retry", () => {
+      console.warn(
+        `better-sqlite3 binding unavailable: ${bindingError ?? "PERF_TEST not set"}`,
+      );
+    });
+  },
+);

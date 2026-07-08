@@ -1,10 +1,23 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CheckCircle2, ArrowLeftRight, Square, AlertCircle, RefreshCw, Sparkles } from "lucide-react";
-import type { FocusSessionItem, PlanTaskItem } from "../../../preload/api-types";
+import {
+  CheckCircle2,
+  ArrowLeftRight,
+  Square,
+  AlertCircle,
+  RefreshCw,
+  Sparkles,
+} from "lucide-react";
+import type {
+  FocusSessionItem,
+  PlanTaskItem,
+} from "../../../preload/api-types";
 import { SwitchTaskPicker } from "./SwitchTaskPicker";
 import { StuckPrompts } from "./StuckPrompts";
 import { ReplanModal } from "../../components/Replan/ReplanModal";
-import { MakeStartableModal, type MakeStartableResult } from "../../components/ai/MakeStartableModal";
+import {
+  MakeStartableModal,
+  type MakeStartableResult,
+} from "../../components/ai/MakeStartableModal";
 
 interface Props {
   session: FocusSessionItem;
@@ -20,7 +33,9 @@ function useElapsed(startedAt: number): string {
   const ref = useRef<NodeJS.Timeout | null>(null);
   useEffect(() => {
     ref.current = setInterval(() => setElapsed(Date.now() - startedAt), 10_000);
-    return () => { if (ref.current) clearInterval(ref.current); };
+    return () => {
+      if (ref.current) clearInterval(ref.current);
+    };
   }, [startedAt]);
   const mins = Math.floor(elapsed / 60_000);
   if (mins < 60) return `${mins}m`;
@@ -35,7 +50,14 @@ type MakeStartableState =
   | { kind: "error"; error: AIError }
   | null;
 
-export function ActiveSession({ session, task, todayTasks, onMarkDone, onEnd, onSwitch }: Props) {
+export function ActiveSession({
+  session,
+  task,
+  todayTasks,
+  onMarkDone,
+  onEnd,
+  onSwitch,
+}: Props) {
   const [switchOpen, setSwitchOpen] = useState(false);
   const [stuckSessionId, setStuckSessionId] = useState<string | null>(null);
   const [replanOpen, setReplanOpen] = useState(false);
@@ -45,28 +67,51 @@ export function ActiveSession({ session, task, todayTasks, onMarkDone, onEnd, on
   const elapsed = useElapsed(session.started_at);
 
   useEffect(() => {
-    void window.calmly.ai.getSettings().then((s) => setAiEnabled(s.enabled)).catch(() => {});
+    void window.calmly.ai
+      .getSettings()
+      .then((s) => setAiEnabled(s.enabled))
+      .catch(() => {});
   }, []);
 
   const handleMakeStartable = useCallback(async () => {
     if (!task) return;
     setMsState({ kind: "loading" });
     try {
-      const r = await window.calmly.ai.run("make_startable", { title: task.title, notes: task.notes ?? "" }, "task", task.id);
+      const r = await window.calmly.ai.run(
+        "make_startable",
+        { title: task.title, notes: task.notes ?? "" },
+        "task",
+        task.id,
+      );
       if (!r.ok) {
         setMsState({ kind: "error", error: r.error });
         return;
       }
-      setMsState({ kind: "done", suggestionId: r.value.suggestionId, suggestion: r.value.result as MakeStartableResult });
+      setMsState({
+        kind: "done",
+        suggestionId: r.value.suggestionId,
+        suggestion: r.value.result as MakeStartableResult,
+      });
     } catch {
       setMsState({ kind: "error", error: { kind: "unknown" } });
     }
   }, [task]);
 
-  const handleApply = useCallback(async (result: MakeStartableResult, suggestionId: string, edited: boolean) => {
-    await window.calmly.ai.recordOutcome(suggestionId, edited ? "edited" : "accepted", edited ? result : undefined);
-    setMsState(null);
-  }, []);
+  const handleApply = useCallback(
+    async (
+      result: MakeStartableResult,
+      suggestionId: string,
+      edited: boolean,
+    ) => {
+      await window.calmly.ai.recordOutcome(
+        suggestionId,
+        edited ? "edited" : "accepted",
+        edited ? result : undefined,
+      );
+      setMsState(null);
+    },
+    [],
+  );
 
   const handleReject = useCallback(async (suggestionId: string) => {
     await window.calmly.ai.recordOutcome(suggestionId, "rejected");
@@ -75,7 +120,11 @@ export function ActiveSession({ session, task, todayTasks, onMarkDone, onEnd, on
 
   const run = async (fn: () => Promise<void>) => {
     setBusy(true);
-    try { await fn(); } finally { setBusy(false); }
+    try {
+      await fn();
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -94,7 +143,9 @@ export function ActiveSession({ session, task, todayTasks, onMarkDone, onEnd, on
           {task?.title ?? "Unknown task"}
         </h1>
         {task?.notes && (
-          <p className="mt-3 text-sm text-stone-400 leading-relaxed line-clamp-3">{task.notes}</p>
+          <p className="mt-3 text-sm text-stone-400 leading-relaxed line-clamp-3">
+            {task.notes}
+          </p>
         )}
       </div>
 
@@ -167,7 +218,10 @@ export function ActiveSession({ session, task, todayTasks, onMarkDone, onEnd, on
         <SwitchTaskPicker
           tasks={todayTasks}
           currentTaskId={session.task_id}
-          onPick={(taskId) => { setSwitchOpen(false); void run(() => onSwitch(taskId)); }}
+          onPick={(taskId) => {
+            setSwitchOpen(false);
+            void run(() => onSwitch(taskId));
+          }}
           onClose={() => setSwitchOpen(false)}
         />
       )}
@@ -190,8 +244,14 @@ export function ActiveSession({ session, task, todayTasks, onMarkDone, onEnd, on
         <StuckPrompts
           stuckSessionId={stuckSessionId}
           onContinue={() => setStuckSessionId(null)}
-          onSwitch={() => { setStuckSessionId(null); setSwitchOpen(true); }}
-          onBreak={() => { setStuckSessionId(null); void run(onEnd); }}
+          onSwitch={() => {
+            setStuckSessionId(null);
+            setSwitchOpen(true);
+          }}
+          onBreak={() => {
+            setStuckSessionId(null);
+            void run(onEnd);
+          }}
           onClose={() => setStuckSessionId(null)}
         />
       )}

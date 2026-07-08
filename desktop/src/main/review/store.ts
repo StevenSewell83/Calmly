@@ -117,7 +117,18 @@ export function carryForward(
                           updated_at = ?, version = ?
           WHERE id = ? AND user_id = ?`,
       ).run(tomorrowMidnight, now, next, taskId, userId);
-      enqueueTaskUpsert(db, taskId, row, { due_at: tomorrowMidnight, scheduled_start: null, scheduled_end: null }, now, next);
+      enqueueTaskUpsert(
+        db,
+        taskId,
+        row,
+        {
+          due_at: tomorrowMidnight,
+          scheduled_start: null,
+          scheduled_end: null,
+        },
+        now,
+        next,
+      );
       count++;
     }
     return count;
@@ -146,7 +157,14 @@ export function dropTasks(
         `UPDATE tasks SET status = 'dropped', updated_at = ?, version = ?
           WHERE id = ? AND user_id = ?`,
       ).run(now, next, taskId, userId);
-      enqueueTaskUpsert(db, taskId, row, { status: TaskStatusSchema.enum.dropped }, now, next);
+      enqueueTaskUpsert(
+        db,
+        taskId,
+        row,
+        { status: TaskStatusSchema.enum.dropped },
+        now,
+        next,
+      );
       count++;
     }
     return count;
@@ -175,7 +193,14 @@ export function markDoneTasks(
         `UPDATE tasks SET status = 'done', updated_at = ?, version = ?
           WHERE id = ? AND user_id = ?`,
       ).run(now, next, taskId, userId);
-      enqueueTaskUpsert(db, taskId, row, { status: TaskStatusSchema.enum.done }, now, next);
+      enqueueTaskUpsert(
+        db,
+        taskId,
+        row,
+        { status: TaskStatusSchema.enum.done },
+        now,
+        next,
+      );
       count++;
     }
     return count;
@@ -202,7 +227,14 @@ export function moveTaskTo(
                       updated_at = ?, version = ?
       WHERE id = ? AND user_id = ?`,
   ).run(targetDayMs, now, next, taskId, userId);
-  enqueueTaskUpsert(db, taskId, row, { due_at: targetDayMs, scheduled_start: null, scheduled_end: null }, now, next);
+  enqueueTaskUpsert(
+    db,
+    taskId,
+    row,
+    { due_at: targetDayMs, scheduled_start: null, scheduled_end: null },
+    now,
+    next,
+  );
   return { ok: true };
 }
 
@@ -253,7 +285,9 @@ export function completeShutdown(
     const existing = db
       .prepare("SELECT settings_json FROM user_settings WHERE user_id = ?")
       .get(userId) as { settings_json: string } | undefined;
-    const settings = existing ? (JSON.parse(existing.settings_json) as Record<string, unknown>) : {};
+    const settings = existing
+      ? (JSON.parse(existing.settings_json) as Record<string, unknown>)
+      : {};
     settings.last_shutdown_date = dateStr;
     db.prepare(
       `UPDATE user_settings SET settings_json = ?, updated_at = ? WHERE user_id = ?`,

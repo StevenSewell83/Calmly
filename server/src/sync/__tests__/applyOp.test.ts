@@ -10,7 +10,10 @@ const stubClient = {
   },
 } as unknown as pg.PoolClient;
 
-const ctx = { client: stubClient, userId: "00000000-0000-0000-0000-000000000001" };
+const ctx = {
+  client: stubClient,
+  userId: "00000000-0000-0000-0000-000000000001",
+};
 
 const validId = "00000000-0000-0000-0000-000000000002";
 const now = Date.now();

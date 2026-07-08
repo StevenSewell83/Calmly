@@ -36,17 +36,31 @@ const call = (ch: string, raw: unknown) => reg.get(ch)!(CTX, raw);
 describe("plan:listForDay", () => {
   it("uses ctx.now as day when no day field provided", () => {
     const plan = { scheduled: [], backlog: [] };
-    vi.mocked(store.listForDay).mockReturnValue(plan as ReturnType<typeof store.listForDay>);
+    vi.mocked(store.listForDay).mockReturnValue(
+      plan as ReturnType<typeof store.listForDay>,
+    );
     const r = call("plan:listForDay", {});
-    expect(store.listForDay).toHaveBeenCalledWith(CTX.db, CTX.userId, CTX.now, CTX.tz);
+    expect(store.listForDay).toHaveBeenCalledWith(
+      CTX.db,
+      CTX.userId,
+      CTX.now,
+      CTX.tz,
+    );
     expect(r).toEqual({ ok: true, plan, day: CTX.now });
   });
 
   it("uses provided numeric day when valid", () => {
     const plan = { scheduled: [], backlog: [] };
-    vi.mocked(store.listForDay).mockReturnValue(plan as ReturnType<typeof store.listForDay>);
+    vi.mocked(store.listForDay).mockReturnValue(
+      plan as ReturnType<typeof store.listForDay>,
+    );
     call("plan:listForDay", { day: 1_234_567 });
-    expect(store.listForDay).toHaveBeenCalledWith(CTX.db, CTX.userId, 1_234_567, CTX.tz);
+    expect(store.listForDay).toHaveBeenCalledWith(
+      CTX.db,
+      CTX.userId,
+      1_234_567,
+      CTX.tz,
+    );
   });
 });
 

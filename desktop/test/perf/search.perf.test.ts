@@ -62,10 +62,26 @@ function percentile(sorted: number[], p: number): number {
 }
 
 const QUERY_TOKENS = [
-  "call", "email", "review", "fix", "phone", "bill", "meeting",
-  "doctor", "report", "project", "deadline", "budget", "invoice",
-  "follow up", "review fix", "phone bill", "urgent important",
-  "call email", "meeting doctor", "deadline budget",
+  "call",
+  "email",
+  "review",
+  "fix",
+  "phone",
+  "bill",
+  "meeting",
+  "doctor",
+  "report",
+  "project",
+  "deadline",
+  "budget",
+  "invoice",
+  "follow up",
+  "review fix",
+  "phone bill",
+  "urgent important",
+  "call email",
+  "meeting doctor",
+  "deadline budget",
 ];
 
 describe.skipIf(SKIP_BINDING)("Search performance (10k rows)", () => {
@@ -74,7 +90,8 @@ describe.skipIf(SKIP_BINDING)("Search performance (10k rows)", () => {
   let userId: string;
 
   beforeAll(() => {
-    if (!DatabaseCtor) throw new Error(`better-sqlite3 binding unavailable: ${bindingError}`);
+    if (!DatabaseCtor)
+      throw new Error(`better-sqlite3 binding unavailable: ${bindingError}`);
     tmpDir = mkdtempSync(join(tmpdir(), "calmly-perf-"));
     db = new DatabaseCtor(join(tmpDir, "perf.db"));
     db.pragma("journal_mode = WAL");
@@ -93,8 +110,12 @@ describe.skipIf(SKIP_BINDING)("Search performance (10k rows)", () => {
   });
 
   it("row counts match seed (determinism check)", () => {
-    const tasks = (db.prepare("SELECT COUNT(*) as n FROM tasks").get() as { n: number }).n;
-    const inbox = (db.prepare("SELECT COUNT(*) as n FROM inbox_items").get() as { n: number }).n;
+    const tasks = (
+      db.prepare("SELECT COUNT(*) as n FROM tasks").get() as { n: number }
+    ).n;
+    const inbox = (
+      db.prepare("SELECT COUNT(*) as n FROM inbox_items").get() as { n: number }
+    ).n;
     expect(tasks).toBe(8000);
     expect(inbox).toBe(2000);
   });
@@ -125,8 +146,13 @@ describe.skipIf(SKIP_BINDING)("Search performance (10k rows)", () => {
   });
 });
 
-describe.skipIf(!SKIP_BINDING || SKIP)("Search performance (binding unavailable)", () => {
-  it("skipped — run `npm rebuild better-sqlite3` then retry", () => {
-    console.warn(`better-sqlite3 binding unavailable: ${bindingError ?? "PERF_TEST not set"}`);
-  });
-});
+describe.skipIf(!SKIP_BINDING || SKIP)(
+  "Search performance (binding unavailable)",
+  () => {
+    it("skipped — run `npm rebuild better-sqlite3` then retry", () => {
+      console.warn(
+        `better-sqlite3 binding unavailable: ${bindingError ?? "PERF_TEST not set"}`,
+      );
+    });
+  },
+);

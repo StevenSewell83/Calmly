@@ -25,7 +25,9 @@ exports.up = (pgm) => {
   // Backfill any existing dev rows so the NOT NULL flip doesn't fail.
   // CAL-04 has not shipped yet so this should be a no-op in production,
   // but local dev DBs might have F-05 round-trip seed data.
-  pgm.sql(`UPDATE calendar_event_imports SET account_id = '' WHERE account_id IS NULL`);
+  pgm.sql(
+    `UPDATE calendar_event_imports SET account_id = '' WHERE account_id IS NULL`,
+  );
   pgm.alterColumn("calendar_event_imports", "account_id", { notNull: true });
   pgm.addConstraint(
     "calendar_event_imports",

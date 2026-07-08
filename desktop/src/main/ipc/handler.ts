@@ -39,7 +39,10 @@ export function authedHandler<R>(
 
   ipcMain.handle(
     channel,
-    async (_e: Electron.IpcMainInvokeEvent, ...args: unknown[]): Promise<R | { ok: false; error: "NotSignedIn" | "InternalError" }> => {
+    async (
+      _e: Electron.IpcMainInvokeEvent,
+      ...args: unknown[]
+    ): Promise<R | { ok: false; error: "NotSignedIn" | "InternalError" }> => {
       const user = getCurrentUser();
       if (!user) return { ok: false, error: "NotSignedIn" };
       const ctx: HandlerCtx = {

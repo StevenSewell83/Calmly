@@ -58,7 +58,8 @@ export async function fetchMicrosoftEvents(
     if (res.status === 410) throw new MicrosoftSyncExpiredError();
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      if (text.includes("SyncStateNotFound")) throw new MicrosoftSyncExpiredError();
+      if (text.includes("SyncStateNotFound"))
+        throw new MicrosoftSyncExpiredError();
       throw new Error(`Microsoft Graph API error: ${res.status}`);
     }
 
@@ -78,7 +79,8 @@ function buildCalendarViewUrl(startMs: number, endMs: number): string {
     startDateTime: new Date(startMs).toISOString(),
     endDateTime: new Date(endMs).toISOString(),
     $top: "250",
-    $select: "id,subject,location,start,end,isAllDay,isCancelled,seriesMasterId",
+    $select:
+      "id,subject,location,start,end,isAllDay,isCancelled,seriesMasterId",
   });
   return `${GRAPH_API}/me/calendarView/delta?${params.toString()}`;
 }

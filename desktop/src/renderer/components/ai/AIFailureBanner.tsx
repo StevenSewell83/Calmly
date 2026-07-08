@@ -10,7 +10,11 @@ interface AIFailureBannerProps {
 
 interface ErrorInfo {
   message: string;
-  primaryAction?: { label: string; action: "retry" | "settings" | "external"; href?: string };
+  primaryAction?: {
+    label: string;
+    action: "retry" | "settings" | "external";
+    href?: string;
+  };
   secondaryAction?: { label: string; action: "dismiss" | "retry" };
 }
 
@@ -25,7 +29,11 @@ function getErrorInfo(error: AIError): ErrorInfo {
     case "quota":
       return {
         message: "Anthropic quota exhausted.",
-        primaryAction: { label: "See your usage ↗", action: "external", href: "https://console.anthropic.com/usage" },
+        primaryAction: {
+          label: "See your usage ↗",
+          action: "external",
+          href: "https://console.anthropic.com/usage",
+        },
         secondaryAction: { label: "Dismiss", action: "dismiss" },
       };
     case "network":
@@ -56,7 +64,11 @@ function getErrorInfo(error: AIError): ErrorInfo {
   }
 }
 
-export function AIFailureBanner({ error, onRetry, onDismiss }: AIFailureBannerProps) {
+export function AIFailureBanner({
+  error,
+  onRetry,
+  onDismiss,
+}: AIFailureBannerProps) {
   const navigate = useNavigate();
   const info = getErrorInfo(error);
 
@@ -64,7 +76,10 @@ export function AIFailureBanner({ error, onRetry, onDismiss }: AIFailureBannerPr
     if (!info.primaryAction) return;
     if (info.primaryAction.action === "retry") onRetry?.();
     else if (info.primaryAction.action === "settings") navigate("/settings/ai");
-    else if (info.primaryAction.action === "external" && info.primaryAction.href) {
+    else if (
+      info.primaryAction.action === "external" &&
+      info.primaryAction.href
+    ) {
       window.open(info.primaryAction.href, "_blank", "noopener noreferrer");
     }
   };
@@ -91,7 +106,9 @@ export function AIFailureBanner({ error, onRetry, onDismiss }: AIFailureBannerPr
               className="inline-flex items-center gap-1 text-xs text-rose-600 hover:text-rose-800 font-medium underline underline-offset-2 transition-colors"
             >
               {info.primaryAction.action === "retry" && <RefreshCw size={10} />}
-              {info.primaryAction.action === "external" && <ExternalLink size={10} />}
+              {info.primaryAction.action === "external" && (
+                <ExternalLink size={10} />
+              )}
               {info.primaryAction.label}
             </button>
           )}

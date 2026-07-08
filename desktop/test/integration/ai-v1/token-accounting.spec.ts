@@ -8,7 +8,9 @@ import { vi, describe, it, expect, beforeEach } from "vitest";
 const mockComplete = vi.fn();
 vi.mock("../../../src/main/ai/providers/anthropic", () => ({
   AnthropicProvider: class {
-    complete(...args: unknown[]) { return mockComplete(...args); }
+    complete(...args: unknown[]) {
+      return mockComplete(...args);
+    }
   },
 }));
 
@@ -27,7 +29,13 @@ vi.mock("../../../src/main/db", () => ({
   })),
 }));
 
-vi.mock("crypto", () => ({ randomUUID: vi.fn().mockReturnValueOnce("sug-1").mockReturnValueOnce("usage-1").mockReturnValue("other-id") }));
+vi.mock("crypto", () => ({
+  randomUUID: vi
+    .fn()
+    .mockReturnValueOnce("sug-1")
+    .mockReturnValueOnce("usage-1")
+    .mockReturnValue("other-id"),
+}));
 
 import { runAI } from "../../../src/main/ai";
 import { readTodayUsage } from "../../../src/main/ai/usage";

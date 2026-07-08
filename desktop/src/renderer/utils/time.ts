@@ -17,7 +17,10 @@ export function formatClock(at: number): string {
  * Coarse relative phrase for past timestamps: "Just now", "5m ago", "2h ago",
  * "3d ago", "1w ago". Future timestamps return "Just now".
  */
-export function formatRelativePast(at: number, now: number = Date.now()): string {
+export function formatRelativePast(
+  at: number,
+  now: number = Date.now(),
+): string {
   const diffMs = Math.max(0, now - at);
   const minutes = Math.round(diffMs / 60_000);
   if (minutes < 1) return "Just now";
@@ -34,11 +37,15 @@ export function formatRelativePast(at: number, now: number = Date.now()): string
  * Coarse relative phrase for future timestamps: "In 5 minutes", "In 2 hours".
  * Past/present timestamps return "Just now".
  */
-export function formatRelativeFuture(at: number, now: number = Date.now()): string {
+export function formatRelativeFuture(
+  at: number,
+  now: number = Date.now(),
+): string {
   const diffMs = at - now;
   if (diffMs <= 0) return "Just now";
   const minutes = Math.round(diffMs / 60_000);
-  if (minutes < 60) return `In ${minutes} ${minutes === 1 ? "minute" : "minutes"}`;
+  if (minutes < 60)
+    return `In ${minutes} ${minutes === 1 ? "minute" : "minutes"}`;
   const hours = Math.round(minutes / 60);
   return `In ${hours} ${hours === 1 ? "hour" : "hours"}`;
 }

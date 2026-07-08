@@ -31,7 +31,10 @@ interface DbRule {
 }
 
 function isImportance(v: unknown): v is ReminderImportance {
-  return typeof v === "string" && (reminderImportances as readonly string[]).includes(v);
+  return (
+    typeof v === "string" &&
+    (reminderImportances as readonly string[]).includes(v)
+  );
 }
 
 function rowFromDb(row: DbRule): ReminderRuleRow {

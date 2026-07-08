@@ -41,7 +41,11 @@ export function BreakdownPanel({
     if (e.key === "Enter") {
       e.preventDefault();
       addRow();
-    } else if (e.key === "Backspace" && subtasks[i] === "" && subtasks.length > 1) {
+    } else if (
+      e.key === "Backspace" &&
+      subtasks[i] === "" &&
+      subtasks.length > 1
+    ) {
       e.preventDefault();
       removeRow(i);
       requestAnimationFrame(() => {

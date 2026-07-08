@@ -9,12 +9,19 @@ import type {
 
 export const remindersBridge: RemindersBridge = {
   get(taskId: string): Promise<RemindersGetResult> {
-    return ipcRenderer.invoke("reminders:get", { taskId }) as Promise<RemindersGetResult>;
+    return ipcRenderer.invoke("reminders:get", {
+      taskId,
+    }) as Promise<RemindersGetResult>;
   },
   upsert(args: RemindersUpsertArgs): Promise<RemindersUpsertResult> {
-    return ipcRenderer.invoke("reminders:upsert", args) as Promise<RemindersUpsertResult>;
+    return ipcRenderer.invoke(
+      "reminders:upsert",
+      args,
+    ) as Promise<RemindersUpsertResult>;
   },
   delete(taskId: string): Promise<RemindersDeleteResult> {
-    return ipcRenderer.invoke("reminders:delete", { taskId }) as Promise<RemindersDeleteResult>;
+    return ipcRenderer.invoke("reminders:delete", {
+      taskId,
+    }) as Promise<RemindersDeleteResult>;
   },
 };

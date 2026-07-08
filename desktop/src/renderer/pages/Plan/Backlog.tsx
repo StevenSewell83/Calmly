@@ -40,7 +40,12 @@ function BacklogRow({ task, onTaskClick }: BacklogRowProps) {
           if (!isDragging) onTaskClick(task);
         }
       }}
-      onClick={(e) => { if (!isDragging) { e.stopPropagation(); onTaskClick(task); } }}
+      onClick={(e) => {
+        if (!isDragging) {
+          e.stopPropagation();
+          onTaskClick(task);
+        }
+      }}
       className={[
         "group flex items-start gap-3 px-4 py-3 rounded-2xl bg-white/70",
         "border border-stone-100 shadow-sm select-none",

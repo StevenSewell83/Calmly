@@ -13,7 +13,7 @@ import { recordUsage, readTodayUsage, estimateTokens } from "../usage";
 
 describe("estimateTokens", () => {
   it("returns ceil(len/4)", () => {
-    expect(estimateTokens("hello")).toBe(2);        // ceil(5/4)
+    expect(estimateTokens("hello")).toBe(2); // ceil(5/4)
     expect(estimateTokens("hello world!")).toBe(3); // ceil(12/4)
     expect(estimateTokens("")).toBe(0);
   });
@@ -41,12 +41,14 @@ describe("recordUsage", () => {
 
   it("records usage without error on normal call", () => {
     mockRun.mockImplementation(() => {});
-    expect(() => recordUsage("user-1", {
-      promptClass: "make_startable",
-      inputTokens: 10,
-      outputTokens: 5,
-      model: "claude-haiku-4-5-20251001",
-    })).not.toThrow();
+    expect(() =>
+      recordUsage("user-1", {
+        promptClass: "make_startable",
+        inputTokens: 10,
+        outputTokens: 5,
+        model: "claude-haiku-4-5-20251001",
+      }),
+    ).not.toThrow();
     expect(mockRun).toHaveBeenCalled();
   });
 });

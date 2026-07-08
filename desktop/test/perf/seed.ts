@@ -1,11 +1,42 @@
 import type Database from "better-sqlite3";
 
 const WORDS = [
-  "call", "email", "review", "fix", "update", "write", "send", "check",
-  "phone", "bill", "meeting", "doctor", "dentist", "report", "project",
-  "deadline", "budget", "invoice", "client", "task", "note", "reminder",
-  "friday", "monday", "morning", "urgent", "important", "follow", "up",
-  "schedule", "cancel", "confirm", "prepare", "submit", "approve", "plan",
+  "call",
+  "email",
+  "review",
+  "fix",
+  "update",
+  "write",
+  "send",
+  "check",
+  "phone",
+  "bill",
+  "meeting",
+  "doctor",
+  "dentist",
+  "report",
+  "project",
+  "deadline",
+  "budget",
+  "invoice",
+  "client",
+  "task",
+  "note",
+  "reminder",
+  "friday",
+  "monday",
+  "morning",
+  "urgent",
+  "important",
+  "follow",
+  "up",
+  "schedule",
+  "cancel",
+  "confirm",
+  "prepare",
+  "submit",
+  "approve",
+  "plan",
 ];
 
 function pick(arr: string[], rng: () => number): string {
@@ -31,10 +62,12 @@ function makeTitle(rng: () => number): string {
 
 function makeNotes(rng: () => number): string {
   const sentences = 1 + Math.floor(rng() * 3);
-  return Array.from({ length: sentences }, () => {
-    const len = 5 + Math.floor(rng() * 10);
-    return Array.from({ length: len }, () => pick(WORDS, rng)).join(" ");
-  }).join(". ") + ".";
+  return (
+    Array.from({ length: sentences }, () => {
+      const len = 5 + Math.floor(rng() * 10);
+      return Array.from({ length: len }, () => pick(WORDS, rng)).join(" ");
+    }).join(". ") + "."
+  );
 }
 
 /** Seeds `taskCount` tasks and `inboxCount` inbox items into `db`. Returns the user_id used. */
@@ -82,13 +115,7 @@ export function seedDatabase(
     }
     for (let i = 0; i < inboxCount; i++) {
       const ts = now - Math.floor(rng() * 30 * 86400 * 1000);
-      insertInbox.run(
-        `inbox-${i}`,
-        userId,
-        makeNotes(rng),
-        ts,
-        ts,
-      );
+      insertInbox.run(`inbox-${i}`, userId, makeNotes(rng), ts, ts);
     }
   })();
 

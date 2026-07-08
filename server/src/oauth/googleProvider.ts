@@ -210,7 +210,10 @@ export async function fetchGoogleUserInfo(args: {
 }): Promise<GoogleUserInfo> {
   const fetchFn = args.fetchImpl ?? fetch;
   const res = await fetchFn(USERINFO_URL, {
-    headers: { authorization: `Bearer ${args.accessToken}`, accept: "application/json" },
+    headers: {
+      authorization: `Bearer ${args.accessToken}`,
+      accept: "application/json",
+    },
   });
   if (!res.ok) {
     throw new OAuthExchangeError(

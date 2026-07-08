@@ -10,7 +10,11 @@ export interface AiSettings {
 
 export type AiTestResult =
   | { ok: true }
-  | { ok: false; error: "NoKey" | "InvalidKey" | "NetworkError" | "InternalError"; message?: string };
+  | {
+      ok: false;
+      error: "NoKey" | "InvalidKey" | "NetworkError" | "InternalError";
+      message?: string;
+    };
 
 const ANTHROPIC_KEY = "ai.anthropic.key";
 
@@ -39,9 +43,9 @@ function writeAiSettings(patch: Partial<AiSettings>): void {
   if (patch.enabled !== undefined) j["ai.enabled"] = patch.enabled;
   if (patch.mode !== undefined) j["ai.mode"] = patch.mode;
   if (row) {
-    db.prepare("UPDATE user_settings SET settings_json = ?, updated_at = unixepoch() * 1000").run(
-      JSON.stringify(j),
-    );
+    db.prepare(
+      "UPDATE user_settings SET settings_json = ?, updated_at = unixepoch() * 1000",
+    ).run(JSON.stringify(j));
   } else {
     db.prepare(
       "INSERT INTO user_settings (settings_json, updated_at) VALUES (?, unixepoch() * 1000)",
@@ -65,9 +69,18 @@ async function testAnthropicKey(key: string): Promise<AiTestResult> {
       }),
     });
     if (res.ok) return { ok: true };
-    if (res.status === 401) return { ok: false, error: "InvalidKey", message: "API key is invalid or revoked" };
+    if (res.status === 401)
+      return {
+        ok: false,
+        error: "InvalidKey",
+        message: "API key is invalid or revoked",
+      };
     const body = await res.text().catch(() => "");
-    return { ok: false, error: "InternalError", message: `HTTP ${res.status}: ${body.slice(0, 120)}` };
+    return {
+      ok: false,
+      error: "InternalError",
+      message: `HTTP ${res.status}: ${body.slice(0, 120)}`,
+    };
   } catch (err) {
     return {
       ok: false,
@@ -88,12 +101,16 @@ export function registerAiSettingsIpc(): void {
   ipcMain.handle(
     "ai:setSettings",
     (_e, patch: unknown): { ok: boolean; error?: string } => {
-      if (!patch || typeof patch !== "object") return { ok: false, error: "BadPayload" };
+      if (!patch || typeof patch !== "object")
+        return { ok: false, error: "BadPayload" };
       try {
         writeAiSettings(patch as Partial<AiSettings>);
         return { ok: true };
       } catch (e) {
-        return { ok: false, error: e instanceof Error ? e.message : "InternalError" };
+        return {
+          ok: false,
+          error: e instanceof Error ? e.message : "InternalError",
+        };
       }
     },
   );
@@ -110,7 +127,8 @@ export function registerAiSettingsIpc(): void {
         secretStore.set(ANTHROPIC_KEY, value.trim());
         return { ok: true };
       } catch (e) {
-        if (e instanceof EncryptionUnavailableError) return { ok: false, error: "EncryptionUnavailable" };
+        if (e instanceof EncryptionUnavailableError)
+          return { ok: false, error: "EncryptionUnavailable" };
         return { ok: false, error: "InternalError" };
       }
     },

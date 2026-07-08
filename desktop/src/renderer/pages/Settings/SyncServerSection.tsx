@@ -48,7 +48,10 @@ export function SyncServerSection() {
     try {
       const res = await fetch(`${v.url}/health`);
       if (!res.ok) {
-        setTest({ kind: "fail", message: `Server returned HTTP ${res.status}` });
+        setTest({
+          kind: "fail",
+          message: `Server returned HTTP ${res.status}`,
+        });
         return;
       }
       let version = "unknown";
@@ -88,7 +91,8 @@ export function SyncServerSection() {
     return (
       <div className="mt-8 bg-amber-50 border border-amber-200 rounded-[1.8rem] p-6">
         <p className="text-sm text-amber-900 font-medium">
-          Switching to the hosted server will sign you out and reset local sync state. Your captured items stay on-device.
+          Switching to the hosted server will sign you out and reset local sync
+          state. Your captured items stay on-device.
         </p>
         <div className="mt-4 flex gap-3">
           <button
@@ -162,9 +166,7 @@ export function SyncServerSection() {
                 : "border-stone-200 focus:border-emerald-400",
             ].join(" ")}
           />
-          {urlError && (
-            <p className="text-xs text-red-500">{urlError}</p>
-          )}
+          {urlError && <p className="text-xs text-red-500">{urlError}</p>}
 
           <div className="flex items-center gap-3">
             <button

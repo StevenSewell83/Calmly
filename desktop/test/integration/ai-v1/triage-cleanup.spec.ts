@@ -10,7 +10,9 @@ import { vi, describe, it, expect, beforeEach } from "vitest";
 const mockComplete = vi.fn();
 vi.mock("../../../src/main/ai/providers/anthropic", () => ({
   AnthropicProvider: class {
-    complete(...args: unknown[]) { return mockComplete(...args); }
+    complete(...args: unknown[]) {
+      return mockComplete(...args);
+    }
   },
 }));
 
@@ -27,7 +29,11 @@ const mockDbRun = vi.fn();
 const mockDbGet = vi.fn();
 vi.mock("../../../src/main/db", () => ({
   getDb: vi.fn(() => ({
-    prepare: vi.fn(() => ({ run: mockDbRun, get: mockDbGet, all: vi.fn(() => []) })),
+    prepare: vi.fn(() => ({
+      run: mockDbRun,
+      get: mockDbGet,
+      all: vi.fn(() => []),
+    })),
   })),
 }));
 
@@ -47,11 +53,17 @@ describe("triage_cleanup integration", () => {
   beforeEach(() => {
     mockComplete.mockReset();
     mockDbRun.mockReset();
-    mockComplete.mockResolvedValue({ ok: true, value: JSON.stringify(cleanResponse) });
+    mockComplete.mockResolvedValue({
+      ok: true,
+      value: JSON.stringify(cleanResponse),
+    });
   });
 
   it("happy path: returns suggestion with all fields", async () => {
-    const r = await runAI({ action: "triage_cleanup", payload: { rawText: "thing about the car" } });
+    const r = await runAI({
+      action: "triage_cleanup",
+      payload: { rawText: "thing about the car" },
+    });
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(r.value.action).toBe("triage_cleanup");
@@ -62,7 +74,10 @@ describe("triage_cleanup integration", () => {
   });
 
   it("records a pending suggestion row", async () => {
-    await runAI({ action: "triage_cleanup", payload: { rawText: "car thing" } });
+    await runAI({
+      action: "triage_cleanup",
+      payload: { rawText: "car thing" },
+    });
     expect(mockDbRun).toHaveBeenCalledWith(
       "suggestion-id-001",
       null,
@@ -74,7 +89,10 @@ describe("triage_cleanup integration", () => {
   });
 
   it("returns suggestionId in response", async () => {
-    const r = await runAI({ action: "triage_cleanup", payload: { rawText: "car" } });
+    const r = await runAI({
+      action: "triage_cleanup",
+      payload: { rawText: "car" },
+    });
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(r.value.suggestionId).toBe("suggestion-id-001");

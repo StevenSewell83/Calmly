@@ -27,23 +27,38 @@ export const focusBridge: FocusBridge = {
     return ipcRenderer.invoke("focus:markDone") as Promise<FocusMarkDoneResult>;
   },
   switch(args: FocusStartArgs): Promise<FocusSwitchResult> {
-    return ipcRenderer.invoke("focus:switch", args) as Promise<FocusSwitchResult>;
+    return ipcRenderer.invoke(
+      "focus:switch",
+      args,
+    ) as Promise<FocusSwitchResult>;
   },
   searchOpenTasks(query: string): Promise<FocusSearchResult> {
-    return ipcRenderer.invoke("focus:searchOpenTasks", query) as Promise<FocusSearchResult>;
+    return ipcRenderer.invoke(
+      "focus:searchOpenTasks",
+      query,
+    ) as Promise<FocusSearchResult>;
   },
   startAdHoc(title: string): Promise<FocusStartAdHocResult> {
-    return ipcRenderer.invoke("focus:startAdHoc", title) as Promise<FocusStartAdHocResult>;
+    return ipcRenderer.invoke(
+      "focus:startAdHoc",
+      title,
+    ) as Promise<FocusStartAdHocResult>;
   },
   onAdHocRequest(handler: () => void): () => void {
     const wrapped = (): void => handler();
     ipcRenderer.on(ADHOC_FOCUS_CHANNEL, wrapped);
-    return () => { ipcRenderer.off(ADHOC_FOCUS_CHANNEL, wrapped); };
+    return () => {
+      ipcRenderer.off(ADHOC_FOCUS_CHANNEL, wrapped);
+    };
   },
   startStuck() {
-    return ipcRenderer.invoke("focus:startStuck") as ReturnType<FocusBridge["startStuck"]>;
+    return ipcRenderer.invoke("focus:startStuck") as ReturnType<
+      FocusBridge["startStuck"]
+    >;
   },
   endStuck(args) {
-    return ipcRenderer.invoke("focus:endStuck", args) as ReturnType<FocusBridge["endStuck"]>;
+    return ipcRenderer.invoke("focus:endStuck", args) as ReturnType<
+      FocusBridge["endStuck"]
+    >;
   },
 };

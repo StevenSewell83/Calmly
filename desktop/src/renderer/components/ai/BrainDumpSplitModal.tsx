@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-  Sparkles, X, CheckCircle2, Loader2, ChevronDown, ChevronUp,
+  Sparkles,
+  X,
+  CheckCircle2,
+  Loader2,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { AIFailureBanner } from "./AIFailureBanner";
 import type { AIError } from "../../../preload/api-types";
@@ -23,7 +28,11 @@ interface BrainDumpSplitModalProps {
 
 const MAX_VISIBLE = 20;
 
-export function BrainDumpSplitModal({ state, onClose, onConfirm }: BrainDumpSplitModalProps) {
+export function BrainDumpSplitModal({
+  state,
+  onClose,
+  onConfirm,
+}: BrainDumpSplitModalProps) {
   const [checkedMap, setCheckedMap] = useState<Record<number, boolean>>({});
   const [editedTitles, setEditedTitles] = useState<Record<number, string>>({});
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
@@ -37,7 +46,9 @@ export function BrainDumpSplitModal({ state, onClose, onConfirm }: BrainDumpSpli
   useEffect(() => {
     if (state.kind === "done") {
       const m: Record<number, boolean> = {};
-      state.items.forEach((_, i) => { m[i] = true; });
+      state.items.forEach((_, i) => {
+        m[i] = true;
+      });
       setCheckedMap(m);
       setEditedTitles({});
       setExpanded({});
@@ -51,7 +62,10 @@ export function BrainDumpSplitModal({ state, onClose, onConfirm }: BrainDumpSpli
     if (!suggestionId) return;
     setConfirming(true);
     const selected: SplitItem[] = items
-      .map((item, i) => ({ title: editedTitles[i] ?? item.title, notes: item.notes }))
+      .map((item, i) => ({
+        title: editedTitles[i] ?? item.title,
+        notes: item.notes,
+      }))
       .filter((_, i) => checkedMap[i]);
     await onConfirm(selected, suggestionId);
     setConfirming(false);
@@ -63,8 +77,10 @@ export function BrainDumpSplitModal({ state, onClose, onConfirm }: BrainDumpSpli
     const onKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
-      if (e.key === "Enter") { e.preventDefault(); void handleConfirm(); }
-      else if (e.key === "Escape") onClose();
+      if (e.key === "Enter") {
+        e.preventDefault();
+        void handleConfirm();
+      } else if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -78,7 +94,10 @@ export function BrainDumpSplitModal({ state, onClose, onConfirm }: BrainDumpSpli
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-stone-900/20 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-stone-900/20 backdrop-blur-sm"
+        onClick={onClose}
+      />
 
       {/* Modal */}
       <div className="relative w-full max-w-lg bg-white rounded-[2rem] shadow-xl border border-stone-100 flex flex-col max-h-[80vh] animate-in fade-in zoom-in-95 duration-200">
@@ -97,7 +116,11 @@ export function BrainDumpSplitModal({ state, onClose, onConfirm }: BrainDumpSpli
                 : "Splitting…"}
             </p>
           </div>
-          <button type="button" onClick={onClose} className="text-stone-400 hover:text-stone-600 transition-colors">
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-stone-400 hover:text-stone-600 transition-colors"
+          >
             <X size={15} />
           </button>
         </div>
@@ -107,7 +130,9 @@ export function BrainDumpSplitModal({ state, onClose, onConfirm }: BrainDumpSpli
           {state.kind === "loading" && (
             <div className="flex items-center gap-3 py-6 justify-center">
               <Loader2 size={15} className="text-emerald-500 animate-spin" />
-              <span className="text-sm text-stone-500">Splitting your brain dump…</span>
+              <span className="text-sm text-stone-500">
+                Splitting your brain dump…
+              </span>
             </div>
           )}
 
@@ -129,7 +154,9 @@ export function BrainDumpSplitModal({ state, onClose, onConfirm }: BrainDumpSpli
                   isExpanded={expanded[i] ?? false}
                   onCheck={(v) => setCheckedMap((m) => ({ ...m, [i]: v }))}
                   onEdit={(v) => setEditedTitles((m) => ({ ...m, [i]: v }))}
-                  onToggleExpand={() => setExpanded((m) => ({ ...m, [i]: !m[i] }))}
+                  onToggleExpand={() =>
+                    setExpanded((m) => ({ ...m, [i]: !m[i] }))
+                  }
                 />
               ))}
               {items.length > MAX_VISIBLE && !showAll && (
@@ -156,9 +183,11 @@ export function BrainDumpSplitModal({ state, onClose, onConfirm }: BrainDumpSpli
               disabled={confirming || checkedCount === 0}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-500 disabled:opacity-40 transition-colors"
             >
-              {confirming
-                ? <Loader2 size={13} className="animate-spin" />
-                : <CheckCircle2 size={13} />}
+              {confirming ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                <CheckCircle2 size={13} />
+              )}
               Create {checkedCount} item{checkedCount !== 1 ? "s" : ""}
             </button>
             <button
@@ -189,15 +218,27 @@ interface RowProps {
   onToggleExpand: () => void;
 }
 
-function SplitItemRow({ item, checked, editedTitle, isExpanded, onCheck, onEdit, onToggleExpand }: RowProps) {
+function SplitItemRow({
+  item,
+  checked,
+  editedTitle,
+  isExpanded,
+  onCheck,
+  onEdit,
+  onToggleExpand,
+}: RowProps) {
   const [editing, setEditing] = useState(false);
   const title = editedTitle ?? item.title;
 
   return (
-    <li className={[
-      "rounded-2xl border px-3 py-2.5 transition-colors",
-      checked ? "border-stone-200 bg-white" : "border-stone-100 bg-stone-50 opacity-50",
-    ].join(" ")}>
+    <li
+      className={[
+        "rounded-2xl border px-3 py-2.5 transition-colors",
+        checked
+          ? "border-stone-200 bg-white"
+          : "border-stone-100 bg-stone-50 opacity-50",
+      ].join(" ")}
+    >
       <div className="flex items-center gap-3">
         <input
           type="checkbox"
@@ -212,7 +253,12 @@ function SplitItemRow({ item, checked, editedTitle, isExpanded, onCheck, onEdit,
             value={title}
             onChange={(e) => onEdit(e.target.value)}
             onBlur={() => setEditing(false)}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); setEditing(false); } }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                setEditing(false);
+              }
+            }}
             className="flex-1 text-sm text-stone-800 bg-transparent outline-none border-b border-emerald-300 pb-0.5"
           />
         ) : (

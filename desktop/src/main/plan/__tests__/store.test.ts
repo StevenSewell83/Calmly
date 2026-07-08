@@ -160,9 +160,7 @@ describe("scheduleTask", () => {
     const r = scheduleTask(fake.db, USER, TASK, 5_000, 7_000, 1_000);
     expect(r).toEqual({ ok: true });
 
-    const update = fake.prepared.find((p) =>
-      p.sql.startsWith("update tasks"),
-    );
+    const update = fake.prepared.find((p) => p.sql.startsWith("update tasks"));
     // (start, end, updated_at, version, id, user_id)
     expect(update?.args).toEqual([5_000, 7_000, 1_000, 1, TASK, USER]);
 
@@ -196,9 +194,7 @@ describe("unscheduleTask", () => {
     const r = unscheduleTask(fake.db, USER, TASK, 9_000);
     expect(r).toEqual({ ok: true });
 
-    const update = fake.prepared.find((p) =>
-      p.sql.startsWith("update tasks"),
-    );
+    const update = fake.prepared.find((p) => p.sql.startsWith("update tasks"));
     expect(update?.args).toEqual([9_000, 4, TASK, USER]);
 
     const op = findOpPayload(fake.prepared, "tasks");
@@ -237,7 +233,13 @@ describe("updateTask", () => {
   it("patches title and enqueues snapshot", () => {
     const fake = makeFakeDb();
     fake.pushGetResult({ ...seededTask, version: 2 });
-    const r = updateTask(fake.db, USER, TASK, { title: "Updated title" }, 5_000);
+    const r = updateTask(
+      fake.db,
+      USER,
+      TASK,
+      { title: "Updated title" },
+      5_000,
+    );
     expect(r).toEqual({ ok: true });
 
     const update = fake.prepared.find((p) => p.sql.startsWith("update tasks"));
@@ -246,12 +248,22 @@ describe("updateTask", () => {
     expect(update?.args[6]).toBe(3); // version bumped
 
     const op = findOpPayload(fake.prepared, "tasks");
-    expect(op).toMatchObject({ id: TASK, title: "Updated title", version: 3, updated_at: 5_000 });
+    expect(op).toMatchObject({
+      id: TASK,
+      title: "Updated title",
+      version: 3,
+      updated_at: 5_000,
+    });
   });
 
   it("clearing scheduledStart also clears scheduledEnd", () => {
     const fake = makeFakeDb();
-    fake.pushGetResult({ ...seededTask, scheduled_start: 9_000, scheduled_end: 10_000, version: 1 });
+    fake.pushGetResult({
+      ...seededTask,
+      scheduled_start: 9_000,
+      scheduled_end: 10_000,
+      version: 1,
+    });
     const r = updateTask(fake.db, USER, TASK, { scheduledStart: null }, 2_000);
     expect(r).toEqual({ ok: true });
 

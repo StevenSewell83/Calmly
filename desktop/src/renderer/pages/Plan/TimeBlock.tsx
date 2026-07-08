@@ -85,7 +85,14 @@ export function TimeBlock({
         onResizeCommit(task.id, newEnd);
       }
     },
-    [previewDuration, initialDuration, startMinutes, endMinutes, onResizeCommit, task.id],
+    [
+      previewDuration,
+      initialDuration,
+      startMinutes,
+      endMinutes,
+      onResizeCommit,
+      task.id,
+    ],
   );
 
   useEffect(() => {

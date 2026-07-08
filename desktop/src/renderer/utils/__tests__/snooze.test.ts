@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { snoozeOneHour, snoozeTomorrowMorning, snoozeNextWeek } from "../snooze";
+import {
+  snoozeOneHour,
+  snoozeTomorrowMorning,
+  snoozeNextWeek,
+} from "../snooze";
 
 // Fixed reference: Friday 2024-03-08 23:30:00 local (just before DST spring-forward)
 // DST in US starts Sun 2024-03-10 at 2am — "tomorrow morning" from Fri evening should be 8am Sat

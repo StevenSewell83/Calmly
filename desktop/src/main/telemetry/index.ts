@@ -79,9 +79,9 @@ export function emitTelemetryEvent(
     );
     // Flush immediately if batch is full.
     const count = (
-      db
-        .prepare("SELECT COUNT(*) AS n FROM telemetry_outbox")
-        .get() as { n: number }
+      db.prepare("SELECT COUNT(*) AS n FROM telemetry_outbox").get() as {
+        n: number;
+      }
     ).n;
     if (count >= BATCH_SIZE) {
       void flushOutbox();
@@ -119,7 +119,10 @@ async function flushOutbox(): Promise<void> {
     anonymous_id: r.anonymous_id,
     session_id: r.session_id,
     timestamp: r.created_at,
-    props: JSON.parse(r.props_json) as Record<string, boolean | number | string>,
+    props: JSON.parse(r.props_json) as Record<
+      string,
+      boolean | number | string
+    >,
   }));
 
   const batch = TelemetryBatchSchema.safeParse({ events });
@@ -127,7 +130,9 @@ async function flushOutbox(): Promise<void> {
     // Invalid rows — drop them so they don't block future flushes.
     const ids = rows.map((r) => r.id);
     const placeholders = ids.map(() => "?").join(",");
-    db.prepare(`DELETE FROM telemetry_outbox WHERE id IN (${placeholders})`).run(...ids);
+    db.prepare(
+      `DELETE FROM telemetry_outbox WHERE id IN (${placeholders})`,
+    ).run(...ids);
     return;
   }
 
@@ -135,7 +140,9 @@ async function flushOutbox(): Promise<void> {
     await flushClient.request("POST", "/telemetry/ingest", batch.data);
     const ids = rows.map((r) => r.id);
     const placeholders = ids.map(() => "?").join(",");
-    db.prepare(`DELETE FROM telemetry_outbox WHERE id IN (${placeholders})`).run(...ids);
+    db.prepare(
+      `DELETE FROM telemetry_outbox WHERE id IN (${placeholders})`,
+    ).run(...ids);
   } catch {
     // Network failure — leave rows in outbox for the next flush.
   }
@@ -147,11 +154,16 @@ export function startTelemetryWorker(apiClient: ApiClient): void {
   flushClient = apiClient;
   sessionId = randomUUID();
   if (flushTimer) return;
-  flushTimer = setInterval(() => { void flushOutbox(); }, FLUSH_INTERVAL_MS);
+  flushTimer = setInterval(() => {
+    void flushOutbox();
+  }, FLUSH_INTERVAL_MS);
 }
 
 export function stopTelemetryWorker(): void {
-  if (flushTimer) { clearInterval(flushTimer); flushTimer = null; }
+  if (flushTimer) {
+    clearInterval(flushTimer);
+    flushTimer = null;
+  }
   flushClient = null;
 }
 

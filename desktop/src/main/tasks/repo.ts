@@ -6,7 +6,10 @@ import { enqueueOp } from "../sync/queue";
 // (loadTask, enqueueTaskUpsert) that were previously duplicated across
 // plan/store.ts and focus/store.ts.
 
-export const SCHEDULABLE_STATUSES: readonly TaskStatus[] = ["open", "in_progress"];
+export const SCHEDULABLE_STATUSES: readonly TaskStatus[] = [
+  "open",
+  "in_progress",
+];
 
 export interface TaskRow {
   title: string;

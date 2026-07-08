@@ -197,11 +197,18 @@ describe("upsertReminderRule", () => {
       fake.db,
       USER,
       TASK,
-      { importance: "important", intervalSeconds: 600, escalationJson: '{"escalate":true}', active: true },
+      {
+        importance: "important",
+        intervalSeconds: 600,
+        escalationJson: '{"escalate":true}',
+        active: true,
+      },
       1_000,
     );
     expect(r.ok).toBe(true);
-    const insert = fake.prepared.find((p) => p.sql.startsWith("insert into reminder_rules"));
+    const insert = fake.prepared.find((p) =>
+      p.sql.startsWith("insert into reminder_rules"),
+    );
     expect(insert).toBeDefined();
     const op = findOpPayload(fake.prepared, "reminder_rules");
     expect(op).toMatchObject({
@@ -224,11 +231,18 @@ describe("upsertReminderRule", () => {
       fake.db,
       USER,
       TASK,
-      { importance: "soft", intervalSeconds: 1800, escalationJson: "{}", active: false },
+      {
+        importance: "soft",
+        intervalSeconds: 1800,
+        escalationJson: "{}",
+        active: false,
+      },
       9_000,
     );
     expect(r).toEqual({ ok: true, id: "r-existing" });
-    const update = fake.prepared.find((p) => p.sql.startsWith("update reminder_rules"));
+    const update = fake.prepared.find((p) =>
+      p.sql.startsWith("update reminder_rules"),
+    );
     expect(update).toBeDefined();
     const op = findOpPayload(fake.prepared, "reminder_rules");
     expect(op).toMatchObject({
@@ -269,7 +283,9 @@ describe("deleteReminderRule", () => {
     fake.pushGet({ id: "r-x", version: 7 });
     const r = deleteReminderRule(fake.db, USER, TASK, 9_000);
     expect(r).toEqual({ ok: true });
-    const update = fake.prepared.find((p) => p.sql.startsWith("update reminder_rules"));
+    const update = fake.prepared.find((p) =>
+      p.sql.startsWith("update reminder_rules"),
+    );
     expect(update?.args).toEqual([9_000, 8, "r-x"]);
     const op = findOpPayload(fake.prepared, "reminder_rules");
     expect(op).toMatchObject({ id: "r-x", updated_at: 9_000 });

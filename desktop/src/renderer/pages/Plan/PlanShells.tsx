@@ -8,7 +8,13 @@ export interface DayPickerProps {
   onToday(): void;
 }
 
-export function DayPicker({ day, today, onPrev, onNext, onToday }: DayPickerProps) {
+export function DayPicker({
+  day,
+  today,
+  onPrev,
+  onNext,
+  onToday,
+}: DayPickerProps) {
   const isToday =
     new Date(day).toDateString() === new Date(today).toDateString();
   return (
@@ -59,4 +65,3 @@ export function LoadingShell() {
     </div>
   );
 }
-

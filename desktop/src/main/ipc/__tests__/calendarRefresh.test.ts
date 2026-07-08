@@ -2,7 +2,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const hoisted = vi.hoisted(() => ({
-  handlers: new Map<string, (e: unknown, ...args: unknown[]) => Promise<unknown>>(),
+  handlers: new Map<
+    string,
+    (e: unknown, ...args: unknown[]) => Promise<unknown>
+  >(),
   signedIn: true,
   mockUser: { id: "user-1", email: "alex@example.com" },
   triggerImport: vi.fn((_id?: string) => Promise.resolve()),
@@ -10,8 +13,10 @@ const hoisted = vi.hoisted(() => ({
 
 vi.mock("electron", () => ({
   ipcMain: {
-    handle: (ch: string, cb: (e: unknown, ...args: unknown[]) => Promise<unknown>) =>
-      hoisted.handlers.set(ch, cb),
+    handle: (
+      ch: string,
+      cb: (e: unknown, ...args: unknown[]) => Promise<unknown>,
+    ) => hoisted.handlers.set(ch, cb),
   },
   BrowserWindow: { getAllWindows: () => [] },
 }));
@@ -42,7 +47,10 @@ import { __resetCalendarIpcForTests, registerCalendarIpc } from "../calendar";
 import type { ApiClient } from "../../net/client";
 
 const noopClient: ApiClient = {
-  request: vi.fn(async () => ({ status: 200, body: {} })) as unknown as ApiClient["request"],
+  request: vi.fn(async () => ({
+    status: 200,
+    body: {},
+  })) as unknown as ApiClient["request"],
 };
 
 function setup(): void {

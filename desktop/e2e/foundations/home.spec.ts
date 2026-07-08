@@ -43,99 +43,96 @@ test.describe("CL-01-e2e · Home screen with seeded tasks/events", () => {
     );
   });
 
-  test(
-    "Now card shows in_progress task, Next card shows upcoming task, Today list shows event",
-    async () => {
-      const userDataDir = await mkdtemp(join(tmpdir(), "calmly-e2e-home-"));
+  test("Now card shows in_progress task, Next card shows upcoming task, Today list shows event", async () => {
+    const userDataDir = await mkdtemp(join(tmpdir(), "calmly-e2e-home-"));
+    try {
+      // ── Phase 1: sign in so the user row exists in SQLite ─────────────
+      const firstLaunch = await launchElectronApp({
+        syncUrl: server!.url,
+        userDataDir,
+      });
+      let userId: string;
       try {
-        // ── Phase 1: sign in so the user row exists in SQLite ─────────────
-        const firstLaunch = await launchElectronApp({
-          syncUrl: server!.url,
-          userDataDir,
+        const result = await signInAsTestUser({
+          app: firstLaunch.electronApp,
+          window: firstLaunch.window,
+          server: server!,
+          email: `home-e2e-${Date.now()}@calmly.test`,
         });
-        let userId: string;
-        try {
-          const result = await signInAsTestUser({
-            app: firstLaunch.electronApp,
-            window: firstLaunch.window,
-            server: server!,
-            email: `home-e2e-${Date.now()}@calmly.test`,
-          });
-          userId = result.user.id;
-        } finally {
-          // Close the app cleanly so it flushes WAL and releases the DB lock.
-          await firstLaunch.dispose();
-        }
-
-        // ── Phase 2: seed the SQLite directly now that the lock is released ─
-        const now = Date.now();
-        const todayInProgress = "Write the weekly retrospective";
-        const todayNext = "Review pull requests";
-        const todayEvent = "Team standup";
-
-        // In 30 minutes — lands in the "Next" slot (future, today)
-        const nextDueAt = now + 30 * 60_000;
-        // Event: +1 hour to +2 hours — within today's window
-        const eventStartAt = now + 60 * 60_000;
-        const eventEndAt = now + 2 * 60 * 60_000;
-
-        seedDesktopDb(userDataDir, {
-          tasks: [
-            {
-              userId,
-              title: todayInProgress,
-              status: "in_progress",
-            },
-            {
-              userId,
-              title: todayNext,
-              status: "open",
-              dueAt: nextDueAt,
-            },
-          ],
-          events: [
-            {
-              userId,
-              title: todayEvent,
-              startAt: eventStartAt,
-              endAt: eventEndAt,
-            },
-          ],
-        });
-
-        // ── Phase 3: relaunch with the same userDataDir and assert ─────────
-        const secondLaunch = await launchElectronApp({
-          syncUrl: server!.url,
-          userDataDir,
-        });
-        try {
-          // App boots, finds the persisted session cookie, skips SignIn,
-          // and navigates directly to Home.
-          const win = secondLaunch.window;
-          await expect(win.getByText("Peace, friend.")).toBeVisible({
-            timeout: 20_000,
-          });
-
-          // Now card: in_progress task title visible inside the Now article
-          const nowCard = win.getByRole("article", { name: "Now" });
-          await expect(nowCard).toBeVisible({ timeout: 10_000 });
-          await expect(nowCard.getByText(todayInProgress)).toBeVisible();
-
-          // Next card: upcoming task title visible inside the Next article
-          const nextCard = win.getByRole("article", { name: "Next" });
-          await expect(nextCard).toBeVisible({ timeout: 5_000 });
-          await expect(nextCard.getByText(todayNext)).toBeVisible();
-
-          // Today list: event title visible somewhere on the page
-          await expect(win.getByText(todayEvent)).toBeVisible({
-            timeout: 5_000,
-          });
-        } finally {
-          await secondLaunch.dispose();
-        }
+        userId = result.user.id;
       } finally {
-        await rm(userDataDir, { recursive: true, force: true }).catch(() => {});
+        // Close the app cleanly so it flushes WAL and releases the DB lock.
+        await firstLaunch.dispose();
       }
-    },
-  );
+
+      // ── Phase 2: seed the SQLite directly now that the lock is released ─
+      const now = Date.now();
+      const todayInProgress = "Write the weekly retrospective";
+      const todayNext = "Review pull requests";
+      const todayEvent = "Team standup";
+
+      // In 30 minutes — lands in the "Next" slot (future, today)
+      const nextDueAt = now + 30 * 60_000;
+      // Event: +1 hour to +2 hours — within today's window
+      const eventStartAt = now + 60 * 60_000;
+      const eventEndAt = now + 2 * 60 * 60_000;
+
+      seedDesktopDb(userDataDir, {
+        tasks: [
+          {
+            userId,
+            title: todayInProgress,
+            status: "in_progress",
+          },
+          {
+            userId,
+            title: todayNext,
+            status: "open",
+            dueAt: nextDueAt,
+          },
+        ],
+        events: [
+          {
+            userId,
+            title: todayEvent,
+            startAt: eventStartAt,
+            endAt: eventEndAt,
+          },
+        ],
+      });
+
+      // ── Phase 3: relaunch with the same userDataDir and assert ─────────
+      const secondLaunch = await launchElectronApp({
+        syncUrl: server!.url,
+        userDataDir,
+      });
+      try {
+        // App boots, finds the persisted session cookie, skips SignIn,
+        // and navigates directly to Home.
+        const win = secondLaunch.window;
+        await expect(win.getByText("Peace, friend.")).toBeVisible({
+          timeout: 20_000,
+        });
+
+        // Now card: in_progress task title visible inside the Now article
+        const nowCard = win.getByRole("article", { name: "Now" });
+        await expect(nowCard).toBeVisible({ timeout: 10_000 });
+        await expect(nowCard.getByText(todayInProgress)).toBeVisible();
+
+        // Next card: upcoming task title visible inside the Next article
+        const nextCard = win.getByRole("article", { name: "Next" });
+        await expect(nextCard).toBeVisible({ timeout: 5_000 });
+        await expect(nextCard.getByText(todayNext)).toBeVisible();
+
+        // Today list: event title visible somewhere on the page
+        await expect(win.getByText(todayEvent)).toBeVisible({
+          timeout: 5_000,
+        });
+      } finally {
+        await secondLaunch.dispose();
+      }
+    } finally {
+      await rm(userDataDir, { recursive: true, force: true }).catch(() => {});
+    }
+  });
 });

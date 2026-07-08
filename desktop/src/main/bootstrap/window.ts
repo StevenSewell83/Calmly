@@ -2,7 +2,10 @@ import { BrowserWindow, shell } from "electron";
 import { join } from "node:path";
 import windowStateKeeper from "electron-window-state";
 
-export function createMainWindow(mainDir: string, isDev: boolean): BrowserWindow {
+export function createMainWindow(
+  mainDir: string,
+  isDev: boolean,
+): BrowserWindow {
   const mainWindowState = windowStateKeeper({
     defaultWidth: 1100,
     defaultHeight: 720,

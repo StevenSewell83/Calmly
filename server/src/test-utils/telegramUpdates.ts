@@ -68,22 +68,31 @@ function messageBase(opts: BaseUpdateOpts): MessageBaseFields {
   };
 }
 
-export function makeBaseUpdate(opts: BaseUpdateOpts = {}): Pick<Update, "update_id"> {
+export function makeBaseUpdate(
+  opts: BaseUpdateOpts = {},
+): Pick<Update, "update_id"> {
   return { update_id: opts.update_id ?? nextUpdateId() };
 }
 
-export function makeTextUpdate(text: string, opts: BaseUpdateOpts = {}): Update {
-  const message: Message.TextMessage & { chat: Chat.PrivateChat; from: User } = {
-    ...messageBase(opts),
-    text,
-  };
+export function makeTextUpdate(
+  text: string,
+  opts: BaseUpdateOpts = {},
+): Update {
+  const message: Message.TextMessage & { chat: Chat.PrivateChat; from: User } =
+    {
+      ...messageBase(opts),
+      text,
+    };
   return {
     update_id: opts.update_id ?? nextUpdateId(),
     message,
   };
 }
 
-export function makeStartUpdate(code?: string, opts: BaseUpdateOpts = {}): Update {
+export function makeStartUpdate(
+  code?: string,
+  opts: BaseUpdateOpts = {},
+): Update {
   const text = code ? `/start ${code}` : "/start";
   return makeTextUpdate(text, opts);
 }
@@ -164,7 +173,8 @@ export function makeCallbackQueryUpdate(
   const cq: CallbackQuery = {
     id: opts.callbackQueryId ?? `cq-${nextMessageId()}`,
     from: makeUser(opts),
-    chat_instance: opts.chatInstance ?? `chat-instance-${opts.chat_id ?? DEFAULT_CHAT_ID}`,
+    chat_instance:
+      opts.chatInstance ?? `chat-instance-${opts.chat_id ?? DEFAULT_CHAT_ID}`,
     data: callback_data,
   };
   return {

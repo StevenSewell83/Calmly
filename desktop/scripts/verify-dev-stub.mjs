@@ -19,7 +19,11 @@ const app = await electron.launch({
     `--user-data-dir=${userDataDir}`,
     ...(process.platform === "linux" ? ["--no-sandbox"] : []),
   ],
-  env: { ...process.env, CALMLY_DEV_AUTH: "stub", CALMLY_DISABLE_DEVTOOLS: "1" },
+  env: {
+    ...process.env,
+    CALMLY_DEV_AUTH: "stub",
+    CALMLY_DISABLE_DEVTOOLS: "1",
+  },
 });
 
 let stubLogSeen = false;
@@ -28,9 +32,11 @@ app.process().stdout?.on("data", (d) => {
   if (s.includes("DEV STUB ENABLED")) stubLogSeen = true;
   process.stdout.write(`[main] ${s}`);
 });
-app.process().stderr?.on("data", (d) =>
-  process.stderr.write(`[main:err] ${d.toString()}`),
-);
+app
+  .process()
+  .stderr?.on("data", (d) =>
+    process.stderr.write(`[main:err] ${d.toString()}`),
+  );
 
 const win = await app.firstWindow();
 await win.waitForLoadState("domcontentloaded");
@@ -44,7 +50,9 @@ await app.close().catch(() => {});
 await rm(userDataDir, { recursive: true, force: true }).catch(() => {});
 
 if (!ok) {
-  console.error("FAIL: home screen ('Peace, friend.') did not render within 15s");
+  console.error(
+    "FAIL: home screen ('Peace, friend.') did not render within 15s",
+  );
   process.exit(1);
 }
 if (!stubLogSeen) {

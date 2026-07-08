@@ -117,7 +117,9 @@ function HomeContent({
           label: "Capture a thought",
           onClick: () =>
             document
-              .querySelector<HTMLInputElement>('[aria-label="Capture a thought"]')
+              .querySelector<HTMLInputElement>(
+                '[aria-label="Capture a thought"]',
+              )
               ?.focus(),
         }}
       />
@@ -163,7 +165,10 @@ function HomeContent({
             name="home-nothing-scheduled"
             title="Nothing on the schedule."
             body="Pick something from your backlog or capture a new task."
-            primaryAction={{ label: "Go to Plan", onClick: () => navigate("/plan") }}
+            primaryAction={{
+              label: "Go to Plan",
+              onClick: () => navigate("/plan"),
+            }}
           />
         ) : (
           <TodayList items={todayItems} />

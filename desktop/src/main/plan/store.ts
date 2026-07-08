@@ -92,11 +92,7 @@ export function scheduleTask(
   endMs: number,
   now: number,
 ): ScheduleResult {
-  if (
-    !Number.isFinite(startMs) ||
-    !Number.isFinite(endMs) ||
-    endMs < startMs
-  ) {
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs < startMs) {
     return { ok: false, error: "InvalidArgs" };
   }
   try {
@@ -153,7 +149,10 @@ export function updateTask(
   args: UpdateTaskArgs,
   now: number,
 ): UpdateTaskResult {
-  if (args.title !== undefined && (typeof args.title !== "string" || args.title.trim() === "")) {
+  if (
+    args.title !== undefined &&
+    (typeof args.title !== "string" || args.title.trim() === "")
+  ) {
     return { ok: false, error: "InvalidArgs" };
   }
   try {
@@ -166,7 +165,10 @@ export function updateTask(
       const notes = args.notes !== undefined ? args.notes : row.notes;
       const dueAt = args.dueAt !== undefined ? args.dueAt : row.due_at;
       // Clearing scheduledStart also clears scheduledEnd.
-      const scheduledStart = args.scheduledStart !== undefined ? args.scheduledStart : row.scheduled_start;
+      const scheduledStart =
+        args.scheduledStart !== undefined
+          ? args.scheduledStart
+          : row.scheduled_start;
       const scheduledEnd =
         args.scheduledStart === null
           ? null
@@ -179,11 +181,30 @@ export function updateTask(
                 scheduled_start = ?, scheduled_end = ?,
                 updated_at = ?, version = ?
           WHERE id = ? AND user_id = ?`,
-      ).run(title, notes, dueAt, scheduledStart, scheduledEnd, now, nextVersion, taskId, userId);
+      ).run(
+        title,
+        notes,
+        dueAt,
+        scheduledStart,
+        scheduledEnd,
+        now,
+        nextVersion,
+        taskId,
+        userId,
+      );
       enqueueTaskUpsert(
-        db, taskId, row,
-        { title, notes, due_at: dueAt, scheduled_start: scheduledStart, scheduled_end: scheduledEnd },
-        now, nextVersion,
+        db,
+        taskId,
+        row,
+        {
+          title,
+          notes,
+          due_at: dueAt,
+          scheduled_start: scheduledStart,
+          scheduled_end: scheduledEnd,
+        },
+        now,
+        nextVersion,
       );
       found = true;
     });
@@ -217,7 +238,11 @@ export function moveToDate(
       const applyDay = (ms: number | null): number | null => {
         if (ms === null) return null;
         const d = new Date(ms);
-        d.setFullYear(target.getFullYear(), target.getMonth(), target.getDate());
+        d.setFullYear(
+          target.getFullYear(),
+          target.getMonth(),
+          target.getDate(),
+        );
         return d.getTime();
       };
       const nextVersion = row.version + 1;
@@ -226,8 +251,27 @@ export function moveToDate(
       const scheduledEnd = applyDay(row.scheduled_end);
       db.prepare(
         `UPDATE tasks SET due_at=?, scheduled_start=?, scheduled_end=?, updated_at=?, version=? WHERE id=? AND user_id=?`,
-      ).run(dueAt, scheduledStart, scheduledEnd, now, nextVersion, taskId, userId);
-      enqueueTaskUpsert(db, taskId, row, { due_at: dueAt, scheduled_start: scheduledStart, scheduled_end: scheduledEnd }, now, nextVersion);
+      ).run(
+        dueAt,
+        scheduledStart,
+        scheduledEnd,
+        now,
+        nextVersion,
+        taskId,
+        userId,
+      );
+      enqueueTaskUpsert(
+        db,
+        taskId,
+        row,
+        {
+          due_at: dueAt,
+          scheduled_start: scheduledStart,
+          scheduled_end: scheduledEnd,
+        },
+        now,
+        nextVersion,
+      );
       found = true;
     });
     tx();
@@ -249,7 +293,8 @@ export function pushBy(
   offsetMs: number,
   now: number,
 ): PushByResult {
-  if (!Number.isFinite(offsetMs) || offsetMs <= 0) return { ok: false, error: "InvalidArgs" };
+  if (!Number.isFinite(offsetMs) || offsetMs <= 0)
+    return { ok: false, error: "InvalidArgs" };
   try {
     let found = false;
     const tx = db.transaction(() => {
@@ -257,11 +302,19 @@ export function pushBy(
       if (!row || row.scheduled_start === null) return;
       const nextVersion = row.version + 1;
       const scheduledStart = row.scheduled_start + offsetMs;
-      const scheduledEnd = row.scheduled_end !== null ? row.scheduled_end + offsetMs : null;
+      const scheduledEnd =
+        row.scheduled_end !== null ? row.scheduled_end + offsetMs : null;
       db.prepare(
         `UPDATE tasks SET scheduled_start=?, scheduled_end=?, updated_at=?, version=? WHERE id=? AND user_id=?`,
       ).run(scheduledStart, scheduledEnd, now, nextVersion, taskId, userId);
-      enqueueTaskUpsert(db, taskId, row, { scheduled_start: scheduledStart, scheduled_end: scheduledEnd }, now, nextVersion);
+      enqueueTaskUpsert(
+        db,
+        taskId,
+        row,
+        { scheduled_start: scheduledStart, scheduled_end: scheduledEnd },
+        now,
+        nextVersion,
+      );
       found = true;
     });
     tx();
@@ -291,7 +344,14 @@ export function dropFromToday(
       db.prepare(
         `UPDATE tasks SET due_at=NULL, scheduled_start=NULL, scheduled_end=NULL, updated_at=?, version=? WHERE id=? AND user_id=?`,
       ).run(now, nextVersion, taskId, userId);
-      enqueueTaskUpsert(db, taskId, row, { due_at: null, scheduled_start: null, scheduled_end: null }, now, nextVersion);
+      enqueueTaskUpsert(
+        db,
+        taskId,
+        row,
+        { due_at: null, scheduled_start: null, scheduled_end: null },
+        now,
+        nextVersion,
+      );
       found = true;
     });
     tx();

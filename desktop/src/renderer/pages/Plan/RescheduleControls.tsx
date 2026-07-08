@@ -31,13 +31,17 @@ export function RescheduleControls({ task, onSaved }: Props) {
   const handleMoveToDate = () => {
     if (!targetDate) return;
     const targetDayMs = new Date(targetDate + "T12:00:00").getTime();
-    void run(() => window.calmly.plan.moveToDate({ taskId: task.id, targetDayMs }));
+    void run(() =>
+      window.calmly.plan.moveToDate({ taskId: task.id, targetDayMs }),
+    );
     setTargetDate("");
   };
 
   return (
     <section className="space-y-3 pt-2 border-t border-stone-100">
-      <p className="text-xs font-medium text-stone-500 uppercase tracking-wide">Reschedule</p>
+      <p className="text-xs font-medium text-stone-500 uppercase tracking-wide">
+        Reschedule
+      </p>
 
       {/* Move to date */}
       <div className="flex gap-2 items-center">
@@ -65,7 +69,11 @@ export function RescheduleControls({ task, onSaved }: Props) {
           {PUSH_PRESETS.map(({ label, ms }) => (
             <button
               key={label}
-              onClick={() => void run(() => window.calmly.plan.pushBy({ taskId: task.id, offsetMs: ms }))}
+              onClick={() =>
+                void run(() =>
+                  window.calmly.plan.pushBy({ taskId: task.id, offsetMs: ms }),
+                )
+              }
               disabled={busy}
               className="text-xs px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 disabled:opacity-40"
             >
@@ -85,7 +93,9 @@ export function RescheduleControls({ task, onSaved }: Props) {
           <Inbox className="w-3 h-3" /> Backlog
         </button>
         <button
-          onClick={() => void run(() => window.calmly.plan.dropFromToday(task.id))}
+          onClick={() =>
+            void run(() => window.calmly.plan.dropFromToday(task.id))
+          }
           disabled={busy}
           className="flex items-center gap-1 text-xs px-3 py-1 rounded-lg text-rose-600 bg-rose-50 hover:bg-rose-100 disabled:opacity-40"
         >

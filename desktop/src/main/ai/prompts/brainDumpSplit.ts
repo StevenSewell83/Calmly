@@ -6,12 +6,14 @@ export const BrainDumpSplitInputSchema = z.object({
 });
 
 export const BrainDumpSplitOutputSchema = z.object({
-  tasks: z.array(
-    z.object({
-      title: z.string(),
-      notes: z.string().optional(),
-    }),
-  ).max(20),
+  tasks: z
+    .array(
+      z.object({
+        title: z.string(),
+        notes: z.string().optional(),
+      }),
+    )
+    .max(20),
 });
 
 export type BrainDumpSplitInput = z.infer<typeof BrainDumpSplitInputSchema>;

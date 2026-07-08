@@ -11,12 +11,9 @@ export interface PlanData {
 }
 
 export function usePlanForDay(day: number): UseResourceReturn<PlanData> {
-  return useResource<PlanData>(
-    async () => {
-      const r = await window.calmly.plan.listForDay(day);
-      if (!r.ok) return { kind: "signed-out" };
-      return { kind: "ok", data: { plan: r.plan, day: r.day } };
-    },
-    [day],
-  );
+  return useResource<PlanData>(async () => {
+    const r = await window.calmly.plan.listForDay(day);
+    if (!r.ok) return { kind: "signed-out" };
+    return { kind: "ok", data: { plan: r.plan, day: r.day } };
+  }, [day]);
 }

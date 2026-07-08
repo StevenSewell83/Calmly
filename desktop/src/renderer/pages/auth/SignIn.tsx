@@ -73,9 +73,14 @@ export function SignIn() {
 
   const [activeServerUrl, setActiveServerUrl] = useState<string | null>(null);
   useEffect(() => {
-    window.calmly.settings.getSyncServerUrl().then((url) => {
-      setActiveServerUrl(url !== DEFAULT_SERVER_URL ? url : null);
-    }).catch(() => { /* ignore */ });
+    window.calmly.settings
+      .getSyncServerUrl()
+      .then((url) => {
+        setActiveServerUrl(url !== DEFAULT_SERVER_URL ? url : null);
+      })
+      .catch(() => {
+        /* ignore */
+      });
   }, []);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {

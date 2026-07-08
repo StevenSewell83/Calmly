@@ -87,12 +87,23 @@ export function registerConnectRoutes(
         });
       }
       if (!q.code) {
-        return renderOAuthError({ reply, code: "missing_code", description: null });
+        return renderOAuthError({
+          reply,
+          code: "missing_code",
+          description: null,
+        });
       }
 
-      const consumed = await consumeOauthState(app.pool, { state: q.state, provider });
+      const consumed = await consumeOauthState(app.pool, {
+        state: q.state,
+        provider,
+      });
       if (!consumed) {
-        return renderOAuthError({ reply, code: "state_mismatch", description: null });
+        return renderOAuthError({
+          reply,
+          code: "state_mismatch",
+          description: null,
+        });
       }
 
       let exchange;
@@ -107,7 +118,10 @@ export function registerConnectRoutes(
         });
       } catch (err) {
         req.log.warn(
-          { status: err instanceof OAuthExchangeError ? err.status : null, provider },
+          {
+            status: err instanceof OAuthExchangeError ? err.status : null,
+            provider,
+          },
           "oauth token exchange failed",
         );
         return renderOAuthError({
@@ -125,10 +139,17 @@ export function registerConnectRoutes(
         });
       } catch (err) {
         req.log.warn(
-          { status: err instanceof OAuthExchangeError ? err.status : null, provider },
+          {
+            status: err instanceof OAuthExchangeError ? err.status : null,
+            provider,
+          },
           "oauth userinfo failed",
         );
-        return renderOAuthError({ reply, code: "userinfo_failed", description: null });
+        return renderOAuthError({
+          reply,
+          code: "userinfo_failed",
+          description: null,
+        });
       }
 
       const account = await upsertCalendarAccount(app.pool, {

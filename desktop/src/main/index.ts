@@ -15,14 +15,21 @@ import {
   electronLogTransport,
 } from "./logging/electron-log-transport";
 import { secretStoreSelfTest } from "./security/secretStore";
-import { registerCaptureHotkey, registerAdHocFocusHotkey, unregisterAllShortcuts } from "./shortcuts";
+import {
+  registerCaptureHotkey,
+  registerAdHocFocusHotkey,
+  unregisterAllShortcuts,
+} from "./shortcuts";
 import { createMainWindow } from "./bootstrap/window";
 import { createDeepLinkBootstrap } from "./bootstrap/deeplinks";
 import { registerAllIpc } from "./bootstrap/ipc-register";
 import { createSyncBootstrap } from "./bootstrap/sync-bootstrap";
 import { runSearchBackfill } from "./search/backfill";
 import { createCalendarRefresh } from "./calendar/refresh";
-import { startCalendarImportWorker, stopCalendarImportWorker } from "./calendar/importWorker";
+import {
+  startCalendarImportWorker,
+  stopCalendarImportWorker,
+} from "./calendar/importWorker";
 import { startTelemetryWorker, stopTelemetryWorker } from "./telemetry";
 import { initCrashReporting } from "./crash";
 
@@ -100,14 +107,16 @@ if (!gotInstanceLock) {
       apiClient,
       openExternal: (url: string) => shell.openExternal(url),
       subscribeDeepLink: deepLinks.onCalendarOAuth,
-      log: (msg, fields) => logger.info(`[calmly:calendar:google] ${msg}`, fields ?? {}),
+      log: (msg, fields) =>
+        logger.info(`[calmly:calendar:google] ${msg}`, fields ?? {}),
     });
     const connectMicrosoft = createConnectMicrosoft({
       apiBaseUrl: API_BASE_URL,
       apiClient,
       openExternal: (url: string) => shell.openExternal(url),
       subscribeDeepLink: deepLinks.onCalendarOAuth,
-      log: (msg, fields) => logger.info(`[calmly:calendar:microsoft] ${msg}`, fields ?? {}),
+      log: (msg, fields) =>
+        logger.info(`[calmly:calendar:microsoft] ${msg}`, fields ?? {}),
     });
     registerAllIpc(orchestrator, activeSyncLoop, logger, {
       apiClient,
@@ -118,11 +127,13 @@ if (!gotInstanceLock) {
 
     const calendarRefresh = createCalendarRefresh({
       apiClient,
-      log: (msg, fields) => logger.info(`[calmly:calendar:refresh] ${msg}`, fields ?? {}),
+      log: (msg, fields) =>
+        logger.info(`[calmly:calendar:refresh] ${msg}`, fields ?? {}),
     });
     startCalendarImportWorker({
       calendarRefresh,
-      log: (msg, fields) => logger.info(`[calmly:calendar:import] ${msg}`, fields ?? {}),
+      log: (msg, fields) =>
+        logger.info(`[calmly:calendar:import] ${msg}`, fields ?? {}),
     });
 
     startTelemetryWorker(apiClient);

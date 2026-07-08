@@ -1,4 +1,8 @@
-import type { FocusSource, InboxSource, ReminderImportance } from "@calmly/shared";
+import type {
+  FocusSource,
+  InboxSource,
+  ReminderImportance,
+} from "@calmly/shared";
 import type {
   EventTodayRow,
   FocusSessionRow,
@@ -138,7 +142,10 @@ export type InboxSnoozeResult =
 
 export type InboxSkipResult =
   | { ok: true }
-  | { ok: false; error: "NotSignedIn" | "NotFound" | "InvalidArgs" | "InternalError" };
+  | {
+      ok: false;
+      error: "NotSignedIn" | "NotFound" | "InvalidArgs" | "InternalError";
+    };
 
 export interface InboxBridge {
   // Persists raw text to the local inbox and queues the upsert for sync.
@@ -156,7 +163,9 @@ export interface InboxBridge {
   // InboxTriageCard (hide at 0, show count + CTA otherwise).
   unresolvedCount(): Promise<UnresolvedInboxCountResult>;
   // Bulk-insert multiple items with source='ai-split'. Used by Brain-dump split.
-  bulkAdd(texts: string[]): Promise<{ ok: boolean; count: number; error?: string }>;
+  bulkAdd(
+    texts: string[],
+  ): Promise<{ ok: boolean; count: number; error?: string }>;
   // Subscribe to global-hotkey focus pings from main. Returns an unsubscribe
   // so React effects can clean up across strict-mode double-mounts.
   onFocusRequest(handler: () => void): () => void;
@@ -232,7 +241,15 @@ export interface TriageResolveAsEventArgs {
 
 export type TriageBreakdownResult =
   | { ok: true; parentId: string; subtaskIds: string[] }
-  | { ok: false; error: "NotSignedIn" | "NotFound" | "AlreadyResolved" | "InvalidArgs" | "InternalError" };
+  | {
+      ok: false;
+      error:
+        | "NotSignedIn"
+        | "NotFound"
+        | "AlreadyResolved"
+        | "InvalidArgs"
+        | "InternalError";
+    };
 
 export interface TriageResolveWithBreakdownArgs {
   inboxId: string;
@@ -242,12 +259,16 @@ export interface TriageResolveWithBreakdownArgs {
 }
 
 export interface TriageBridge {
-  resolveAsTask(args: TriageResolveAsTaskArgs): Promise<TriageResolveTaskResult>;
+  resolveAsTask(
+    args: TriageResolveAsTaskArgs,
+  ): Promise<TriageResolveTaskResult>;
   resolveAsEvent(
     args: TriageResolveAsEventArgs,
   ): Promise<TriageResolveEventResult>;
   discard(inboxId: string): Promise<TriageDiscardResult>;
-  resolveWithBreakdown(args: TriageResolveWithBreakdownArgs): Promise<TriageBreakdownResult>;
+  resolveWithBreakdown(
+    args: TriageResolveWithBreakdownArgs,
+  ): Promise<TriageBreakdownResult>;
 }
 
 // Plan view — wire shape re-exported from ../main/wireTypes. Two
@@ -269,11 +290,7 @@ export type PlanScheduleResult =
   | { ok: true }
   | {
       ok: false;
-      error:
-        | "NotSignedIn"
-        | "NotFound"
-        | "InvalidArgs"
-        | "InternalError";
+      error: "NotSignedIn" | "NotFound" | "InvalidArgs" | "InternalError";
     };
 
 export type PlanUnscheduleResult =
@@ -313,7 +330,10 @@ export interface PlanMoveToDateArgs {
 
 export type PlanMoveToDateResult =
   | { ok: true }
-  | { ok: false; error: "NotSignedIn" | "NotFound" | "InvalidArgs" | "InternalError" };
+  | {
+      ok: false;
+      error: "NotSignedIn" | "NotFound" | "InvalidArgs" | "InternalError";
+    };
 
 export interface PlanPushByArgs {
   taskId: string;
@@ -323,7 +343,10 @@ export interface PlanPushByArgs {
 
 export type PlanPushByResult =
   | { ok: true }
-  | { ok: false; error: "NotSignedIn" | "NotFound" | "InvalidArgs" | "InternalError" };
+  | {
+      ok: false;
+      error: "NotSignedIn" | "NotFound" | "InvalidArgs" | "InternalError";
+    };
 
 export type PlanDropResult =
   | { ok: true }
@@ -372,11 +395,7 @@ export type FocusMarkDoneResult =
   | { ok: true; taskId: string }
   | {
       ok: false;
-      error:
-        | "NotSignedIn"
-        | "NoActiveSession"
-        | "NotFound"
-        | "InternalError";
+      error: "NotSignedIn" | "NoActiveSession" | "NotFound" | "InternalError";
     };
 
 export type FocusSwitchResult = FocusStartResult;
@@ -420,11 +439,22 @@ export interface FocusBridge {
   searchOpenTasks(query: string): Promise<FocusSearchResult>;
   startAdHoc(title: string): Promise<FocusStartAdHocResult>;
   onAdHocRequest(handler: () => void): () => void;
-  startStuck(): Promise<{ ok: true; stuckSessionId: string } | { ok: false; error: string }>;
-  endStuck(args: { stuckSessionId: string; outcome: string; answers: { question: string; answer: string }[] }): Promise<{ ok: true } | { ok: false; error: string }>;
+  startStuck(): Promise<
+    { ok: true; stuckSessionId: string } | { ok: false; error: string }
+  >;
+  endStuck(args: {
+    stuckSessionId: string;
+    outcome: string;
+    answers: { question: string; answer: string }[];
+  }): Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
-export type ReplanReason = "ran_late" | "got_stuck" | "priorities_changed" | "other" | null;
+export type ReplanReason =
+  | "ran_late"
+  | "got_stuck"
+  | "priorities_changed"
+  | "other"
+  | null;
 
 export type ReplanActionType = "push" | "drop" | "shrink" | "moveToDate";
 
@@ -437,12 +467,18 @@ export interface ReplanAction {
 }
 
 export interface ReplanBridge {
-  recordEvent(reason: ReplanReason): Promise<{ ok: true } | { ok: false; error: string }>;
-  applyBatch(actions: ReplanAction[]): Promise<{ ok: true; applied: number } | { ok: false; error: string }>;
+  recordEvent(
+    reason: ReplanReason,
+  ): Promise<{ ok: true } | { ok: false; error: string }>;
+  applyBatch(
+    actions: ReplanAction[],
+  ): Promise<{ ok: true; applied: number } | { ok: false; error: string }>;
 }
 
 export interface QuickPlanBridge {
-  getDate(): Promise<{ ok: true; date: string | null } | { ok: false; error: string }>;
+  getDate(): Promise<
+    { ok: true; date: string | null } | { ok: false; error: string }
+  >;
   setDate(date: string): Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
@@ -464,7 +500,10 @@ export type ReviewSummaryResult =
 
 export type ReviewCarryForwardResult =
   | { ok: true; count: number }
-  | { ok: false; error: "NotSignedIn" | "InvalidArgs" | "NotFound" | "InternalError" };
+  | {
+      ok: false;
+      error: "NotSignedIn" | "InvalidArgs" | "NotFound" | "InternalError";
+    };
 
 export type ReviewDropResult =
   | { ok: true; count: number }
@@ -476,7 +515,10 @@ export type ReviewMarkDoneResult =
 
 export type ReviewMoveToResult =
   | { ok: true }
-  | { ok: false; error: "NotSignedIn" | "InvalidArgs" | "NotFound" | "InternalError" };
+  | {
+      ok: false;
+      error: "NotSignedIn" | "InvalidArgs" | "NotFound" | "InternalError";
+    };
 
 export type ReviewSaveReflectionResult =
   | { ok: true }
@@ -542,11 +584,7 @@ export type DisconnectCalendarResult =
   | { ok: true }
   | {
       ok: false;
-      error:
-        | "NotSignedIn"
-        | "NotFound"
-        | "InvalidArgs"
-        | "InternalError";
+      error: "NotSignedIn" | "NotFound" | "InvalidArgs" | "InternalError";
     };
 
 export interface AccountStatusEventPayload {
@@ -590,7 +628,11 @@ export interface AiSettings {
 
 export type AiTestResult =
   | { ok: true }
-  | { ok: false; error: "NoKey" | "InvalidKey" | "NetworkError" | "InternalError"; message?: string };
+  | {
+      ok: false;
+      error: "NoKey" | "InvalidKey" | "NetworkError" | "InternalError";
+      message?: string;
+    };
 
 export type AIAction = "triage_cleanup" | "make_startable" | "brain_dump_split";
 
@@ -603,27 +645,44 @@ export type AIError =
   | { kind: "unknown"; cause?: unknown };
 
 export type AIRunResult =
-  | { ok: true; value: { action: AIAction; result: unknown; suggestionId: string } }
+  | {
+      ok: true;
+      value: { action: AIAction; result: unknown; suggestionId: string };
+    }
   | { ok: false; error: AIError };
 
 export type SuggestionOutcome = "accepted" | "rejected" | "edited";
 
 export interface AiBridge {
   getSettings(): Promise<AiSettings>;
-  setSettings(patch: Partial<AiSettings>): Promise<{ ok: boolean; error?: string }>;
+  setSettings(
+    patch: Partial<AiSettings>,
+  ): Promise<{ ok: boolean; error?: string }>;
   hasKey(): Promise<boolean>;
   setKey(value: string): Promise<{ ok: boolean; error?: string }>;
   clearKey(): Promise<boolean>;
   testConnection(): Promise<AiTestResult>;
-  run(action: AIAction, payload: Record<string, unknown>, ownerType?: string, ownerId?: string): Promise<AIRunResult>;
-  recordOutcome(suggestionId: string, outcome: SuggestionOutcome, editedJson?: unknown): Promise<{ ok: boolean; error?: string }>;
+  run(
+    action: AIAction,
+    payload: Record<string, unknown>,
+    ownerType?: string,
+    ownerId?: string,
+  ): Promise<AIRunResult>;
+  recordOutcome(
+    suggestionId: string,
+    outcome: SuggestionOutcome,
+    editedJson?: unknown,
+  ): Promise<{ ok: boolean; error?: string }>;
   getUsage(): Promise<{
     ok: boolean;
     usage?: {
       totalRequests: number;
       totalInputTokens: number;
       totalOutputTokens: number;
-      byPromptClass: Record<string, { requests: number; inputTokens: number; outputTokens: number }>;
+      byPromptClass: Record<
+        string,
+        { requests: number; inputTokens: number; outputTokens: number }
+      >;
     };
     rateLimiter?: { suspended: boolean; suspendedUntilMs: number };
   }>;

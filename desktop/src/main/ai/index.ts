@@ -2,9 +2,18 @@ import { z } from "zod";
 import { secretStore } from "../security/secretStore";
 import { AnthropicProvider } from "./providers/anthropic";
 import type { AIAction, AIRequest, AIError, Result } from "./types";
-import { buildTriageCleanupPrompts, TriageCleanupOutputSchema } from "./prompts/triageCleanup";
-import { buildMakeStartablePrompts, MakeStartableOutputSchema } from "./prompts/makeStartable";
-import { buildBrainDumpSplitPrompts, BrainDumpSplitOutputSchema } from "./prompts/brainDumpSplit";
+import {
+  buildTriageCleanupPrompts,
+  TriageCleanupOutputSchema,
+} from "./prompts/triageCleanup";
+import {
+  buildMakeStartablePrompts,
+  MakeStartableOutputSchema,
+} from "./prompts/makeStartable";
+import {
+  buildBrainDumpSplitPrompts,
+  BrainDumpSplitOutputSchema,
+} from "./prompts/brainDumpSplit";
 import { recordPending, type OwnerType } from "./persistence";
 import { recordUsage } from "./usage";
 import { globalRateLimiter } from "./rateLimiter";
@@ -30,7 +39,10 @@ export interface AIRunResponse {
   suggestionId: string;
 }
 
-export async function runAI(req: AIRequest, opts?: AIRunOptions): Promise<Result<AIRunResponse>> {
+export async function runAI(
+  req: AIRequest,
+  opts?: AIRunOptions,
+): Promise<Result<AIRunResponse>> {
   // Rate limiter check
   const waitMs = globalRateLimiter.check();
   if (waitMs > 0) {
@@ -45,13 +57,25 @@ export async function runAI(req: AIRequest, opts?: AIRunOptions): Promise<Result
 
   let prompts: { system: string; user: string };
   if (req.action === "triage_cleanup") {
-    prompts = buildTriageCleanupPrompts(req.payload as Parameters<typeof buildTriageCleanupPrompts>[0]);
+    prompts = buildTriageCleanupPrompts(
+      req.payload as Parameters<typeof buildTriageCleanupPrompts>[0],
+    );
   } else if (req.action === "make_startable") {
-    prompts = buildMakeStartablePrompts(req.payload as Parameters<typeof buildMakeStartablePrompts>[0]);
+    prompts = buildMakeStartablePrompts(
+      req.payload as Parameters<typeof buildMakeStartablePrompts>[0],
+    );
   } else if (req.action === "brain_dump_split") {
-    prompts = buildBrainDumpSplitPrompts(req.payload as Parameters<typeof buildBrainDumpSplitPrompts>[0]);
+    prompts = buildBrainDumpSplitPrompts(
+      req.payload as Parameters<typeof buildBrainDumpSplitPrompts>[0],
+    );
   } else {
-    return { ok: false, error: { kind: "unknown", cause: `Unknown action: ${String(req.action)}` } };
+    return {
+      ok: false,
+      error: {
+        kind: "unknown",
+        cause: `Unknown action: ${String(req.action)}`,
+      },
+    };
   }
 
   const raw = await provider.complete(prompts.system, prompts.user);
@@ -83,12 +107,22 @@ export async function runAI(req: AIRequest, opts?: AIRunOptions): Promise<Result
 
   // Record token usage if userId is available
   if (opts?.userId) {
-    const inputTokens = Math.ceil((prompts.system.length + prompts.user.length) / 4);
+    const inputTokens = Math.ceil(
+      (prompts.system.length + prompts.user.length) / 4,
+    );
     const outputTokens = Math.ceil(raw.value.length / 4);
-    recordUsage(opts.userId, { promptClass: req.action, inputTokens, outputTokens, model: MODEL_ID });
+    recordUsage(opts.userId, {
+      promptClass: req.action,
+      inputTokens,
+      outputTokens,
+      model: MODEL_ID,
+    });
   }
 
-  return { ok: true, value: { action: req.action, result: validation.data, suggestionId } };
+  return {
+    ok: true,
+    value: { action: req.action, result: validation.data, suggestionId },
+  };
 }
 
 export type { AIAction, AIRequest, AIError, Result };

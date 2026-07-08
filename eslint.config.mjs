@@ -120,14 +120,12 @@ export default tseslint.config(
         {
           selector:
             "Property[key.name='status'] Literal[value=/^(open|in_progress|done|dropped)$/]",
-          message:
-            "Use TaskStatus from @calmly/shared, not a string literal.",
+          message: "Use TaskStatus from @calmly/shared, not a string literal.",
         },
         {
           selector:
             "BinaryExpression[left.property.name='status'] Literal[value=/^(open|in_progress|done|dropped)$/]",
-          message:
-            "Use TaskStatus from @calmly/shared, not a string literal.",
+          message: "Use TaskStatus from @calmly/shared, not a string literal.",
         },
         {
           selector:

@@ -73,7 +73,10 @@ export function Inbox() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       const target = e.target as HTMLElement | null;
-      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) {
+      if (
+        target &&
+        (target.tagName === "INPUT" || target.tagName === "TEXTAREA")
+      ) {
         return;
       }
       if (items.length === 0 || !selectedId) return;
@@ -188,9 +191,7 @@ export function Inbox() {
 
         {state.kind === "ready" && items.length > 0 ? (
           <p className="mt-6 text-[11px] text-stone-400 tracking-wide">
-            <span className="font-bold tracking-[0.18em] uppercase">
-              Keys
-            </span>{" "}
+            <span className="font-bold tracking-[0.18em] uppercase">Keys</span>{" "}
             · ↑/↓ to navigate · Enter to triage · S to snooze · X to skip
           </p>
         ) : null}
@@ -234,4 +235,3 @@ function SortToggle({ value, onChange }: SortToggleProps) {
     </div>
   );
 }
-

@@ -72,9 +72,7 @@ test.describe("F-14b · top-level navigation", () => {
       // we start from a known-good state at "/". From there, walk each
       // sidebar NavLink in turn.
       for (const { navLinkName, pageHeading } of ROUTES) {
-        await launched.window
-          .getByRole("link", { name: navLinkName })
-          .click();
+        await launched.window.getByRole("link", { name: navLinkName }).click();
         await expect(
           launched.window.getByRole("heading", {
             name: pageHeading,

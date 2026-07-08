@@ -22,11 +22,8 @@ export const FocusSessionSchema = z
     ended_at: unixMs.nullable(),
     source: FocusSourceSchema,
   })
-  .refine(
-    (s) => s.ended_at === null || s.ended_at >= s.started_at,
-    {
-      message: "ended_at must be >= started_at when set",
-      path: ["ended_at"],
-    },
-  );
+  .refine((s) => s.ended_at === null || s.ended_at >= s.started_at, {
+    message: "ended_at must be >= started_at when set",
+    path: ["ended_at"],
+  });
 export type FocusSession = z.infer<typeof FocusSessionSchema>;

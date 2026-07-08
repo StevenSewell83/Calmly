@@ -13,16 +13,16 @@ import type {
 
 export const tasksBridge: TasksBridge = {
   listToday(): Promise<ListTodayTasksResult> {
-    return ipcRenderer.invoke("tasks:listToday") as Promise<
-      ListTodayTasksResult
-    >;
+    return ipcRenderer.invoke(
+      "tasks:listToday",
+    ) as Promise<ListTodayTasksResult>;
   },
 };
 
 export const eventsBridge: EventsBridge = {
   listToday(): Promise<ListTodayEventsResult> {
-    return ipcRenderer.invoke("events:listToday") as Promise<
-      ListTodayEventsResult
-    >;
+    return ipcRenderer.invoke(
+      "events:listToday",
+    ) as Promise<ListTodayEventsResult>;
   },
 };

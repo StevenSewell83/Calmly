@@ -52,10 +52,10 @@ export function SettingsPrivacy() {
               Crash Reports
             </span>
             <p className="mt-2 text-sm text-stone-600 leading-relaxed">
-              When enabled, native crash dumps are uploaded to Calmly so the team can
-              identify and fix crashes. Crash reports contain only the crash stack,
-              app version, OS, and process type — no task content, no email address,
-              and no account identifiers.
+              When enabled, native crash dumps are uploaded to Calmly so the
+              team can identify and fix crashes. Crash reports contain only the
+              crash stack, app version, OS, and process type — no task content,
+              no email address, and no account identifiers.
             </p>
             <div className="mt-5 flex items-center gap-4">
               <button
@@ -78,7 +78,9 @@ export function SettingsPrivacy() {
                 />
               </button>
               <span className="text-sm text-stone-700">
-                {status.enabled ? "Crash reports enabled" : "Crash reports disabled"}
+                {status.enabled
+                  ? "Crash reports enabled"
+                  : "Crash reports disabled"}
               </span>
             </div>
 

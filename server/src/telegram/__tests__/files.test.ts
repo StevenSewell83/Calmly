@@ -48,7 +48,10 @@ function makeFakeFetch(opts: FakeFetchOpts): {
   return { fetchImpl, calls };
 }
 
-function makeClient(file: TelegramFile, opts: { token?: string; throwError?: Error } = {}): TelegramFileClient {
+function makeClient(
+  file: TelegramFile,
+  opts: { token?: string; throwError?: Error } = {},
+): TelegramFileClient {
   const token = opts.token ?? "test-bot-token";
   return {
     token,

@@ -24,7 +24,10 @@ export function AdHocStart({ onStarted, open }: Props) {
     setError("");
     try {
       const r = await window.calmly.focus.startAdHoc(text.trim());
-      if (!r.ok) { setError("Couldn't start — try again."); return; }
+      if (!r.ok) {
+        setError("Couldn't start — try again.");
+        return;
+      }
       setText("");
       await onStarted();
     } finally {
@@ -45,7 +48,9 @@ export function AdHocStart({ onStarted, open }: Props) {
 
   return (
     <div className="w-full max-w-sm space-y-3">
-      <p className="text-xs font-medium text-stone-500 uppercase tracking-wide text-center">Ad-hoc focus</p>
+      <p className="text-xs font-medium text-stone-500 uppercase tracking-wide text-center">
+        Ad-hoc focus
+      </p>
 
       {/* Capture & focus */}
       <div className="flex gap-2">
@@ -53,7 +58,9 @@ export function AdHocStart({ onStarted, open }: Props) {
           ref={inputRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") void handleCapture(); }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void handleCapture();
+          }}
           placeholder="What are you focusing on?"
           disabled={busy}
           aria-label="Ad-hoc focus input"
@@ -69,7 +76,11 @@ export function AdHocStart({ onStarted, open }: Props) {
         </button>
       </div>
 
-      {error && <p role="alert" className="text-xs text-red-500 text-center">{error}</p>}
+      {error && (
+        <p role="alert" className="text-xs text-red-500 text-center">
+          {error}
+        </p>
+      )}
 
       {/* Pick from existing */}
       <button

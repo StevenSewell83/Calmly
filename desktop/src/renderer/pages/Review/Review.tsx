@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle2, ChevronRight, Inbox, CalendarDays, CheckCheck } from "lucide-react";
+import {
+  CheckCircle2,
+  ChevronRight,
+  Inbox,
+  CalendarDays,
+  CheckCheck,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { ReviewSummary, ReviewTaskItem } from "../../../preload/api-types";
 import { EmptyState } from "../../components/EmptyState";
@@ -15,8 +21,14 @@ function fmtFocused(ms: number): string {
 
 function fmtDateHeader(dateStr: string): string {
   const [y, m, d] = dateStr.split("-").map(Number);
-  return new Date(y as number, (m as number) - 1, d as number).toLocaleDateString(undefined, {
-    weekday: "long", month: "long", day: "numeric",
+  return new Date(
+    y as number,
+    (m as number) - 1,
+    d as number,
+  ).toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
   });
 }
 
@@ -48,16 +60,28 @@ export function Review() {
   useEffect(() => {
     void window.calmly.review.summary().then((r) => {
       setLoading(false);
-      if (!r.ok) { setError("Not signed in."); return; }
+      if (!r.ok) {
+        setError("Not signed in.");
+        return;
+      }
       setSummary(r.summary);
-      setRows(r.summary.unfinished.map((t) => ({ task: t, action: null, dateInput: "", busy: false })));
+      setRows(
+        r.summary.unfinished.map((t) => ({
+          task: t,
+          action: null,
+          dateInput: "",
+          busy: false,
+        })),
+      );
     });
   }, []);
 
   async function applyAction(idx: number, action: RowAction) {
     const row = rows[idx];
     if (!row || row.busy) return;
-    setRows((prev) => prev.map((r, i) => i === idx ? { ...r, busy: true } : r));
+    setRows((prev) =>
+      prev.map((r, i) => (i === idx ? { ...r, busy: true } : r)),
+    );
     const { task } = row;
     if (action === "carry") {
       await window.calmly.review.carryForward([task.id]);
@@ -69,7 +93,9 @@ export function Review() {
       const d = new Date(row.dateInput + "T12:00:00");
       await window.calmly.review.moveTo(task.id, d.getTime());
     }
-    setRows((prev) => prev.map((r, i) => i === idx ? { ...r, action, busy: false } : r));
+    setRows((prev) =>
+      prev.map((r, i) => (i === idx ? { ...r, action, busy: false } : r)),
+    );
   }
 
   async function handleComplete() {
@@ -93,7 +119,9 @@ export function Review() {
   if (error || !summary) {
     return (
       <section className="flex-1 flex items-center justify-center">
-        <p className="text-sm text-stone-400">{error ?? "Could not load review."}</p>
+        <p className="text-sm text-stone-400">
+          {error ?? "Could not load review."}
+        </p>
       </section>
     );
   }
@@ -107,9 +135,15 @@ export function Review() {
     >
       {/* Header */}
       <header className="mb-10">
-        <p className="text-xs text-stone-400 tracking-widest uppercase mb-2">{fmtDateHeader(summary.dateStr)}</p>
-        <h1 className="font-serif italic text-5xl tracking-tight text-stone-800">Close the day.</h1>
-        <p className="mt-2 text-sm text-stone-400">{fmtFocused(summary.focusedMs)}</p>
+        <p className="text-xs text-stone-400 tracking-widest uppercase mb-2">
+          {fmtDateHeader(summary.dateStr)}
+        </p>
+        <h1 className="font-serif italic text-5xl tracking-tight text-stone-800">
+          Close the day.
+        </h1>
+        <p className="mt-2 text-sm text-stone-400">
+          {fmtFocused(summary.focusedMs)}
+        </p>
       </header>
 
       {/* Completed section */}
@@ -131,11 +165,15 @@ export function Review() {
         ) : (
           <>
             <p className="text-2xl font-serif italic text-emerald-700 mb-3 pl-6">
-              {summary.completed.length} {summary.completed.length === 1 ? "thing" : "things"} done.
+              {summary.completed.length}{" "}
+              {summary.completed.length === 1 ? "thing" : "things"} done.
             </p>
             <ul className="pl-6 space-y-1">
               {summary.completed.map((t) => (
-                <li key={t.id} className="flex items-center gap-2 text-sm text-stone-500">
+                <li
+                  key={t.id}
+                  className="flex items-center gap-2 text-sm text-stone-500"
+                >
                   <span className="w-1 h-1 rounded-full bg-emerald-400 flex-shrink-0" />
                   <span className="truncate">{t.title}</span>
                 </li>
@@ -162,7 +200,13 @@ export function Review() {
                 key={row.task.id}
                 row={row}
                 onAction={(a) => void applyAction(idx, a)}
-                onDateChange={(v) => setRows((prev) => prev.map((r, i) => i === idx ? { ...r, dateInput: v } : r))}
+                onDateChange={(v) =>
+                  setRows((prev) =>
+                    prev.map((r, i) =>
+                      i === idx ? { ...r, dateInput: v } : r,
+                    ),
+                  )
+                }
               />
             ))}
           </ul>
@@ -172,13 +216,18 @@ export function Review() {
       {/* Reflection */}
       <div className="mb-10">
         <h2 className="text-xs font-bold tracking-[0.2em] uppercase text-stone-500 mb-3">
-          Reflection <span className="font-normal text-stone-300 tracking-normal normal-case">(optional)</span>
+          Reflection{" "}
+          <span className="font-normal text-stone-300 tracking-normal normal-case">
+            (optional)
+          </span>
         </h2>
         <div className="relative">
           <textarea
             ref={reflectionRef}
             value={reflection}
-            onChange={(e) => setReflection(e.target.value.slice(0, MAX_REFLECTION))}
+            onChange={(e) =>
+              setReflection(e.target.value.slice(0, MAX_REFLECTION))
+            }
             placeholder="One word, one sentence, or nothing at all…"
             rows={2}
             className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-700 placeholder:text-stone-300 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:bg-white transition-colors"
@@ -230,8 +279,12 @@ function UnfinishedRow({ row, onAction, onDateChange }: UnfinishedRowProps) {
   const done = action !== null;
 
   return (
-    <li className={`rounded-2xl border px-4 py-3 transition-colors ${done ? "bg-stone-50 border-stone-100 opacity-60" : "bg-white border-stone-100"}`}>
-      <p className={`text-sm font-medium mb-2 truncate ${done ? "line-through text-stone-400" : "text-stone-800"}`}>
+    <li
+      className={`rounded-2xl border px-4 py-3 transition-colors ${done ? "bg-stone-50 border-stone-100 opacity-60" : "bg-white border-stone-100"}`}
+    >
+      <p
+        className={`text-sm font-medium mb-2 truncate ${done ? "line-through text-stone-400" : "text-stone-800"}`}
+      >
         {task.title}
       </p>
       {!done && (
@@ -282,7 +335,13 @@ function UnfinishedRow({ row, onAction, onDateChange }: UnfinishedRowProps) {
       )}
       {done && (
         <p className="text-[10px] text-stone-400">
-          {action === "carry" ? "Carried to tomorrow" : action === "drop" ? "Dropped" : action === "done" ? "Marked done" : "Moved"}
+          {action === "carry"
+            ? "Carried to tomorrow"
+            : action === "drop"
+              ? "Dropped"
+              : action === "done"
+                ? "Marked done"
+                : "Moved"}
         </p>
       )}
     </li>

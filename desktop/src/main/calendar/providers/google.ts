@@ -106,10 +106,7 @@ export function googleEventEndMs(ev: GoogleEvent): number {
   return parseGoogleDateTime(ev.end);
 }
 
-function parseGoogleDateTime(dt: {
-  dateTime?: string;
-  date?: string;
-}): number {
+function parseGoogleDateTime(dt: { dateTime?: string; date?: string }): number {
   if (dt.dateTime) return new Date(dt.dateTime).getTime();
   if (dt.date) return new Date(dt.date).getTime();
   return 0;

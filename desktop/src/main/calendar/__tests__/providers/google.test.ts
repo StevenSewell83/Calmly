@@ -12,7 +12,12 @@ const makeFetch = (pages: object[]): typeof fetch => {
   let call = 0;
   return vi.fn(async () => {
     const body = pages[call++] ?? {};
-    return { ok: true, status: 200, json: async () => body, text: async () => "" } as unknown as Response;
+    return {
+      ok: true,
+      status: 200,
+      json: async () => body,
+      text: async () => "",
+    } as unknown as Response;
   });
 };
 
@@ -57,12 +62,15 @@ describe("fetchGoogleEvents", () => {
   });
 
   it("sends syncToken when provided (incremental sync)", async () => {
-    const mockFetch = makeFetch([{ items: [ev("g3")], nextSyncToken: "tok-2" }]);
+    const mockFetch = makeFetch([
+      { items: [ev("g3")], nextSyncToken: "tok-2" },
+    ]);
     vi.stubGlobal("fetch", mockFetch);
 
     await fetchGoogleEvents("access", W_START, W_END, "tok-prev");
 
-    const url = (mockFetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
+    const url = (mockFetch as ReturnType<typeof vi.fn>).mock
+      .calls[0]![0] as string;
     expect(url).toContain("syncToken=tok-prev");
     expect(url).not.toContain("timeMin");
   });
@@ -73,7 +81,8 @@ describe("fetchGoogleEvents", () => {
 
     await fetchGoogleEvents("access", W_START, W_END);
 
-    const url = (mockFetch as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
+    const url = (mockFetch as ReturnType<typeof vi.fn>).mock
+      .calls[0]![0] as string;
     expect(url).toContain("timeMin=");
     expect(url).toContain("timeMax=");
     expect(url).not.toContain("syncToken=");
@@ -98,22 +107,30 @@ describe("fetchGoogleEvents", () => {
 
     await fetchGoogleEvents("access", W_START, W_END);
 
-    const url2 = (mockFetch as ReturnType<typeof vi.fn>).mock.calls[1]![0] as string;
+    const url2 = (mockFetch as ReturnType<typeof vi.fn>).mock
+      .calls[1]![0] as string;
     expect(url2).toContain("pageToken=next-page");
   });
 
   it("throws GoogleSyncExpiredError on 410", async () => {
     vi.stubGlobal("fetch", makeErrorFetch(410));
-    await expect(fetchGoogleEvents("access", W_START, W_END, "stale-tok")).rejects.toBeInstanceOf(GoogleSyncExpiredError);
+    await expect(
+      fetchGoogleEvents("access", W_START, W_END, "stale-tok"),
+    ).rejects.toBeInstanceOf(GoogleSyncExpiredError);
   });
 
   it("throws generic error on non-410 HTTP error", async () => {
     vi.stubGlobal("fetch", makeErrorFetch(503));
-    await expect(fetchGoogleEvents("access", W_START, W_END)).rejects.toThrow("503");
+    await expect(fetchGoogleEvents("access", W_START, W_END)).rejects.toThrow(
+      "503",
+    );
   });
 
   it("includes cancelled events in output (worker decides what to do)", async () => {
-    vi.stubGlobal("fetch", makeFetch([{ items: [ev("g-del", "cancelled")], nextSyncToken: "t" }]));
+    vi.stubGlobal(
+      "fetch",
+      makeFetch([{ items: [ev("g-del", "cancelled")], nextSyncToken: "t" }]),
+    );
     const result = await fetchGoogleEvents("access", W_START, W_END);
     expect(result.events[0]!.status).toBe("cancelled");
   });
@@ -128,8 +145,12 @@ describe("fetchGoogleEvents", () => {
 describe("googleEventStartMs / googleEventEndMs", () => {
   it("parses dateTime events", () => {
     const e = ev("x");
-    expect(googleEventStartMs(e)).toBe(new Date("2024-03-01T10:00:00Z").getTime());
-    expect(googleEventEndMs(e)).toBe(new Date("2024-03-01T11:00:00Z").getTime());
+    expect(googleEventStartMs(e)).toBe(
+      new Date("2024-03-01T10:00:00Z").getTime(),
+    );
+    expect(googleEventEndMs(e)).toBe(
+      new Date("2024-03-01T11:00:00Z").getTime(),
+    );
   });
 
   it("parses all-day events using date field", () => {

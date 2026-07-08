@@ -60,7 +60,10 @@ function setStatus(
  */
 export function runSearchBackfill(
   db: Database.Database,
-  log: { info(msg: string, data?: object): void; debug(msg: string, data?: object): void },
+  log: {
+    info(msg: string, data?: object): void;
+    debug(msg: string, data?: object): void;
+  },
   force = false,
 ): void {
   if (running) return;
@@ -80,11 +83,15 @@ export function runSearchBackfill(
 
   // Collect all rowids for tasks + inbox_items first (fast read).
   const taskRowids = (
-    db.prepare("SELECT rowid FROM tasks WHERE deleted_at IS NULL").all() as Array<{ rowid: number }>
+    db
+      .prepare("SELECT rowid FROM tasks WHERE deleted_at IS NULL")
+      .all() as Array<{ rowid: number }>
   ).map((r) => r.rowid);
 
   const inboxRowids = (
-    db.prepare("SELECT rowid FROM inbox_items WHERE deleted_at IS NULL").all() as Array<{ rowid: number }>
+    db
+      .prepare("SELECT rowid FROM inbox_items WHERE deleted_at IS NULL")
+      .all() as Array<{ rowid: number }>
   ).map((r) => r.rowid);
 
   // Clear existing FTS content so we start fresh.
@@ -126,7 +133,9 @@ export function runSearchBackfill(
       log.debug("[search] FTS backfill progress", { totalRows });
     }
 
-    setImmediate(() => processBatch(rowids, offset + BATCH_SIZE, table, fts, columns));
+    setImmediate(() =>
+      processBatch(rowids, offset + BATCH_SIZE, table, fts, columns),
+    );
   }
 
   function scheduleTasks(offset: number) {
@@ -137,7 +146,9 @@ export function runSearchBackfill(
 
   function scheduleInbox(offset: number) {
     setImmediate(() =>
-      processBatch(inboxRowids, offset, "inbox_items", "inbox_fts", ["raw_text"]),
+      processBatch(inboxRowids, offset, "inbox_items", "inbox_fts", [
+        "raw_text",
+      ]),
     );
   }
 
@@ -145,7 +156,10 @@ export function runSearchBackfill(
     const finishedAt = Date.now();
     setStatus(db, "done", { startedAt, finishedAt, rowCount: totalRows });
     running = false;
-    log.info("[search] FTS backfill complete", { totalRows, ms: finishedAt - startedAt });
+    log.info("[search] FTS backfill complete", {
+      totalRows,
+      ms: finishedAt - startedAt,
+    });
   }
 
   scheduleTasks(0);
@@ -154,7 +168,10 @@ export function runSearchBackfill(
 /** Resets backfill marker and re-runs the full index. */
 export function reindexSearch(
   db: Database.Database,
-  log: { info(msg: string, data?: object): void; debug(msg: string, data?: object): void },
+  log: {
+    info(msg: string, data?: object): void;
+    debug(msg: string, data?: object): void;
+  },
 ): void {
   setStatus(db, "pending");
   runSearchBackfill(db, log, true);

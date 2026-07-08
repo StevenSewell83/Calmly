@@ -78,7 +78,14 @@ describe("tasks/repo", () => {
 
   it("enqueueTaskUpsert writes a full-snapshot payload with the bumped version", () => {
     const { db, prepared } = makeFakeDb();
-    enqueueTaskUpsert(db, TASK, baseRow, { status: "in_progress" }, NOW + 1000, 7);
+    enqueueTaskUpsert(
+      db,
+      TASK,
+      baseRow,
+      { status: "in_progress" },
+      NOW + 1000,
+      7,
+    );
 
     // One INSERT into op_queue.
     expect(prepared).toHaveLength(1);
@@ -102,7 +109,10 @@ describe("tasks/repo", () => {
   it("enqueueTaskUpsert always sets deleted_at to null (upsert clears tombstone)", () => {
     const { db, prepared } = makeFakeDb();
     enqueueTaskUpsert(db, TASK, baseRow, {}, NOW, 1);
-    const payload = JSON.parse(prepared[0]!.args[3] as string) as Record<string, unknown>;
+    const payload = JSON.parse(prepared[0]!.args[3] as string) as Record<
+      string,
+      unknown
+    >;
     expect(payload["deleted_at"]).toBeNull();
   });
 });

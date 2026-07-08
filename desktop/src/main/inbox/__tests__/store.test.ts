@@ -263,13 +263,7 @@ describe("snoozeInboxItem", () => {
 
   it("rejects past untilMs as InvalidArgs", () => {
     const fake = makeFakeDb();
-    const r = snoozeInboxItem(
-      fake.db,
-      TEST_USER,
-      ITEM,
-      1_000,
-      2_000,
-    );
+    const r = snoozeInboxItem(fake.db, TEST_USER, ITEM, 1_000, 2_000);
     expect(r).toEqual({ ok: false, error: "InvalidArgs" });
     expect(fake.prepared).toHaveLength(0);
   });
@@ -277,13 +271,7 @@ describe("snoozeInboxItem", () => {
   it("returns NotFound when the item doesn't exist for this user", () => {
     const fake = makeFakeDb();
     fake.pushGetResult(undefined);
-    const r = snoozeInboxItem(
-      fake.db,
-      TEST_USER,
-      ITEM,
-      2_000,
-      1_000,
-    );
+    const r = snoozeInboxItem(fake.db, TEST_USER, ITEM, 2_000, 1_000);
     expect(r).toEqual({ ok: false, error: "NotFound" });
   });
 
@@ -296,13 +284,7 @@ describe("snoozeInboxItem", () => {
       resolved_at: null,
       version: 3,
     });
-    const r = snoozeInboxItem(
-      fake.db,
-      TEST_USER,
-      ITEM,
-      9_000,
-      1_000,
-    );
+    const r = snoozeInboxItem(fake.db, TEST_USER, ITEM, 9_000, 1_000);
     expect(r).toEqual({ ok: true });
 
     const update = fake.prepared.find((p) =>

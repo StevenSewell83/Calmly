@@ -66,7 +66,10 @@ export function createSyncClient(args: CreateClientArgs): SyncClient {
       while (true) {
         const page = await fetchOnePage(cursor);
         let anyMore = false;
-        for (const [table, entry] of Object.entries(page.records) as [SyncTable, typeof page.records[SyncTable]][]) {
+        for (const [table, entry] of Object.entries(page.records) as [
+          SyncTable,
+          (typeof page.records)[SyncTable],
+        ][]) {
           if (!entry) continue;
           if (!allRows[table]) allRows[table] = [];
           allRows[table]!.push(...entry.rows);
@@ -74,11 +77,20 @@ export function createSyncClient(args: CreateClientArgs): SyncClient {
         }
         if (page.version > cursor) cursor = page.version;
         if (!anyMore) {
-          return { records: allRows as PullResponse["records"], version: cursor };
+          return {
+            records: allRows as PullResponse["records"],
+            version: cursor,
+          };
         }
         // Safety: if version didn't advance, there's nothing left to fetch.
-        if (page.version <= since && !Object.values(page.records).some(e => e?.rows.length)) {
-          return { records: allRows as PullResponse["records"], version: cursor };
+        if (
+          page.version <= since &&
+          !Object.values(page.records).some((e) => e?.rows.length)
+        ) {
+          return {
+            records: allRows as PullResponse["records"],
+            version: cursor,
+          };
         }
       }
     },

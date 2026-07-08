@@ -34,6 +34,7 @@ Skip if there is already an open epic with label `audit-YYYY-MM-DD` for the curr
 Each prompt is invoked as `Agent(subagent_type="general-purpose", prompt=...)`. Run all three in parallel — single message, three Agent calls.
 
 ### Sub-agent 1: desktop main + IPC + sync
+
 ```
 Audit `desktop/src/main/**` and `desktop/src/preload/**` for drift, duplication, and bug-shaped patterns. Specifically look for:
 
@@ -49,6 +50,7 @@ Report: a numbered list of findings, each with severity (P0 bug / P0 refactor / 
 ```
 
 ### Sub-agent 2: renderer + e2e
+
 ```
 Audit `desktop/src/renderer/**` and `desktop/e2e/**` for drift and regression risk. Specifically look for:
 
@@ -64,6 +66,7 @@ Report format: same as sub-agent 1.
 ```
 
 ### Sub-agent 3: server + shared
+
 ```
 Audit `server/**` and `shared/**` for drift. Specifically look for:
 

@@ -50,7 +50,8 @@ export async function crashRoute(app: FastifyInstance): Promise<void> {
       return reply.code(400).send({ error: "missing_dump" });
     }
 
-    const dumpDir = process.env["CALMLY_CRASH_DUMP_DIR"] ?? "/tmp/calmly-crashes";
+    const dumpDir =
+      process.env["CALMLY_CRASH_DUMP_DIR"] ?? "/tmp/calmly-crashes";
     try {
       await mkdir(dumpDir, { recursive: true });
       const filename = `${Date.now()}-${randomUUID()}.dmp`;
@@ -58,12 +59,19 @@ export async function crashRoute(app: FastifyInstance): Promise<void> {
       await new Promise<void>((resolve, reject) => {
         const ws = createWriteStream(fullPath);
         ws.write(dumpData!, (err) => {
-          if (err) { ws.destroy(); reject(err); return; }
+          if (err) {
+            ws.destroy();
+            reject(err);
+            return;
+          }
           ws.end(resolve);
         });
         ws.on("error", reject);
       });
-      app.log.info({ path: fullPath, size: dumpData.length, ...meta }, "[crash] dump stored");
+      app.log.info(
+        { path: fullPath, size: dumpData.length, ...meta },
+        "[crash] dump stored",
+      );
     } catch (err) {
       app.log.error({ err }, "[crash] failed to store dump");
       return reply.code(500).send({ error: "internal" });

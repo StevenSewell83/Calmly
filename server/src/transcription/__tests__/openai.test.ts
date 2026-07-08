@@ -20,9 +20,10 @@ interface FakeFetchOpts {
   abortAfterMs?: number;
 }
 
-function makeFakeFetch(
-  opts: FakeFetchOpts,
-): { fetchImpl: typeof fetch; calls: RecordedRequest[] } {
+function makeFakeFetch(opts: FakeFetchOpts): {
+  fetchImpl: typeof fetch;
+  calls: RecordedRequest[];
+} {
   const calls: RecordedRequest[] = [];
   const fetchImpl: typeof fetch = async (input, init) => {
     const url =
@@ -32,7 +33,10 @@ function makeFakeFetch(
           ? input.href
           : input.url;
     const method = (init?.method ?? "GET").toUpperCase();
-    const headers = init?.headers as Record<string, string> | Headers | undefined;
+    const headers = init?.headers as
+      | Record<string, string>
+      | Headers
+      | undefined;
     let authorization: string | null = null;
     if (headers instanceof Headers) {
       authorization = headers.get("authorization");
@@ -97,9 +101,9 @@ function makeFakeFetch(
 
 describe("createOpenAIWhisperProvider", () => {
   it("requires apiKey", () => {
-    expect(() =>
-      createOpenAIWhisperProvider({ apiKey: "" }),
-    ).toThrow(/apiKey is required/);
+    expect(() => createOpenAIWhisperProvider({ apiKey: "" })).toThrow(
+      /apiKey is required/,
+    );
   });
 
   it("posts multipart form with model + auth + file and returns text/duration", async () => {

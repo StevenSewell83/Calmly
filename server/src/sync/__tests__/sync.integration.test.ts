@@ -8,7 +8,11 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildApp } from "../../app";
 import { loadConfig } from "../../config";
 import { generateToken, hashToken } from "../../auth/tokens";
-import type { PullResponse, PushResponse, WirePullResponse } from "@calmly/shared";
+import type {
+  PullResponse,
+  PushResponse,
+  WirePullResponse,
+} from "@calmly/shared";
 
 // F-11c: Multi-client sync protocol integration test.
 //
@@ -131,10 +135,7 @@ describe.skipIf(!dockerAvailable)(
 
     // ── Helpers ────────────────────────────────────────────────────────────
 
-    async function push(
-      cookie: string,
-      ops: object[],
-    ): Promise<PushResponse> {
+    async function push(cookie: string, ops: object[]): Promise<PushResponse> {
       const res = await app.inject({
         method: "POST",
         url: "/sync/push",
@@ -145,10 +146,7 @@ describe.skipIf(!dockerAvailable)(
       return res.json() as PushResponse;
     }
 
-    async function pull(
-      cookie: string,
-      since: number,
-    ): Promise<PullResponse> {
+    async function pull(cookie: string, since: number): Promise<PullResponse> {
       const res = await app.inject({
         method: "POST",
         url: "/sync/pull",
@@ -160,7 +158,10 @@ describe.skipIf(!dockerAvailable)(
       // Normalize to flat PullResponse for test assertions.
       const wire = res.json() as WirePullResponse;
       const records: PullResponse["records"] = {};
-      for (const [table, entry] of Object.entries(wire.records) as [string, { rows: Record<string, unknown>[]; hasMore: boolean } | undefined][]) {
+      for (const [table, entry] of Object.entries(wire.records) as [
+        string,
+        { rows: Record<string, unknown>[]; hasMore: boolean } | undefined,
+      ][]) {
         if (entry && entry.rows.length > 0) {
           records[table as keyof typeof records] = entry.rows;
         }
@@ -209,7 +210,9 @@ describe.skipIf(!dockerAvailable)(
       expect(pullRes.version).toBeGreaterThanOrEqual(serverVersion);
 
       const tasks = (pullRes.records.tasks ?? []) as Record<string, unknown>[];
-      const received = tasks.find((t: Record<string, unknown>) => t["id"] === taskId);
+      const received = tasks.find(
+        (t: Record<string, unknown>) => t["id"] === taskId,
+      );
       expect(received).toBeTruthy();
       expect(received!["title"]).toBe("Task from client A");
       expect(received!["deleted_at"]).toBeNull();
@@ -267,8 +270,13 @@ describe.skipIf(!dockerAvailable)(
       // Client A: pull delta since versionBeforeDelete — should see the
       // task with deleted_at set.
       const afterDeletePull = await pull(cookieA, versionBeforeDelete);
-      const tasks = (afterDeletePull.records.tasks ?? []) as Record<string, unknown>[];
-      const deleted = tasks.find((t: Record<string, unknown>) => t["id"] === taskId);
+      const tasks = (afterDeletePull.records.tasks ?? []) as Record<
+        string,
+        unknown
+      >[];
+      const deleted = tasks.find(
+        (t: Record<string, unknown>) => t["id"] === taskId,
+      );
       expect(deleted).toBeTruthy();
       expect(deleted!["deleted_at"]).not.toBeNull();
     });
@@ -282,7 +290,10 @@ describe.skipIf(!dockerAvailable)(
       // record arrays should be empty (or absent).
       const second = await pull(cookieA, currentVersion);
       const totalRecords = (
-        Object.values(second.records) as (Record<string, unknown>[] | undefined)[]
+        Object.values(second.records) as (
+          | Record<string, unknown>[]
+          | undefined
+        )[]
       ).reduce((n, rows) => n + (rows?.length ?? 0), 0);
       expect(totalRecords).toBe(0);
     });
@@ -368,7 +379,9 @@ describe.skipIf(!dockerAvailable)(
       // User B2 pulls from version 0 — must never see user A's task.
       const pullRes = await pull(cookieB2, 0);
       const tasks = (pullRes.records.tasks ?? []) as Record<string, unknown>[];
-      const leaked = tasks.find((t: Record<string, unknown>) => t["id"] === taskId);
+      const leaked = tasks.find(
+        (t: Record<string, unknown>) => t["id"] === taskId,
+      );
       expect(leaked).toBeUndefined();
     });
 
@@ -384,7 +397,10 @@ describe.skipIf(!dockerAvailable)(
           op: "upsert",
           payload: {
             id: settingsId,
-            settings_json: JSON.stringify({ theme: "dark", notifications: true }),
+            settings_json: JSON.stringify({
+              theme: "dark",
+              notifications: true,
+            }),
             updated_at: now,
             deleted_at: null,
             version: 0,
@@ -397,8 +413,13 @@ describe.skipIf(!dockerAvailable)(
 
       // Pull from version 0 — should receive the settings row with the same id.
       const pullRes = await pull(cookieA, 0);
-      const settings = (pullRes.records.user_settings ?? []) as Record<string, unknown>[];
-      const received = settings.find((s: Record<string, unknown>) => s["id"] === settingsId);
+      const settings = (pullRes.records.user_settings ?? []) as Record<
+        string,
+        unknown
+      >[];
+      const received = settings.find(
+        (s: Record<string, unknown>) => s["id"] === settingsId,
+      );
       expect(received).toBeTruthy();
       expect(received!["settings_json"]).toContain("dark");
     });
@@ -406,9 +427,7 @@ describe.skipIf(!dockerAvailable)(
   { timeout: 120_000 },
 );
 
-function extractSessionCookie(
-  header: string | string[] | undefined,
-): string {
-  const raw = Array.isArray(header) ? header[0] ?? "" : (header ?? "");
+function extractSessionCookie(header: string | string[] | undefined): string {
+  const raw = Array.isArray(header) ? (header[0] ?? "") : (header ?? "");
   return raw.split(";")[0] ?? "";
 }

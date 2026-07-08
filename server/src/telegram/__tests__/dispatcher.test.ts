@@ -31,11 +31,8 @@ vi.mock("../bot", () => ({
 }));
 
 vi.mock("../handlers/start", () => ({
-  handleStart: (
-    msg: unknown,
-    pool: unknown,
-    log: unknown,
-  ): unknown => mockHandleStart(msg, pool, log),
+  handleStart: (msg: unknown, pool: unknown, log: unknown): unknown =>
+    mockHandleStart(msg, pool, log),
 }));
 
 // Imported after vi.mock so the dispatcher picks up the mocked modules.

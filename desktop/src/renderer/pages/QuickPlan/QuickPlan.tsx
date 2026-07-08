@@ -43,14 +43,20 @@ export function QuickPlan({ open, onClose }: Props) {
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [open, onClose]);
 
   const withBusy = async (fn: () => Promise<void>) => {
     setBusy(true);
-    try { await fn(); } finally { setBusy(false); }
+    try {
+      await fn();
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleMove = (index: number, dir: "up" | "down") => {
@@ -81,25 +87,41 @@ export function QuickPlan({ open, onClose }: Props) {
       const t = reordered[index];
       const t2 = reordered[swap];
       if (t && t.scheduled_start !== null && t.scheduled_end !== null) {
-        await window.calmly.plan.schedule({ taskId: t.id, startAt: t.scheduled_start, endAt: t.scheduled_end });
+        await window.calmly.plan.schedule({
+          taskId: t.id,
+          startAt: t.scheduled_start,
+          endAt: t.scheduled_end,
+        });
       }
       if (t2 && t2.scheduled_start !== null && t2.scheduled_end !== null) {
-        await window.calmly.plan.schedule({ taskId: t2.id, startAt: t2.scheduled_start, endAt: t2.scheduled_end });
+        await window.calmly.plan.schedule({
+          taskId: t2.id,
+          startAt: t2.scheduled_start,
+          endAt: t2.scheduled_end,
+        });
       }
     });
   };
 
   const handleDrop = (taskId: string) => {
     setTasks((prev) => prev.filter((t) => t.id !== taskId));
-    void withBusy(async () => { await window.calmly.plan.toBacklog(taskId); });
+    void withBusy(async () => {
+      await window.calmly.plan.toBacklog(taskId);
+    });
   };
 
   const handleShrink = (task: PlanTaskItem, mins: number) => {
     if (task.scheduled_start === null) return;
     const newEnd = task.scheduled_start + mins * 60_000;
-    setTasks((prev) => prev.map((t) => t.id === task.id ? { ...t, scheduled_end: newEnd } : t));
+    setTasks((prev) =>
+      prev.map((t) => (t.id === task.id ? { ...t, scheduled_end: newEnd } : t)),
+    );
     void withBusy(async () => {
-      await window.calmly.plan.schedule({ taskId: task.id, startAt: task.scheduled_start!, endAt: newEnd });
+      await window.calmly.plan.schedule({
+        taskId: task.id,
+        startAt: task.scheduled_start!,
+        endAt: newEnd,
+      });
     });
   };
 
@@ -116,7 +138,11 @@ export function QuickPlan({ open, onClose }: Props) {
   if (!open) return null;
 
   const totalMins = totalScheduledMins(tasks);
-  const todayStr = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  const todayStr = new Date().toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
 
   return (
     <>
@@ -135,16 +161,23 @@ export function QuickPlan({ open, onClose }: Props) {
         <div className="px-6 pt-6 pb-4 border-b border-stone-100">
           <div className="flex items-start justify-between">
             <div>
-              <h2 className="font-serif italic text-2xl text-stone-800">Quick Plan</h2>
+              <h2 className="font-serif italic text-2xl text-stone-800">
+                Quick Plan
+              </h2>
               <p className="text-xs text-stone-400 mt-0.5">{todayStr}</p>
             </div>
-            <button onClick={onClose} aria-label="Close" className="p-1.5 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-100">
+            <button
+              onClick={onClose}
+              aria-label="Close"
+              className="p-1.5 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-100"
+            >
               <X className="w-4 h-4" />
             </button>
           </div>
           {!loading && tasks.length > 0 && (
             <p className="mt-3 text-xs text-stone-500">
-              {tasks.length} commitment{tasks.length !== 1 ? "s" : ""} · {totalMins}m scheduled
+              {tasks.length} commitment{tasks.length !== 1 ? "s" : ""} ·{" "}
+              {totalMins}m scheduled
             </p>
           )}
         </div>
@@ -154,12 +187,17 @@ export function QuickPlan({ open, onClose }: Props) {
           {loading ? (
             <div className="space-y-2">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-14 rounded-2xl bg-stone-100 animate-pulse" />
+                <div
+                  key={i}
+                  className="h-14 rounded-2xl bg-stone-100 animate-pulse"
+                />
               ))}
             </div>
           ) : tasks.length === 0 ? (
             <div className="py-10 text-center">
-              <p className="text-sm text-stone-400">Nothing scheduled today — you're clear.</p>
+              <p className="text-sm text-stone-400">
+                Nothing scheduled today — you're clear.
+              </p>
             </div>
           ) : (
             <ul className="space-y-2">

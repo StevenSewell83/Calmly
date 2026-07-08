@@ -11,7 +11,10 @@ function fakeFetchOk(body: Record<string, unknown>): typeof fetch {
     })) as unknown as typeof fetch;
 }
 
-function fakeFetch(status: number, body: Record<string, unknown>): typeof fetch {
+function fakeFetch(
+  status: number,
+  body: Record<string, unknown>,
+): typeof fetch {
   return (async () =>
     new Response(JSON.stringify(body), {
       status,

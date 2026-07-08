@@ -34,10 +34,10 @@ See [docs/SELF_HOSTING.md](../docs/SELF_HOSTING.md) for the complete guide.
 
 All config is via environment variables. See [docs/SELF_HOSTING.md](../docs/SELF_HOSTING.md#configuration-reference) for the full reference.
 
-| Variable | Default | Notes |
-|---|---|---|
-| `DATABASE_URL` | — | Required. PostgreSQL connection string. |
-| `PORT` | `3001` | HTTP port. |
+| Variable       | Default   | Notes                                                                  |
+| -------------- | --------- | ---------------------------------------------------------------------- |
+| `DATABASE_URL` | —         | Required. PostgreSQL connection string.                                |
+| `PORT`         | `3001`    | HTTP port.                                                             |
 | `EMAIL_SENDER` | `console` | `console` writes emails to `DEV_MAIL_DIR`; use `resend` in production. |
 
 ## Development

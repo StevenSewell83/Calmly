@@ -1,5 +1,9 @@
 import type { BrowserWindow } from "electron";
-import { findDeepLinkInArgv, parseDeepLink, type DeepLinkPayload } from "../auth/deeplink";
+import {
+  findDeepLinkInArgv,
+  parseDeepLink,
+  type DeepLinkPayload,
+} from "../auth/deeplink";
 import { installDeepLink } from "../auth/deeplink-install";
 import type { AuthOrchestrator, RedeemResult } from "../auth/session";
 
@@ -14,7 +18,10 @@ export interface DeepLinkBootstrap {
   // Call once: registers the OS protocol handler and buffers incoming URLs.
   install(): void;
   // Call after the orchestrator and window are ready to drain the buffer.
-  setReady(orchestrator: AuthOrchestrator, mainWindow: () => BrowserWindow | null): void;
+  setReady(
+    orchestrator: AuthOrchestrator,
+    mainWindow: () => BrowserWindow | null,
+  ): void;
   // Cold-start: push a link from process.argv and flush.
   pushFromArgv(argv: string[]): void;
   // Subscribe to calendar OAuth completions so calendar/<provider>OAuth.ts
@@ -47,7 +54,9 @@ export function createDeepLinkBootstrap(): DeepLinkBootstrap {
     }
   }
 
-  function dispatchAuth(payload: Extract<DeepLinkPayload, { kind: "auth" }>): void {
+  function dispatchAuth(
+    payload: Extract<DeepLinkPayload, { kind: "auth" }>,
+  ): void {
     if (!orch) return;
     void orch.redeem(payload.token).then((result: RedeemResult) => {
       const win = getWin?.();

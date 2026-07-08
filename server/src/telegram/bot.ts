@@ -18,6 +18,7 @@ export function initBot(config: TelegramConfig): Bot {
 }
 
 export function getBot(): Bot {
-  if (!_bot) throw new Error("Telegram bot not initialised — call initBot first");
+  if (!_bot)
+    throw new Error("Telegram bot not initialised — call initBot first");
   return _bot;
 }

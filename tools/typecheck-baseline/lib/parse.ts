@@ -25,16 +25,17 @@ export function parseTypecheckOutput(text: string): TypecheckError[] {
     const line = raw.trimEnd();
     const m = ERROR_RE.exec(line);
     if (!m) continue;
-    const [, workspace, file, lineStr, colStr, code, message] = m as unknown as [
-      string,
-      string,
-      string,
-      string,
-      string,
-      string,
-      string,
-      string,
-    ];
+    const [, workspace, file, lineStr, colStr, code, message] =
+      m as unknown as [
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+        string,
+      ];
     out.push({
       workspace,
       file,
@@ -82,6 +83,10 @@ function compareBuckets(a: ErrorBucket, b: ErrorBucket): number {
   return a.code < b.code ? -1 : a.code > b.code ? 1 : 0;
 }
 
-export function bucketKey(workspace: string, file: string, code: string): string {
+export function bucketKey(
+  workspace: string,
+  file: string,
+  code: string,
+): string {
   return `${workspace}\t${file}\t${code}`;
 }

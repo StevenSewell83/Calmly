@@ -20,7 +20,10 @@ interface AICleanupPanelProps {
     | { kind: "error"; error: AIError };
   onRun: () => void;
   onCancel: () => void;
-  onApplyAll: (suggestion: TriageCleanupResult, suggestionId: string) => Promise<void>;
+  onApplyAll: (
+    suggestion: TriageCleanupResult,
+    suggestionId: string,
+  ) => Promise<void>;
   onDiscard: (suggestionId: string) => Promise<void>;
   onClose: () => void;
   aiEnabled: boolean;
@@ -55,7 +58,12 @@ export function AICleanupPanel({
   useEffect(() => {
     if (state.kind === "done") {
       setEdited({});
-      setAccepted({ type: false, title: false, dueDate: false, nextAction: false });
+      setAccepted({
+        type: false,
+        title: false,
+        dueDate: false,
+        nextAction: false,
+      });
     }
   }, [state.kind === "done" ? state.suggestionId : null]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -64,10 +72,14 @@ export function AICleanupPanel({
 
   const merged: TriageCleanupResult | null = suggestion
     ? {
-        type: (edited.type ?? suggestion.type),
-        title: (edited.title ?? suggestion.title),
-        dueDate: edited.dueDate !== undefined ? edited.dueDate : suggestion.dueDate,
-        nextAction: edited.nextAction !== undefined ? edited.nextAction : suggestion.nextAction,
+        type: edited.type ?? suggestion.type,
+        title: edited.title ?? suggestion.title,
+        dueDate:
+          edited.dueDate !== undefined ? edited.dueDate : suggestion.dueDate,
+        nextAction:
+          edited.nextAction !== undefined
+            ? edited.nextAction
+            : suggestion.nextAction,
       }
     : null;
 
@@ -89,9 +101,16 @@ export function AICleanupPanel({
     const onKey = (e: KeyboardEvent): void => {
       const target = e.target as HTMLElement | null;
       if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA") return;
-      if (e.key === "a" || e.key === "A") { e.preventDefault(); void handleApplyAll(); }
-      else if (e.key === "r" || e.key === "R") { e.preventDefault(); void handleDiscard(); }
-      else if (e.key === "Escape") { e.preventDefault(); onClose(); }
+      if (e.key === "a" || e.key === "A") {
+        e.preventDefault();
+        void handleApplyAll();
+      } else if (e.key === "r" || e.key === "R") {
+        e.preventDefault();
+        void handleDiscard();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -179,7 +198,9 @@ export function AICleanupPanel({
                       : "bg-stone-100 text-stone-600 hover:bg-stone-200",
                   ].join(" ")}
                 >
-                  {t === "someday" ? "Someday" : t.charAt(0).toUpperCase() + t.slice(1)}
+                  {t === "someday"
+                    ? "Someday"
+                    : t.charAt(0).toUpperCase() + t.slice(1)}
                 </button>
               ))}
             </div>
@@ -199,7 +220,7 @@ export function AICleanupPanel({
           </SuggestionField>
 
           {/* Due date field */}
-          {(merged.dueDate !== undefined) && (
+          {merged.dueDate !== undefined && (
             <SuggestionField
               label="Due"
               accepted={accepted.dueDate}
@@ -215,7 +236,7 @@ export function AICleanupPanel({
           )}
 
           {/* Next action field */}
-          {(merged.nextAction !== undefined) && (
+          {merged.nextAction !== undefined && (
             <SuggestionField
               label="First step"
               accepted={accepted.nextAction}
@@ -238,7 +259,11 @@ export function AICleanupPanel({
               disabled={applying}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-500 disabled:opacity-40 transition-colors"
             >
-              {applying ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
+              {applying ? (
+                <Loader2 size={12} className="animate-spin" />
+              ) : (
+                <CheckCircle2 size={12} />
+              )}
               Apply all
             </button>
             <button
@@ -269,7 +294,13 @@ interface SuggestionFieldProps {
   children: React.ReactNode;
 }
 
-function SuggestionField({ label, accepted, onAccept, onReject, children }: SuggestionFieldProps) {
+function SuggestionField({
+  label,
+  accepted,
+  onAccept,
+  onReject,
+  children,
+}: SuggestionFieldProps) {
   return (
     <div
       className={[
@@ -332,7 +363,9 @@ function EditableText({ value, onChange, placeholder }: EditableTextProps) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onBlur={() => setEditing(false)}
-        onKeyDown={(e) => { if (e.key === "Enter") setEditing(false); }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") setEditing(false);
+        }}
         placeholder={placeholder}
         className="w-full text-xs text-stone-800 bg-transparent outline-none border-b border-emerald-300 pb-0.5"
       />
@@ -345,8 +378,13 @@ function EditableText({ value, onChange, placeholder }: EditableTextProps) {
       onClick={() => setEditing(true)}
       className="group flex items-center gap-1.5 w-full text-left"
     >
-      <span className="text-xs text-stone-800">{value || <span className="text-stone-400">{placeholder}</span>}</span>
-      <Pencil size={10} className="text-stone-300 group-hover:text-stone-500 transition-colors shrink-0" />
+      <span className="text-xs text-stone-800">
+        {value || <span className="text-stone-400">{placeholder}</span>}
+      </span>
+      <Pencil
+        size={10}
+        className="text-stone-300 group-hover:text-stone-500 transition-colors shrink-0"
+      />
     </button>
   );
 }

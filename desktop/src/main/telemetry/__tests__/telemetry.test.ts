@@ -14,7 +14,14 @@ vi.mock("../../db", () => ({
       run: (...args: unknown[]) => {
         if (sql.includes("INSERT INTO telemetry_outbox")) {
           const [id, eventName, anonId, sessId, propsJson, createdAt] = args;
-          hoisted.outbox.push({ id, event_name: eventName, anonymous_id: anonId, session_id: sessId, props_json: propsJson, created_at: createdAt });
+          hoisted.outbox.push({
+            id,
+            event_name: eventName,
+            anonymous_id: anonId,
+            session_id: sessId,
+            props_json: propsJson,
+            created_at: createdAt,
+          });
         } else if (sql.includes("DELETE FROM telemetry_outbox")) {
           hoisted.outbox.splice(0);
         }
@@ -37,9 +44,13 @@ vi.mock("../../db", () => ({
 vi.mock("../../security/secretStore", () => ({
   secretStore: {
     get: () => hoisted.storedId,
-    set: (key: string, value: string) => { hoisted.storedId = value; },
+    set: (key: string, value: string) => {
+      hoisted.storedId = value;
+    },
     has: () => hoisted.storedId !== null,
-    delete: () => { hoisted.storedId = null; },
+    delete: () => {
+      hoisted.storedId = null;
+    },
   },
 }));
 
@@ -129,7 +140,9 @@ describe("TelemetryBatchSchema", () => {
       session_id: "00000000-0000-0000-0000-000000000002",
       timestamp: Date.now(),
     };
-    const result = TelemetryBatchSchema.safeParse({ events: Array(101).fill(ev) });
+    const result = TelemetryBatchSchema.safeParse({
+      events: Array(101).fill(ev),
+    });
     expect(result.success).toBe(false);
   });
 });
@@ -189,7 +202,9 @@ describe("purgeOutbox", () => {
 });
 
 describe("getOrCreateAnonymousId", () => {
-  beforeEach(() => { hoisted.storedId = null; });
+  beforeEach(() => {
+    hoisted.storedId = null;
+  });
 
   it("creates and stores a new UUID when none exists", () => {
     const id = getOrCreateAnonymousId();

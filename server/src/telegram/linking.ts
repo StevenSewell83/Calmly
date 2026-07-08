@@ -48,7 +48,9 @@ export async function generateLinkingCode(
         AND expires_at > $2`,
     [userId, now],
   );
-  if (parseInt(activeCount.rows[0]?.count ?? "0", 10) >= MAX_ACTIVE_CODES_PER_USER) {
+  if (
+    parseInt(activeCount.rows[0]?.count ?? "0", 10) >= MAX_ACTIVE_CODES_PER_USER
+  ) {
     return { ok: false, error: "rate_limited" };
   }
 
@@ -213,10 +215,9 @@ export async function unlinkTelegram(
   pool: pg.Pool,
   userId: string,
 ): Promise<{ ok: true; deleted: number }> {
-  const r = await pool.query(
-    `DELETE FROM telegram_links WHERE user_id = $1`,
-    [userId],
-  );
+  const r = await pool.query(`DELETE FROM telegram_links WHERE user_id = $1`, [
+    userId,
+  ]);
   return { ok: true, deleted: r.rowCount ?? 0 };
 }
 

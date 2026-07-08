@@ -34,17 +34,27 @@ const call = (ch: string, raw: unknown) => reg.get(ch)!(CTX, raw);
 
 describe("reminders:get", () => {
   it("rejects non-object payload with InvalidArgs", () => {
-    expect(call("reminders:get", "bad")).toEqual({ ok: false, error: "InvalidArgs" });
+    expect(call("reminders:get", "bad")).toEqual({
+      ok: false,
+      error: "InvalidArgs",
+    });
   });
 
   it("rejects payload missing taskId", () => {
-    expect(call("reminders:get", {})).toEqual({ ok: false, error: "InvalidArgs" });
+    expect(call("reminders:get", {})).toEqual({
+      ok: false,
+      error: "InvalidArgs",
+    });
   });
 
   it("delegates to getReminderRule and wraps in { ok, rule }", () => {
     vi.mocked(store.getReminderRule).mockReturnValue(null);
     const r = call("reminders:get", { taskId: "t1" });
-    expect(store.getReminderRule).toHaveBeenCalledWith(CTX.db, CTX.userId, "t1");
+    expect(store.getReminderRule).toHaveBeenCalledWith(
+      CTX.db,
+      CTX.userId,
+      "t1",
+    );
     expect(r).toEqual({ ok: true, rule: null });
   });
 
@@ -75,18 +85,25 @@ describe("reminders:upsert", () => {
   };
 
   it("rejects non-object payload", () => {
-    expect(call("reminders:upsert", null)).toEqual({ ok: false, error: "InvalidArgs" });
+    expect(call("reminders:upsert", null)).toEqual({
+      ok: false,
+      error: "InvalidArgs",
+    });
   });
 
   it("rejects payload missing taskId", () => {
-    expect(call("reminders:upsert", { ...validPayload, taskId: undefined })).toEqual({
+    expect(
+      call("reminders:upsert", { ...validPayload, taskId: undefined }),
+    ).toEqual({
       ok: false,
       error: "InvalidArgs",
     });
   });
 
   it("rejects non-string importance", () => {
-    expect(call("reminders:upsert", { ...validPayload, importance: 1 })).toEqual({
+    expect(
+      call("reminders:upsert", { ...validPayload, importance: 1 }),
+    ).toEqual({
       ok: false,
       error: "InvalidArgs",
     });
@@ -111,7 +128,10 @@ describe("reminders:upsert", () => {
   });
 
   it("delegates to upsertReminderRule on the happy path", () => {
-    vi.mocked(store.upsertReminderRule).mockReturnValue({ ok: true, id: "r-new" });
+    vi.mocked(store.upsertReminderRule).mockReturnValue({
+      ok: true,
+      id: "r-new",
+    });
     const r = call("reminders:upsert", validPayload);
     expect(store.upsertReminderRule).toHaveBeenCalledWith(
       CTX.db,
@@ -133,11 +153,17 @@ describe("reminders:upsert", () => {
 
 describe("reminders:delete", () => {
   it("rejects non-object payload", () => {
-    expect(call("reminders:delete", "x")).toEqual({ ok: false, error: "InvalidArgs" });
+    expect(call("reminders:delete", "x")).toEqual({
+      ok: false,
+      error: "InvalidArgs",
+    });
   });
 
   it("rejects payload missing taskId", () => {
-    expect(call("reminders:delete", {})).toEqual({ ok: false, error: "InvalidArgs" });
+    expect(call("reminders:delete", {})).toEqual({
+      ok: false,
+      error: "InvalidArgs",
+    });
   });
 
   it("delegates to deleteReminderRule on the happy path", () => {
@@ -153,7 +179,10 @@ describe("reminders:delete", () => {
   });
 
   it("passes through NotFound from the store", () => {
-    vi.mocked(store.deleteReminderRule).mockReturnValue({ ok: false, error: "NotFound" });
+    vi.mocked(store.deleteReminderRule).mockReturnValue({
+      ok: false,
+      error: "NotFound",
+    });
     expect(call("reminders:delete", { taskId: "t1" })).toEqual({
       ok: false,
       error: "NotFound",

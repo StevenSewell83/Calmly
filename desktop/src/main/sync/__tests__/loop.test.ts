@@ -279,13 +279,23 @@ describe("runSyncOnce — pull phase", () => {
 describe("createSyncLoop — start/stop", () => {
   it("does not tick after stop()", async () => {
     vi.useFakeTimers();
-    const tick = vi.fn(async () => ({ ok: true, pushed: 0, pulled: 0, pendingAfter: 0, lastPulledVersion: 0 }));
+    const tick = vi.fn(async () => ({
+      ok: true,
+      pushed: 0,
+      pulled: 0,
+      pendingAfter: 0,
+      lastPulledVersion: 0,
+    }));
     const db = makeFakeDb([], { last_pulled_version: 0, last_pushed_at: null });
     const client = makeClient({
       push: tick as never,
       pull: vi.fn(async () => ({ records: {}, version: 0 })),
     });
-    const loop = createSyncLoop({ getDb: () => db as never, client, intervalMs: 1_000 });
+    const loop = createSyncLoop({
+      getDb: () => db as never,
+      client,
+      intervalMs: 1_000,
+    });
     loop.start();
     vi.advanceTimersByTime(2_500);
     loop.stop();
@@ -297,7 +307,11 @@ describe("createSyncLoop — start/stop", () => {
 
   it("stop() is idempotent — calling twice does not throw", () => {
     const db = makeFakeDb([], { last_pulled_version: 0, last_pushed_at: null });
-    const loop = createSyncLoop({ getDb: () => db as never, client: makeClient(), intervalMs: 10_000 });
+    const loop = createSyncLoop({
+      getDb: () => db as never,
+      client: makeClient(),
+      intervalMs: 10_000,
+    });
     loop.start();
     loop.stop();
     expect(() => loop.stop()).not.toThrow();

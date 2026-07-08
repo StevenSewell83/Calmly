@@ -95,9 +95,7 @@ export function startFocus(
       found = true;
     });
     tx();
-    return found
-      ? { ok: true, sessionId }
-      : { ok: false, error: "NotFound" };
+    return found ? { ok: true, sessionId } : { ok: false, error: "NotFound" };
   } catch {
     return { ok: false, error: "InternalError" };
   }
@@ -216,9 +214,7 @@ export function switchFocus(
       found = true;
     });
     tx();
-    return found
-      ? { ok: true, sessionId }
-      : { ok: false, error: "NotFound" };
+    return found ? { ok: true, sessionId } : { ok: false, error: "NotFound" };
   } catch {
     return { ok: false, error: "InternalError" };
   }
@@ -270,11 +266,26 @@ export function startAdHocFocus(
         `INSERT INTO tasks (id, user_id, title, notes, type, status, due_at, parent_task_id, source, created_at, updated_at, version, deleted_at)
          VALUES (?, ?, ?, NULL, 'task', 'open', ?, NULL, 'desktop', ?, ?, 0, NULL)`,
       ).run(taskId, userId, trimmed, now, now, now);
-      enqueueTaskUpsert(db, taskId, {
-        title: trimmed, notes: null, status: "open", due_at: now,
-        scheduled_start: null, scheduled_end: null, parent_task_id: null,
-        source: "desktop", created_at: now, type: "task", version: 0,
-      }, {}, now, 0);
+      enqueueTaskUpsert(
+        db,
+        taskId,
+        {
+          title: trimmed,
+          notes: null,
+          status: "open",
+          due_at: now,
+          scheduled_start: null,
+          scheduled_end: null,
+          parent_task_id: null,
+          source: "desktop",
+          created_at: now,
+          type: "task",
+          version: 0,
+        },
+        {},
+        now,
+        0,
+      );
       endOpenSessions(db, userId, now);
       db.prepare(
         `INSERT INTO focus_sessions (id, user_id, task_id, started_at, ended_at, source) VALUES (?, ?, ?, ?, NULL, 'ad-hoc')`,

@@ -1,5 +1,8 @@
 import { useDroppable } from "@dnd-kit/core";
-import type { CalendarDayEvent, PlanTaskItem } from "../../../preload/api-types";
+import type {
+  CalendarDayEvent,
+  PlanTaskItem,
+} from "../../../preload/api-types";
 import { TimeBlock } from "./TimeBlock";
 import { CalendarEventBlock } from "./CalendarEventBlock";
 import {
@@ -53,7 +56,12 @@ function Slot({ minutesFromStart }: { minutesFromStart: number }) {
   );
 }
 
-export function DayGrid({ blocks, calendarEvents = [], onBlockResize, onBlockClick }: DayGridProps) {
+export function DayGrid({
+  blocks,
+  calendarEvents = [],
+  onBlockResize,
+  onBlockClick,
+}: DayGridProps) {
   const guides = buildSlotGuides();
   return (
     <div className="flex">
@@ -97,11 +105,12 @@ export function DayGrid({ blocks, calendarEvents = [], onBlockResize, onBlockCli
         ))}
 
         {/* Drop slots — invisible, but resolve drop targets to a 15-min minute offset */}
-        {Array.from({ length: SLOT_COUNT }, (_, i) => i * SLOT_SNAP_MINUTES).map(
-          (m) => (
-            <Slot key={m} minutesFromStart={m} />
-          ),
-        )}
+        {Array.from(
+          { length: SLOT_COUNT },
+          (_, i) => i * SLOT_SNAP_MINUTES,
+        ).map((m) => (
+          <Slot key={m} minutesFromStart={m} />
+        ))}
 
         {/* Calendar event blocks (read-only, behind task blocks) */}
         <div className="absolute inset-0 pointer-events-none">
@@ -143,4 +152,3 @@ export function DayGrid({ blocks, calendarEvents = [], onBlockResize, onBlockCli
     </div>
   );
 }
-

@@ -116,7 +116,9 @@ describe("MockTelegramBotApi", () => {
 
   it("fetchImpl returns 502 for any non-file-download URL (catches accidental real-network)", async () => {
     const bot = new MockTelegramBotApi();
-    const res = await bot.fetchImpl("https://api.openai.com/v1/audio/transcriptions");
+    const res = await bot.fetchImpl(
+      "https://api.openai.com/v1/audio/transcriptions",
+    );
     expect(res.status).toBe(502);
   });
 
@@ -124,7 +126,11 @@ describe("MockTelegramBotApi", () => {
     const bot = new MockTelegramBotApi();
     await bot.api.sendMessage(1, "hi");
     bot.setFileBytes("voice/x.ogg", new Uint8Array([1]));
-    bot.setNextGetFile({ file_id: "z", file_unique_id: "z", file_path: "z.ogg" });
+    bot.setNextGetFile({
+      file_id: "z",
+      file_unique_id: "z",
+      file_path: "z.ogg",
+    });
     bot.reset();
     expect(bot.outbound).toEqual([]);
     const url = `https://api.telegram.org/file/bot${bot.token}/voice/x.ogg`;

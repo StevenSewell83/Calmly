@@ -1,5 +1,10 @@
 import { useEffect } from "react";
-import { gridMinutesToMs, msToGridMinutes, snapAndClampStartForDuration, clampDurationMinutes } from "../pages/Plan/planMath";
+import {
+  gridMinutesToMs,
+  msToGridMinutes,
+  snapAndClampStartForDuration,
+  clampDurationMinutes,
+} from "../pages/Plan/planMath";
 
 const STEP_MINUTES = 15;
 
@@ -9,7 +14,11 @@ export const PLAN_ITEM_ATTR = "data-plan-item";
 export const PLAN_BLOCK_ATTR = "data-plan-block";
 
 export interface UsePlanShortcutsOpts {
-  blocks: { task: { id: string; scheduled_start: number; scheduled_end: number }; startMinutes: number; endMinutes: number }[];
+  blocks: {
+    task: { id: string; scheduled_start: number; scheduled_end: number };
+    startMinutes: number;
+    endMinutes: number;
+  }[];
   day: number;
   onMoveBlock(taskId: string, newStartMs: number, newEndMs: number): void;
   onUnschedule(taskId: string): void;
@@ -17,9 +26,7 @@ export interface UsePlanShortcutsOpts {
 }
 
 function planItems(): HTMLElement[] {
-  return [
-    ...document.querySelectorAll<HTMLElement>(`[${PLAN_ITEM_ATTR}]`),
-  ];
+  return [...document.querySelectorAll<HTMLElement>(`[${PLAN_ITEM_ATTR}]`)];
 }
 
 function focusedPlanItem(): HTMLElement | null {
@@ -45,7 +52,13 @@ export function usePlanShortcuts({
       const target = e.target as HTMLElement | null;
       if (target) {
         const tag = target.tagName;
-        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.isContentEditable) return;
+        if (
+          tag === "INPUT" ||
+          tag === "TEXTAREA" ||
+          tag === "SELECT" ||
+          target.isContentEditable
+        )
+          return;
       }
       if (e.metaKey || e.ctrlKey || e.altKey) return;
 
@@ -71,7 +84,10 @@ export function usePlanShortcuts({
         if (!block) return;
         const delta = e.key === "ArrowUp" ? -STEP_MINUTES : STEP_MINUTES;
         const duration = block.endMinutes - block.startMinutes;
-        const newStart = snapAndClampStartForDuration(block.startMinutes + delta, duration);
+        const newStart = snapAndClampStartForDuration(
+          block.startMinutes + delta,
+          duration,
+        );
         const safeDuration = clampDurationMinutes(duration, newStart);
         onMoveBlock(
           blockTaskId,

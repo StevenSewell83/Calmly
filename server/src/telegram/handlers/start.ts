@@ -12,10 +12,13 @@ const ONBOARDING_TEXT =
   "go to Settings → Telegram, generate a linking code, and send it here as /start <CODE>.";
 
 const REPLIES: Record<string, string> = {
-  success: "Your Telegram account is now linked to Calmly. You can send tasks and voice notes here.",
-  not_found: "That code wasn't found. Generate a new one in Settings → Telegram.",
+  success:
+    "Your Telegram account is now linked to Calmly. You can send tasks and voice notes here.",
+  not_found:
+    "That code wasn't found. Generate a new one in Settings → Telegram.",
   expired: "That code has expired. Generate a new one in Settings → Telegram.",
-  already_used: "That code has already been used. Generate a new one in Settings → Telegram.",
+  already_used:
+    "That code has already been used. Generate a new one in Settings → Telegram.",
 };
 
 export async function handleStart(
@@ -33,7 +36,13 @@ export async function handleStart(
 
   const chatId = String(message.chat.id);
   const username = message.from?.username;
-  const result = await redeemLinkingCode(pool, rawCode, chatId, username ?? null, Date.now());
+  const result = await redeemLinkingCode(
+    pool,
+    rawCode,
+    chatId,
+    username ?? null,
+    Date.now(),
+  );
 
   if (result.ok) {
     log.info({ chatId, userId: result.userId }, "[telegram] account linked");

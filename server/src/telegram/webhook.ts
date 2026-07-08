@@ -8,7 +8,8 @@ export function telegramPlugin(tgConfig: TelegramConfig): FastifyPluginAsync {
   return async function (app: FastifyInstance) {
     // Webhook — Telegram posts Updates here.
     app.post("/telegram/webhook", async (req, reply) => {
-      const secret = (req.headers["x-telegram-bot-api-secret-token"] ?? "") as string;
+      const secret = (req.headers["x-telegram-bot-api-secret-token"] ??
+        "") as string;
       if (secret !== tgConfig.TELEGRAM_WEBHOOK_SECRET) {
         return reply.status(401).send({ error: "Unauthorized" });
       }

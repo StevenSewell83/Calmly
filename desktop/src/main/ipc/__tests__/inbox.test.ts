@@ -42,7 +42,10 @@ const call = (ch: string, raw: unknown) => reg.get(ch)!(CTX, raw);
 describe("inbox:add", () => {
   it("rejects non-string payload with InvalidArgs", () => {
     expect(call("inbox:add", 42)).toEqual({ ok: false, error: "InvalidArgs" });
-    expect(call("inbox:add", null)).toEqual({ ok: false, error: "InvalidArgs" });
+    expect(call("inbox:add", null)).toEqual({
+      ok: false,
+      error: "InvalidArgs",
+    });
     expect(store.addInboxItem).not.toHaveBeenCalled();
   });
 
@@ -79,7 +82,9 @@ describe("inbox:add", () => {
 describe("inbox:list", () => {
   it("calls listInbox with userId and now, returns items", () => {
     const items = [{ id: "i1" }];
-    vi.mocked(store.listInbox).mockReturnValue(items as ReturnType<typeof store.listInbox>);
+    vi.mocked(store.listInbox).mockReturnValue(
+      items as ReturnType<typeof store.listInbox>,
+    );
     const r = call("inbox:list", undefined);
     expect(store.listInbox).toHaveBeenCalledWith(CTX.db, CTX.userId, CTX.now);
     expect(r).toEqual({ ok: true, items });

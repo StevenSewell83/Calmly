@@ -36,49 +36,50 @@ test.describe("CL-15c · empty-state first-open flow", () => {
     );
   });
 
-  test(
-    "fresh user sees home-first-open EmptyState; CTA focuses CaptureBar; capture replaces inbox EmptyState",
-    async () => {
-      const launched = await launchElectronApp({ syncUrl: server!.url });
-      try {
-        // 1. Sign in (no seed data — brand-new user/DB).
-        await signInAsTestUser({
-          app: launched.electronApp,
-          window: launched.window,
-          server: server!,
-          email: `empty-state-${Date.now()}@calmly.test`,
-        });
+  test("fresh user sees home-first-open EmptyState; CTA focuses CaptureBar; capture replaces inbox EmptyState", async () => {
+    const launched = await launchElectronApp({ syncUrl: server!.url });
+    try {
+      // 1. Sign in (no seed data — brand-new user/DB).
+      await signInAsTestUser({
+        app: launched.electronApp,
+        window: launched.window,
+        server: server!,
+        email: `empty-state-${Date.now()}@calmly.test`,
+      });
 
-        const win = launched.window;
+      const win = launched.window;
 
-        // 2. Home shows the first-open empty state (no tasks / events seeded).
-        const homeEmptyState = win.locator('[data-empty-state="home-first-open"]');
-        await expect(homeEmptyState).toBeVisible({ timeout: 10_000 });
-        await expect(homeEmptyState.getByText("Welcome to Calmly.")).toBeVisible();
+      // 2. Home shows the first-open empty state (no tasks / events seeded).
+      const homeEmptyState = win.locator(
+        '[data-empty-state="home-first-open"]',
+      );
+      await expect(homeEmptyState).toBeVisible({ timeout: 10_000 });
+      await expect(
+        homeEmptyState.getByText("Welcome to Calmly."),
+      ).toBeVisible();
 
-        // 3. CTA "Capture a thought" focuses the CaptureBar input.
-        await win.getByRole("button", { name: "Capture a thought" }).click();
-        const captureInput = win.getByLabel("Capture a thought");
-        await expect(captureInput).toBeFocused({ timeout: 3_000 });
+      // 3. CTA "Capture a thought" focuses the CaptureBar input.
+      await win.getByRole("button", { name: "Capture a thought" }).click();
+      const captureInput = win.getByLabel("Capture a thought");
+      await expect(captureInput).toBeFocused({ timeout: 3_000 });
 
-        // 4. Capture an item and confirm the toast.
-        const captureText = "First thought ever";
-        await captureInput.fill(captureText);
-        await captureInput.press("Enter");
-        await expect(win.getByText("Added to Inbox")).toBeVisible({
-          timeout: 5_000,
-        });
+      // 4. Capture an item and confirm the toast.
+      const captureText = "First thought ever";
+      await captureInput.fill(captureText);
+      await captureInput.press("Enter");
+      await expect(win.getByText("Added to Inbox")).toBeVisible({
+        timeout: 5_000,
+      });
 
-        // 5. Navigate to Inbox — the captured row is visible and the
-        //    inbox-clear EmptyState is gone.
-        await win.getByRole("link", { name: /inbox/i }).click();
-        await expect(win.getByText(captureText)).toBeVisible({ timeout: 10_000 });
-        await expect(
-          win.locator('[data-empty-state="inbox-clear"]'),
-        ).not.toBeVisible();
-      } finally {
-        await launched.dispose();
-      }
-    },
-  );
+      // 5. Navigate to Inbox — the captured row is visible and the
+      //    inbox-clear EmptyState is gone.
+      await win.getByRole("link", { name: /inbox/i }).click();
+      await expect(win.getByText(captureText)).toBeVisible({ timeout: 10_000 });
+      await expect(
+        win.locator('[data-empty-state="inbox-clear"]'),
+      ).not.toBeVisible();
+    } finally {
+      await launched.dispose();
+    }
+  });
 });

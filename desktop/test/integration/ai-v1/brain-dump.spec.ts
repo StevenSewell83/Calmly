@@ -6,7 +6,9 @@ import { vi, describe, it, expect, beforeEach } from "vitest";
 const mockComplete = vi.fn();
 vi.mock("../../../src/main/ai/providers/anthropic", () => ({
   AnthropicProvider: class {
-    complete(...args: unknown[]) { return mockComplete(...args); }
+    complete(...args: unknown[]) {
+      return mockComplete(...args);
+    }
   },
 }));
 
@@ -20,7 +22,11 @@ vi.mock("../../../src/main/security/secretStore", () => ({
 const mockDbRun = vi.fn();
 vi.mock("../../../src/main/db", () => ({
   getDb: vi.fn(() => ({
-    prepare: vi.fn(() => ({ run: mockDbRun, get: vi.fn(), all: vi.fn(() => []) })),
+    prepare: vi.fn(() => ({
+      run: mockDbRun,
+      get: vi.fn(),
+      all: vi.fn(() => []),
+    })),
   })),
 }));
 
@@ -41,13 +47,18 @@ describe("brain_dump_split integration", () => {
   beforeEach(() => {
     mockComplete.mockReset();
     mockDbRun.mockReset();
-    mockComplete.mockResolvedValue({ ok: true, value: JSON.stringify(fourItems) });
+    mockComplete.mockResolvedValue({
+      ok: true,
+      value: JSON.stringify(fourItems),
+    });
   });
 
   it("returns 4 candidate tasks", async () => {
     const r = await runAI({
       action: "brain_dump_split",
-      payload: { text: "buy groceries\ncall dentist\nreply to Sarah\ncar oil change" },
+      payload: {
+        text: "buy groceries\ncall dentist\nreply to Sarah\ncar oil change",
+      },
     });
 
     expect(r.ok).toBe(true);
@@ -58,9 +69,17 @@ describe("brain_dump_split integration", () => {
   });
 
   it("schema rejects tasks array exceeding 20", async () => {
-    const tooMany = { tasks: Array.from({ length: 21 }, (_, i) => ({ title: `Task ${i}` })) };
-    mockComplete.mockResolvedValue({ ok: true, value: JSON.stringify(tooMany) });
-    const r = await runAI({ action: "brain_dump_split", payload: { text: "lots of stuff" } });
+    const tooMany = {
+      tasks: Array.from({ length: 21 }, (_, i) => ({ title: `Task ${i}` })),
+    };
+    mockComplete.mockResolvedValue({
+      ok: true,
+      value: JSON.stringify(tooMany),
+    });
+    const r = await runAI({
+      action: "brain_dump_split",
+      payload: { text: "lots of stuff" },
+    });
     expect(r.ok).toBe(false);
     if (r.ok) return;
     expect(r.error.kind).toBe("invalid_response");

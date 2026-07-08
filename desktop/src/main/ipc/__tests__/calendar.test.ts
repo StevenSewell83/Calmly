@@ -14,9 +14,11 @@ const hoisted = vi.hoisted(() => {
       get: vi.fn(
         (
           _id: string,
-        ):
-          | { id: string; provider: "google" | "microsoft"; email: string }
-          | null => null,
+        ): {
+          id: string;
+          provider: "google" | "microsoft";
+          email: string;
+        } | null => null,
       ),
       delete: vi.fn((_id: string) => true),
     },
@@ -52,7 +54,8 @@ vi.mock("../../auth/currentUser", () => ({
 vi.mock("../../calendar/localStore", () => ({
   listLocalCalendarAccounts: () => hoisted.localStoreMocks.list(),
   getLocalCalendarAccount: (id: string) => hoisted.localStoreMocks.get(id),
-  deleteLocalCalendarAccount: (id: string) => hoisted.localStoreMocks.delete(id),
+  deleteLocalCalendarAccount: (id: string) =>
+    hoisted.localStoreMocks.delete(id),
 }));
 
 vi.mock("../../calendar/tokens", () => ({
@@ -69,10 +72,7 @@ const broadcastedEvents = hoisted.broadcastedEvents;
 const localStoreMocks = hoisted.localStoreMocks;
 const calendarTokensDelete = hoisted.calendarTokensDelete;
 
-import {
-  __resetCalendarIpcForTests,
-  registerCalendarIpc,
-} from "../calendar";
+import { __resetCalendarIpcForTests, registerCalendarIpc } from "../calendar";
 import type { ApiClient } from "../../net/client";
 import { ApiHttpError, ApiNetworkError } from "../../net/client";
 import { calendarStatusEvents } from "../../calendar/statusEvents";
@@ -103,13 +103,24 @@ function setup(args: {
 }): void {
   registerCalendarIpc({
     apiClient: args.apiClient,
-    connectGoogle: (args.connectGoogle ?? (async () => ({ ok: false, error: "internal_error" }))) as () => Promise<{ ok: false; error: "internal_error" }>,
-    connectMicrosoft: (args.connectMicrosoft ?? (async () => ({ ok: false, error: "internal_error" }))) as () => Promise<{ ok: false; error: "internal_error" }>,
+    connectGoogle: (args.connectGoogle ??
+      (async () => ({ ok: false, error: "internal_error" }))) as () => Promise<{
+      ok: false;
+      error: "internal_error";
+    }>,
+    connectMicrosoft: (args.connectMicrosoft ??
+      (async () => ({ ok: false, error: "internal_error" }))) as () => Promise<{
+      ok: false;
+      error: "internal_error";
+    }>,
   });
 }
 
 const noopClient: ApiClient = {
-  request: vi.fn(async () => ({ status: 200, body: {} })) as unknown as ApiClient["request"],
+  request: vi.fn(async () => ({
+    status: 200,
+    body: {},
+  })) as unknown as ApiClient["request"],
 };
 
 describe("calendar:disconnect", () => {
@@ -243,7 +254,13 @@ describe("calendar:listAccounts", () => {
 
   it("returns the local account list", async () => {
     const fakeAccounts = [
-      { id: "a1", provider: "google", email: "a@x.com", external_account_id: "g1", status: "connected" },
+      {
+        id: "a1",
+        provider: "google",
+        email: "a@x.com",
+        external_account_id: "g1",
+        status: "connected",
+      },
     ];
     localStoreMocks.list.mockReturnValue(fakeAccounts);
     setup({ apiClient: noopClient });

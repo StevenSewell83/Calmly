@@ -11,7 +11,9 @@ export const DEV_STUB_USER: AuthUser = {
 };
 
 export function createDevStubOrchestrator(): AuthOrchestrator {
-  const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+  const expiresAt = new Date(
+    Date.now() + 365 * 24 * 60 * 60 * 1000,
+  ).toISOString();
   return {
     async requestLink() {
       return { ok: true };

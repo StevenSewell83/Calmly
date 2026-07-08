@@ -13,7 +13,9 @@ export function CalendarReauthBanner() {
   const loadAccounts = useCallback(async () => {
     const r = await window.calmly.calendar.listAccounts();
     if (r.ok) {
-      setStaleAccounts(r.accounts.filter((a) => a.status === "reauth_required"));
+      setStaleAccounts(
+        r.accounts.filter((a) => a.status === "reauth_required"),
+      );
     }
   }, []);
 
@@ -48,7 +50,11 @@ export function CalendarReauthBanner() {
       aria-live="polite"
       className="mb-4 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3"
     >
-      <RefreshCw size={14} className="mt-0.5 shrink-0 text-amber-600" aria-hidden="true" />
+      <RefreshCw
+        size={14}
+        className="mt-0.5 shrink-0 text-amber-600"
+        aria-hidden="true"
+      />
       <div className="flex-1 min-w-0">
         <p className="text-xs font-medium text-amber-800">
           {staleAccounts.length === 1
@@ -64,7 +70,9 @@ export function CalendarReauthBanner() {
               onClick={() => void handleReconnect(account)}
               className="text-[11px] px-3 py-1 rounded-xl bg-amber-100 text-amber-800 hover:bg-amber-200 disabled:opacity-50 transition-colors font-medium"
             >
-              {reconnecting === account.id ? "Connecting…" : `Reconnect ${account.email}`}
+              {reconnecting === account.id
+                ? "Connecting…"
+                : `Reconnect ${account.email}`}
             </button>
           ))}
         </div>

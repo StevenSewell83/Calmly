@@ -30,12 +30,20 @@ exports.up = (pgm) => {
   pgm.addConstraint("user_settings", "user_settings_pkey", "PRIMARY KEY (id)");
 
   // Step 6: unique constraint so user_id stays a natural key.
-  pgm.addConstraint("user_settings", "user_settings_user_id_key", "UNIQUE (user_id)");
+  pgm.addConstraint(
+    "user_settings",
+    "user_settings_user_id_key",
+    "UNIQUE (user_id)",
+  );
 };
 
 exports.down = (pgm) => {
   pgm.dropConstraint("user_settings", "user_settings_user_id_key");
   pgm.dropConstraint("user_settings", "user_settings_pkey");
-  pgm.addConstraint("user_settings", "user_settings_pkey", "PRIMARY KEY (user_id)");
+  pgm.addConstraint(
+    "user_settings",
+    "user_settings_pkey",
+    "PRIMARY KEY (user_id)",
+  );
   pgm.dropColumn("user_settings", "id");
 };

@@ -5,7 +5,10 @@ interface SettingsJson {
   quickplan_skipped_dates?: string[];
 }
 
-function readSettings(db: import("better-sqlite3").Database, userId: string): SettingsJson {
+function readSettings(
+  db: import("better-sqlite3").Database,
+  userId: string,
+): SettingsJson {
   const row = db
     .prepare("SELECT settings_json FROM user_settings WHERE user_id = ?")
     .get(userId) as { settings_json: string } | undefined;
@@ -41,7 +44,12 @@ export function registerQuickPlanIpc(): void {
 
   authedHandler<{ ok: true }>("quickplan:setDate", (ctx, raw) => {
     const date = typeof raw === "string" ? raw : null;
-    writeSettings(ctx.db, ctx.userId, { last_quickplan_date: date ?? "" }, ctx.now);
+    writeSettings(
+      ctx.db,
+      ctx.userId,
+      { last_quickplan_date: date ?? "" },
+      ctx.now,
+    );
     return { ok: true };
   });
 }

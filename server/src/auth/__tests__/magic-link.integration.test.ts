@@ -128,11 +128,9 @@ describe.skipIf(!dockerAvailable)(
         session: { expiresAt: expect.any(String) },
       });
 
-      const rawSetCookie = redeemRes.headers["set-cookie"] as
-        | string
-        | string[];
+      const rawSetCookie = redeemRes.headers["set-cookie"] as string | string[];
       const cookiePart = (
-        Array.isArray(rawSetCookie) ? rawSetCookie[0] ?? "" : rawSetCookie
+        Array.isArray(rawSetCookie) ? (rawSetCookie[0] ?? "") : rawSetCookie
       ).split(";")[0];
       expect(cookiePart).toMatch(/^calmly_session=/);
 
@@ -275,9 +273,14 @@ describe.skipIf(!dockerAvailable)(
         url: `/auth/magic-link/redeem?token=${encodeURIComponent(rawToken)}`,
       });
       expect(res.statusCode).toBe(200);
-      expect(res.json()).toMatchObject({ user: expect.any(Object), session: { expiresAt: expect.any(String) } });
+      expect(res.json()).toMatchObject({
+        user: expect.any(Object),
+        session: { expiresAt: expect.any(String) },
+      });
       const setCookie = res.headers["set-cookie"];
-      const cookieStr = Array.isArray(setCookie) ? setCookie[0] ?? "" : (setCookie ?? "");
+      const cookieStr = Array.isArray(setCookie)
+        ? (setCookie[0] ?? "")
+        : (setCookie ?? "");
       expect(cookieStr).toMatch(/^calmly_session=/);
     });
 
@@ -288,7 +291,9 @@ describe.skipIf(!dockerAvailable)(
       "%s /auth/magic-link/redeem — 429 when IP is over the request rate limit",
       async (method) => {
         const uniqueIp = `10.${method === "POST" ? 1 : 2}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
-        const userId = await ensureUser(`ip-rl-${method.toLowerCase()}-${Date.now()}@example.com`);
+        const userId = await ensureUser(
+          `ip-rl-${method.toLowerCase()}-${Date.now()}@example.com`,
+        );
         const raw = generateToken();
         // Token must exist; the rate-limit fires before the token lookup.
         await pool.query(
@@ -308,8 +313,17 @@ describe.skipIf(!dockerAvailable)(
 
         const injectOpts =
           method === "POST"
-            ? { method: "POST" as const, url: "/auth/magic-link/redeem", payload: { token: raw }, remoteAddress: uniqueIp }
-            : { method: "GET"  as const, url: `/auth/magic-link/redeem?token=${encodeURIComponent(raw)}`, remoteAddress: uniqueIp };
+            ? {
+                method: "POST" as const,
+                url: "/auth/magic-link/redeem",
+                payload: { token: raw },
+                remoteAddress: uniqueIp,
+              }
+            : {
+                method: "GET" as const,
+                url: `/auth/magic-link/redeem?token=${encodeURIComponent(raw)}`,
+                remoteAddress: uniqueIp,
+              };
 
         const res = await app.inject(injectOpts);
         expect(res.statusCode).toBe(429);

@@ -159,7 +159,11 @@ export class MockTelegramBotApi implements TelegramFileClient {
     this.nextGetFile = null;
   }
 
-  setFileBytes(filePath: string, bytes: Uint8Array, mimeType = "audio/ogg"): void {
+  setFileBytes(
+    filePath: string,
+    bytes: Uint8Array,
+    mimeType = "audio/ogg",
+  ): void {
     this.fileBytes.set(normalisePath(filePath), { bytes, mimeType });
   }
 

@@ -50,9 +50,17 @@ export function createOpenAIWhisperProvider(
       form.append("response_format", "verbose_json");
       // Buffer is converted to a Blob; arrayBuffer slice is required for
       // Node's undici fetch to read the bytes correctly.
-      const blob = new Blob([audio.buffer.slice(audio.byteOffset, audio.byteOffset + audio.byteLength)], {
-        type: mimeType,
-      });
+      const blob = new Blob(
+        [
+          audio.buffer.slice(
+            audio.byteOffset,
+            audio.byteOffset + audio.byteLength,
+          ),
+        ],
+        {
+          type: mimeType,
+        },
+      );
       const filename = filenameForMime(mimeType);
       form.append("file", blob, filename);
 
@@ -70,7 +78,10 @@ export function createOpenAIWhisperProvider(
       } catch (err) {
         clearTimeout(timer);
         if (isAbortError(err)) {
-          throw new TranscriptionError("timeout", "transcription request aborted (timeout)");
+          throw new TranscriptionError(
+            "timeout",
+            "transcription request aborted (timeout)",
+          );
         }
         throw new TranscriptionError(
           "provider_error",
@@ -114,7 +125,10 @@ export function createOpenAIWhisperProvider(
 }
 
 function mapHttpError(status: number, body: unknown): TranscriptionError {
-  const errBody = (body && typeof body === "object" ? (body as OpenAIErrorBody).error : null) ?? null;
+  const errBody =
+    (body && typeof body === "object"
+      ? (body as OpenAIErrorBody).error
+      : null) ?? null;
   const msg = errBody?.message ?? `transcription HTTP ${status}`;
 
   if (status === 401 || status === 403) {
@@ -157,7 +171,8 @@ function filenameForMime(mimeType: string): string {
 
 function isAbortError(err: unknown): boolean {
   return (
-    err instanceof Error && (err.name === "AbortError" || /aborted/i.test(err.message))
+    err instanceof Error &&
+    (err.name === "AbortError" || /aborted/i.test(err.message))
   );
 }
 

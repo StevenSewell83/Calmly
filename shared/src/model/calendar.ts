@@ -27,12 +27,15 @@ export const CalendarEventImportSchema = z
   });
 export type CalendarEventImport = z.infer<typeof CalendarEventImportSchema>;
 
-export const CalendarEventImportRecordSchema = CalendarEventImportSchema.innerType().extend({
-  version: z.number().int().nonnegative(),
-  updated_at: z.number().int().nonnegative(),
-  deleted_at: z.number().int().nonnegative().nullable(),
-});
-export type CalendarEventImportRecord = z.infer<typeof CalendarEventImportRecordSchema>;
+export const CalendarEventImportRecordSchema =
+  CalendarEventImportSchema.innerType().extend({
+    version: z.number().int().nonnegative(),
+    updated_at: z.number().int().nonnegative(),
+    deleted_at: z.number().int().nonnegative().nullable(),
+  });
+export type CalendarEventImportRecord = z.infer<
+  typeof CalendarEventImportRecordSchema
+>;
 
 export const calendarAccountStatuses = [
   "connected",

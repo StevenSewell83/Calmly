@@ -60,10 +60,14 @@ const successAccount = {
 
 describe("createConnectGoogle", () => {
   it("happy path: opens browser, redeems ticket, persists refresh, mirrors row", async () => {
-    let deepLinkHandler: ((p: { provider: "google" | "microsoft"; ticket: string }) => void) | null = null;
+    let deepLinkHandler:
+      | ((p: { provider: "google" | "microsoft"; ticket: string }) => void)
+      | null = null;
     const openExternal = vi.fn(async (_url: string) => {
       // Simulate the user finishing OAuth and the OS firing a deep-link.
-      setImmediate(() => deepLinkHandler?.({ provider: "google", ticket: "abc.def" }));
+      setImmediate(() =>
+        deepLinkHandler?.({ provider: "google", ticket: "abc.def" }),
+      );
     });
 
     const client = makeClient(async (_m, path, body) => {
@@ -110,11 +114,15 @@ describe("createConnectGoogle", () => {
   });
 
   it("ignores microsoft deep-link payloads while waiting for google", async () => {
-    let deepLinkHandler: ((p: { provider: "google" | "microsoft"; ticket: string }) => void) | null = null;
+    let deepLinkHandler:
+      | ((p: { provider: "google" | "microsoft"; ticket: string }) => void)
+      | null = null;
     const openExternal = vi.fn(async () => {
       setImmediate(() => {
         deepLinkHandler?.({ provider: "microsoft", ticket: "wrong" });
-        setImmediate(() => deepLinkHandler?.({ provider: "google", ticket: "right.sig" }));
+        setImmediate(() =>
+          deepLinkHandler?.({ provider: "google", ticket: "right.sig" }),
+        );
       });
     });
 
@@ -194,9 +202,13 @@ describe("createConnectGoogle", () => {
   });
 
   it("maps 401 from /oauth/google/redeem to not_signed_in", async () => {
-    let deepLinkHandler: ((p: { provider: "google" | "microsoft"; ticket: string }) => void) | null = null;
+    let deepLinkHandler:
+      | ((p: { provider: "google" | "microsoft"; ticket: string }) => void)
+      | null = null;
     const openExternal = vi.fn(async () => {
-      setImmediate(() => deepLinkHandler?.({ provider: "google", ticket: "t" }));
+      setImmediate(() =>
+        deepLinkHandler?.({ provider: "google", ticket: "t" }),
+      );
     });
     const client = makeClient(async () => {
       throw new ApiHttpError("redeem failed", 401, { error: "unauthorized" });
@@ -216,9 +228,13 @@ describe("createConnectGoogle", () => {
   });
 
   it("maps redeem network errors to redeem_failed", async () => {
-    let deepLinkHandler: ((p: { provider: "google" | "microsoft"; ticket: string }) => void) | null = null;
+    let deepLinkHandler:
+      | ((p: { provider: "google" | "microsoft"; ticket: string }) => void)
+      | null = null;
     const openExternal = vi.fn(async () => {
-      setImmediate(() => deepLinkHandler?.({ provider: "google", ticket: "t" }));
+      setImmediate(() =>
+        deepLinkHandler?.({ provider: "google", ticket: "t" }),
+      );
     });
     const client = makeClient(async () => {
       throw new ApiNetworkError("network down");
@@ -238,9 +254,13 @@ describe("createConnectGoogle", () => {
 
   it("returns secret_store_failed when secretStore.set throws", async () => {
     secretStoreShouldThrow = true;
-    let deepLinkHandler: ((p: { provider: "google" | "microsoft"; ticket: string }) => void) | null = null;
+    let deepLinkHandler:
+      | ((p: { provider: "google" | "microsoft"; ticket: string }) => void)
+      | null = null;
     const openExternal = vi.fn(async () => {
-      setImmediate(() => deepLinkHandler?.({ provider: "google", ticket: "t" }));
+      setImmediate(() =>
+        deepLinkHandler?.({ provider: "google", ticket: "t" }),
+      );
     });
     const client = makeClient(async () => ({
       status: 200,
@@ -262,6 +282,9 @@ describe("createConnectGoogle", () => {
       },
       timeoutMs: 5_000,
     });
-    expect(await connect()).toEqual({ ok: false, error: "secret_store_failed" });
+    expect(await connect()).toEqual({
+      ok: false,
+      error: "secret_store_failed",
+    });
   });
 });

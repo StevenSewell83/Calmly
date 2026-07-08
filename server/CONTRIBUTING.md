@@ -34,18 +34,18 @@ Integration tests spin up a throwaway Postgres via testcontainers — Docker mus
 ## PR process
 
 - Keep PRs focused; one logical change per PR
-- Describe the *why* in the PR body, not just the *what*
+- Describe the _why_ in the PR body, not just the _what_
 - The maintainers aim to review within 5 business days
 
 ## Issue labels
 
-| Label | Meaning |
-|---|---|
-| `bug` | Confirmed defect |
-| `enhancement` | New feature or improvement |
-| `question` | Needs clarification |
-| `good first issue` | Suitable for new contributors |
-| `self-host` | Specific to self-hosted deployments |
+| Label              | Meaning                             |
+| ------------------ | ----------------------------------- |
+| `bug`              | Confirmed defect                    |
+| `enhancement`      | New feature or improvement          |
+| `question`         | Needs clarification                 |
+| `good first issue` | Suitable for new contributors       |
+| `self-host`        | Specific to self-hosted deployments |
 
 ## License
 

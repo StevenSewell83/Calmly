@@ -21,7 +21,10 @@ export type TelemetryEventName = (typeof TELEMETRY_EVENT_NAMES)[number];
 const TelemetryPropValueSchema = z.union([
   z.boolean(),
   z.number().int(),
-  z.string().max(64).regex(/^[a-zA-Z0-9._:-]+$/),
+  z
+    .string()
+    .max(64)
+    .regex(/^[a-zA-Z0-9._:-]+$/),
 ]);
 
 // Prop keys that are always denied regardless of position.

@@ -6,10 +6,7 @@ import {
   MICROSOFT_SCOPES,
   refreshMicrosoftAccessToken,
 } from "../../oauth/microsoftProvider";
-import {
-  oauthProviderPlugin,
-  type OAuthProviderConfig,
-} from "./plugin";
+import { oauthProviderPlugin, type OAuthProviderConfig } from "./plugin";
 
 export interface MicrosoftOAuthDeps {
   clientId: string;

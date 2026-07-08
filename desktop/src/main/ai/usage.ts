@@ -38,7 +38,10 @@ export interface DailyUsageSummary {
   totalRequests: number;
   totalInputTokens: number;
   totalOutputTokens: number;
-  byPromptClass: Record<string, { requests: number; inputTokens: number; outputTokens: number }>;
+  byPromptClass: Record<
+    string,
+    { requests: number; inputTokens: number; outputTokens: number }
+  >;
 }
 
 export function readTodayUsage(userId: string): DailyUsageSummary {
@@ -54,7 +57,12 @@ export function readTodayUsage(userId: string): DailyUsageSummary {
        WHERE user_id = ? AND ts >= ?
        GROUP BY prompt_class`,
     )
-    .all(userId, startMs) as { prompt_class: string; input: number; output: number; count: number }[];
+    .all(userId, startMs) as {
+    prompt_class: string;
+    input: number;
+    output: number;
+    count: number;
+  }[];
 
   const byPromptClass: DailyUsageSummary["byPromptClass"] = {};
   let totalRequests = 0;

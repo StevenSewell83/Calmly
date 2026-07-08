@@ -58,9 +58,11 @@ export function createMockProviderFetch(): MockProviderFetch {
     if (!match) {
       throw new Error(
         `mockProviderFetch: no expectation matched ${method} ${url}. ` +
-          `Registered patterns: ${expectations
-            .map((e) => `${e.method ?? "*"} ${e.urlPattern}`)
-            .join(", ") || "(none)"}`,
+          `Registered patterns: ${
+            expectations
+              .map((e) => `${e.method ?? "*"} ${e.urlPattern}`)
+              .join(", ") || "(none)"
+          }`,
       );
     }
 

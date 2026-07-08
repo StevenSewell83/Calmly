@@ -1,7 +1,4 @@
-import type {
-  EventTodayItem,
-  TaskTodayItem,
-} from "../../../preload/api-types";
+import type { EventTodayItem, TaskTodayItem } from "../../../preload/api-types";
 import { useResource, type UseResourceReturn } from "../../hooks/useResource";
 
 // Single hook that fans out to the three Home reads in parallel and
@@ -20,27 +17,24 @@ export interface TodaySummary {
 // the three reads returning NotSignedIn means the renderer raced
 // ahead of AuthGate; treat the whole summary as signed-out.
 export function useTodaySummary(): UseResourceReturn<TodaySummary> {
-  return useResource<TodaySummary>(
-    async () => {
-      const [tasksR, eventsR, countR] = await Promise.all([
-        window.calmly.tasks.listToday(),
-        window.calmly.events.listToday(),
-        window.calmly.inbox.unresolvedCount(),
-      ]);
-      if (!tasksR.ok || !eventsR.ok || !countR.ok) {
-        return { kind: "signed-out" };
-      }
-      return {
-        kind: "ok",
-        data: {
-          tasks: tasksR.tasks,
-          events: eventsR.events,
-          unresolvedInboxCount: countR.count,
-        },
-      };
-    },
-    [],
-  );
+  return useResource<TodaySummary>(async () => {
+    const [tasksR, eventsR, countR] = await Promise.all([
+      window.calmly.tasks.listToday(),
+      window.calmly.events.listToday(),
+      window.calmly.inbox.unresolvedCount(),
+    ]);
+    if (!tasksR.ok || !eventsR.ok || !countR.ok) {
+      return { kind: "signed-out" };
+    }
+    return {
+      kind: "ok",
+      data: {
+        tasks: tasksR.tasks,
+        events: eventsR.events,
+        unresolvedInboxCount: countR.count,
+      },
+    };
+  }, []);
 }
 
 // Picks the "Now" task — first in_progress entry, falling back to null

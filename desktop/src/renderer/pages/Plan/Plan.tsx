@@ -10,9 +10,15 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
-import type { CalendarDayEvent, PlanTaskItem } from "../../../preload/api-types";
+import type {
+  CalendarDayEvent,
+  PlanTaskItem,
+} from "../../../preload/api-types";
 
-type PlacedTask = PlanTaskItem & { scheduled_start: number; scheduled_end: number };
+type PlacedTask = PlanTaskItem & {
+  scheduled_start: number;
+  scheduled_end: number;
+};
 
 function isPlaced(t: PlanTaskItem): t is PlacedTask {
   return t.scheduled_start !== null && t.scheduled_end !== null;
@@ -103,7 +109,9 @@ export function Plan() {
   }, [fetchCalendarEvents]);
 
   useEffect(() => {
-    const onFocus = () => { void fetchCalendarEvents(); };
+    const onFocus = () => {
+      void fetchCalendarEvents();
+    };
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, [fetchCalendarEvents]);
@@ -115,7 +123,11 @@ export function Plan() {
 
   const persistSchedule = useCallback(
     async (taskId: string, startMs: number, endMs: number) => {
-      const r = await window.calmly.plan.schedule({ taskId, startAt: startMs, endAt: endMs });
+      const r = await window.calmly.plan.schedule({
+        taskId,
+        startAt: startMs,
+        endAt: endMs,
+      });
       if (r.ok) await refresh();
     },
     [refresh],
@@ -125,7 +137,12 @@ export function Plan() {
     (e: DragEndEvent) => {
       const data = e.active.data.current as
         | { kind: "backlog"; taskId: string }
-        | { kind: "block"; taskId: string; startMinutes: number; endMinutes: number }
+        | {
+            kind: "block";
+            taskId: string;
+            startMinutes: number;
+            endMinutes: number;
+          }
         | undefined;
       if (!data) return;
 
@@ -139,7 +156,11 @@ export function Plan() {
           DEFAULT_BLOCK_MINUTES,
         );
         const endMinutes = startMinutes + DEFAULT_BLOCK_MINUTES;
-        void persistSchedule(data.taskId, gridMinutesToMs(startMinutes, day), gridMinutesToMs(endMinutes, day));
+        void persistSchedule(
+          data.taskId,
+          gridMinutesToMs(startMinutes, day),
+          gridMinutesToMs(endMinutes, day),
+        );
         return;
       }
 
@@ -163,7 +184,11 @@ export function Plan() {
       if (state.kind !== "ready") return;
       const block = state.data.plan.scheduled.find((t) => t.id === taskId);
       if (!block || block.scheduled_start === null) return;
-      void persistSchedule(taskId, block.scheduled_start, gridMinutesToMs(newEndMinutes, day));
+      void persistSchedule(
+        taskId,
+        block.scheduled_start,
+        gridMinutesToMs(newEndMinutes, day),
+      );
     },
     [day, state, persistSchedule],
   );
@@ -184,28 +209,51 @@ export function Plan() {
     if (state.kind !== "ready") return [];
     const placed = state.data.plan.scheduled.filter(isPlaced);
     const overlaps = detectOverlaps(
-      placed.map((t) => ({ id: t.id, startMs: t.scheduled_start, endMs: t.scheduled_end })),
+      placed.map((t) => ({
+        id: t.id,
+        startMs: t.scheduled_start,
+        endMs: t.scheduled_end,
+      })),
     );
     return placed.map((task) => {
       const rawStart = msToGridMinutes(task.scheduled_start, day);
       const rawEnd = msToGridMinutes(task.scheduled_end, day);
-      const startMinutes = Math.max(0, Math.min(GRID_HOURS * 60 - 15, rawStart));
-      const endMinutes = Math.max(startMinutes + 15, Math.min(GRID_HOURS * 60, rawEnd));
-      return { task, startMinutes, endMinutes, overlapped: overlaps.has(task.id) };
+      const startMinutes = Math.max(
+        0,
+        Math.min(GRID_HOURS * 60 - 15, rawStart),
+      );
+      const endMinutes = Math.max(
+        startMinutes + 15,
+        Math.min(GRID_HOURS * 60, rawEnd),
+      );
+      return {
+        task,
+        startMinutes,
+        endMinutes,
+        overlapped: overlaps.has(task.id),
+      };
     });
   }, [state, day]);
 
-  const calendarBlocks = useMemo(() =>
-    calendarEvents
-      .filter((ev) => !ev.isAllDay)
-      .map((event) => {
-        const rawStart = msToGridMinutes(event.startMs, day);
-        const rawEnd = msToGridMinutes(event.endMs, day);
-        const startMinutes = Math.max(0, Math.min(GRID_HOURS * 60 - 5, rawStart));
-        const endMinutes = Math.max(startMinutes + 5, Math.min(GRID_HOURS * 60, rawEnd));
-        return { event, startMinutes, endMinutes };
-      }),
-  [calendarEvents, day]);
+  const calendarBlocks = useMemo(
+    () =>
+      calendarEvents
+        .filter((ev) => !ev.isAllDay)
+        .map((event) => {
+          const rawStart = msToGridMinutes(event.startMs, day);
+          const rawEnd = msToGridMinutes(event.endMs, day);
+          const startMinutes = Math.max(
+            0,
+            Math.min(GRID_HOURS * 60 - 5, rawStart),
+          );
+          const endMinutes = Math.max(
+            startMinutes + 5,
+            Math.min(GRID_HOURS * 60, rawEnd),
+          );
+          return { event, startMinutes, endMinutes };
+        }),
+    [calendarEvents, day],
+  );
 
   const allDayEvents = useMemo(
     () => calendarEvents.filter((ev) => ev.isAllDay),
@@ -223,15 +271,36 @@ export function Plan() {
   });
 
   return (
-    <section aria-labelledby="plan-page-title" className="flex-1 px-12 pt-10 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <h1 id="plan-page-title" className="sr-only">Plan</h1>
+    <section
+      aria-labelledby="plan-page-title"
+      className="flex-1 px-12 pt-10 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-500"
+    >
+      <h1 id="plan-page-title" className="sr-only">
+        Plan
+      </h1>
       <header className="mb-8 flex items-end justify-between gap-6 max-w-5xl">
         <div>
           <h2 className="font-serif italic text-5xl tracking-tight text-stone-800">
             {heading}
           </h2>
           <p className="mt-3 text-sm text-stone-400 tracking-wide">
-            Drag or use <kbd className="text-[10px] font-mono bg-stone-100 px-1 py-0.5 rounded border border-stone-200">j</kbd>/<kbd className="text-[10px] font-mono bg-stone-100 px-1 py-0.5 rounded border border-stone-200">k</kbd> to navigate · <kbd className="text-[10px] font-mono bg-stone-100 px-1 py-0.5 rounded border border-stone-200">↑↓</kbd> to move blocks · <kbd className="text-[10px] font-mono bg-stone-100 px-1 py-0.5 rounded border border-stone-200">u</kbd> to unschedule
+            Drag or use{" "}
+            <kbd className="text-[10px] font-mono bg-stone-100 px-1 py-0.5 rounded border border-stone-200">
+              j
+            </kbd>
+            /
+            <kbd className="text-[10px] font-mono bg-stone-100 px-1 py-0.5 rounded border border-stone-200">
+              k
+            </kbd>{" "}
+            to navigate ·{" "}
+            <kbd className="text-[10px] font-mono bg-stone-100 px-1 py-0.5 rounded border border-stone-200">
+              ↑↓
+            </kbd>{" "}
+            to move blocks ·{" "}
+            <kbd className="text-[10px] font-mono bg-stone-100 px-1 py-0.5 rounded border border-stone-200">
+              u
+            </kbd>{" "}
+            to unschedule
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -279,7 +348,10 @@ export function Plan() {
               <div className="flex gap-6 items-start">
                 <div className="flex-1 min-w-0 max-h-[calc(100vh-14rem)] overflow-y-auto pr-2 custom-scrollbar">
                   {allDayEvents.length > 0 && (
-                    <div className="mb-2 flex flex-wrap gap-1.5" aria-label="All-day calendar events">
+                    <div
+                      className="mb-2 flex flex-wrap gap-1.5"
+                      aria-label="All-day calendar events"
+                    >
                       {allDayEvents.map((ev) => (
                         <span
                           key={ev.id}
@@ -298,7 +370,10 @@ export function Plan() {
                     onBlockClick={onBlockClick}
                   />
                 </div>
-                <Backlog items={data.plan.backlog} onTaskClick={setActiveTask} />
+                <Backlog
+                  items={data.plan.backlog}
+                  onTaskClick={setActiveTask}
+                />
               </div>
             </DndContext>
           )
@@ -310,7 +385,10 @@ export function Plan() {
         task={activeTask}
         day={day}
         onClose={() => setActiveTask(null)}
-        onSaved={async () => { await refresh(); setActiveTask(null); }}
+        onSaved={async () => {
+          await refresh();
+          setActiveTask(null);
+        }}
       />
     </section>
   );

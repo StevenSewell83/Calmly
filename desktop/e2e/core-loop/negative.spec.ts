@@ -1,5 +1,9 @@
 import { test, expect } from "@playwright/test";
-import { isDockerAvailable, seedUser, type SeededApp } from "../fixtures/seedUser";
+import {
+  isDockerAvailable,
+  seedUser,
+  type SeededApp,
+} from "../fixtures/seedUser";
 
 // window.calmly is typed globally via desktop/e2e/window-globals.d.ts.
 
@@ -130,7 +134,11 @@ test.describe("CL-15b · core-loop negative paths", () => {
     })();
     const taskId = await page.evaluate(
       async ({ id, title, dueAt }) => {
-        const r = await window.calmly.triage.resolveAsTask({ inboxId: id, title, dueAt });
+        const r = await window.calmly.triage.resolveAsTask({
+          inboxId: id,
+          title,
+          dueAt,
+        });
         if (!r.ok) throw new Error(`triage failed: ${r.error}`);
         return r.id;
       },
@@ -144,7 +152,9 @@ test.describe("CL-15b · core-loop negative paths", () => {
     expect(dropResult.ok).toBe(true);
     if (dropResult.ok) expect(dropResult.count).toBe(1);
 
-    const planAfter = await page.evaluate(() => window.calmly.plan.listForDay());
+    const planAfter = await page.evaluate(() =>
+      window.calmly.plan.listForDay(),
+    );
     expect(planAfter.ok).toBe(true);
     if (planAfter.ok) {
       expect(planAfter.plan.backlog.some((t) => t.id === taskId)).toBe(false);
@@ -154,8 +164,12 @@ test.describe("CL-15b · core-loop negative paths", () => {
     const summary = await page.evaluate(() => window.calmly.review.summary());
     expect(summary.ok).toBe(true);
     if (summary.ok) {
-      expect(summary.summary.completed.some((t) => t.id === taskId)).toBe(false);
-      expect(summary.summary.unfinished.some((t) => t.id === taskId)).toBe(false);
+      expect(summary.summary.completed.some((t) => t.id === taskId)).toBe(
+        false,
+      );
+      expect(summary.summary.unfinished.some((t) => t.id === taskId)).toBe(
+        false,
+      );
     }
   });
 
@@ -175,11 +189,15 @@ test.describe("CL-15b · core-loop negative paths", () => {
       return d.getTime();
     })();
     const startAt = todayMidnight + 14 * 60 * 60_000; // 2pm
-    const endAt = startAt + 60 * 60_000;              // 3pm
+    const endAt = startAt + 60 * 60_000; // 3pm
 
     const taskId = await page.evaluate(
       async ({ id, title, dueAt }) => {
-        const r = await window.calmly.triage.resolveAsTask({ inboxId: id, title, dueAt });
+        const r = await window.calmly.triage.resolveAsTask({
+          inboxId: id,
+          title,
+          dueAt,
+        });
         if (!r.ok) throw new Error(`triage failed: ${r.error}`);
         return r.id;
       },
@@ -188,13 +206,16 @@ test.describe("CL-15b · core-loop negative paths", () => {
 
     // Schedule the task so it appears in the Replan modal's scheduled list.
     const schedResult = await page.evaluate(
-      ([id, s, e]) => window.calmly.plan.schedule({ taskId: id, startAt: s, endAt: e }),
+      ([id, s, e]) =>
+        window.calmly.plan.schedule({ taskId: id, startAt: s, endAt: e }),
       [taskId, startAt, endAt] as [string, number, number],
     );
     expect(schedResult.ok).toBe(true);
 
     // Verify the task appears in plan.scheduled before opening Replan.
-    const planBefore = await page.evaluate(() => window.calmly.plan.listForDay());
+    const planBefore = await page.evaluate(() =>
+      window.calmly.plan.listForDay(),
+    );
     expect(planBefore.ok).toBe(true);
     if (planBefore.ok) {
       expect(planBefore.plan.scheduled.some((t) => t.id === taskId)).toBe(true);
@@ -223,7 +244,9 @@ test.describe("CL-15b · core-loop negative paths", () => {
     });
 
     // Verify via IPC: task is no longer in plan.scheduled.
-    const planAfter = await page.evaluate(() => window.calmly.plan.listForDay());
+    const planAfter = await page.evaluate(() =>
+      window.calmly.plan.listForDay(),
+    );
     expect(planAfter.ok).toBe(true);
     if (planAfter.ok) {
       expect(planAfter.plan.scheduled.some((t) => t.id === taskId)).toBe(false);
@@ -233,8 +256,12 @@ test.describe("CL-15b · core-loop negative paths", () => {
     const summary = await page.evaluate(() => window.calmly.review.summary());
     expect(summary.ok).toBe(true);
     if (summary.ok) {
-      expect(summary.summary.completed.some((t) => t.id === taskId)).toBe(false);
-      expect(summary.summary.unfinished.some((t) => t.id === taskId)).toBe(false);
+      expect(summary.summary.completed.some((t) => t.id === taskId)).toBe(
+        false,
+      );
+      expect(summary.summary.unfinished.some((t) => t.id === taskId)).toBe(
+        false,
+      );
     }
 
     // Close the modal.

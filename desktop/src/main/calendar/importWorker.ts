@@ -25,10 +25,7 @@ import {
   MicrosoftSyncExpiredError,
   type MicrosoftEvent,
 } from "./providers/microsoft";
-import {
-  upsertCalendarEvent,
-  softDeleteCalendarEvent,
-} from "./eventStore";
+import { upsertCalendarEvent, softDeleteCalendarEvent } from "./eventStore";
 
 const POLL_INTERVAL_MS = 15 * 60_000;
 const WINDOW_PAST_MS = 24 * 60 * 60_000;
@@ -53,13 +50,20 @@ let deps_: ImportWorkerDeps | null = null;
 export function startCalendarImportWorker(deps: ImportWorkerDeps): void {
   deps_ = deps;
   if (timer) return;
-  timer = setInterval(() => { void importAll(deps); }, POLL_INTERVAL_MS);
+  timer = setInterval(() => {
+    void importAll(deps);
+  }, POLL_INTERVAL_MS);
   // Defer initial fetch so the app is fully initialized before network I/O.
-  setTimeout(() => { void importAll(deps); }, 0);
+  setTimeout(() => {
+    void importAll(deps);
+  }, 0);
 }
 
 export function stopCalendarImportWorker(): void {
-  if (timer) { clearInterval(timer); timer = null; }
+  if (timer) {
+    clearInterval(timer);
+    timer = null;
+  }
   deps_ = null;
 }
 
@@ -77,12 +81,19 @@ export async function triggerImport(accountId?: string): Promise<void> {
 async function importAll(deps: ImportWorkerDeps): Promise<void> {
   const accounts = listLocalCalendarAccounts();
   for (const account of accounts) {
-    if (account.status === "reauth_required" || account.status === "disconnected") continue;
+    if (
+      account.status === "reauth_required" ||
+      account.status === "disconnected"
+    )
+      continue;
     await importAccount(account.id, deps);
   }
 }
 
-async function importAccount(accountId: string, deps: ImportWorkerDeps): Promise<void> {
+async function importAccount(
+  accountId: string,
+  deps: ImportWorkerDeps,
+): Promise<void> {
   if (inFlight.has(accountId)) return;
   inFlight.add(accountId);
   try {
@@ -92,7 +103,10 @@ async function importAccount(accountId: string, deps: ImportWorkerDeps): Promise
   }
 }
 
-async function _importAccount(accountId: string, deps: ImportWorkerDeps): Promise<void> {
+async function _importAccount(
+  accountId: string,
+  deps: ImportWorkerDeps,
+): Promise<void> {
   const log = deps.log ?? (() => {});
   const now = (deps.now ?? Date.now)();
   const user = getCurrentUser();
@@ -107,7 +121,10 @@ async function _importAccount(accountId: string, deps: ImportWorkerDeps): Promis
     accountId,
   );
   if (!tokenResult.ok) {
-    log("calendar import: token unavailable", { accountId, error: tokenResult.error });
+    log("calendar import: token unavailable", {
+      accountId,
+      error: tokenResult.error,
+    });
     return;
   }
   const { accessToken } = tokenResult;
@@ -117,9 +134,27 @@ async function _importAccount(accountId: string, deps: ImportWorkerDeps): Promis
 
   try {
     if (account.provider === "google") {
-      await importGoogle(db, user.id, accountId, accessToken, windowStart, windowEnd, now, log);
+      await importGoogle(
+        db,
+        user.id,
+        accountId,
+        accessToken,
+        windowStart,
+        windowEnd,
+        now,
+        log,
+      );
     } else {
-      await importMicrosoft(db, user.id, accountId, accessToken, windowStart, windowEnd, now, log);
+      await importMicrosoft(
+        db,
+        user.id,
+        accountId,
+        accessToken,
+        windowStart,
+        windowEnd,
+        now,
+        log,
+      );
     }
   } catch (err) {
     log("calendar import: fetch error", { accountId, err: String(err) });
@@ -140,7 +175,12 @@ async function importGoogle(
   let result;
 
   try {
-    result = await fetchGoogleEvents(accessToken, windowStart, windowEnd, syncToken);
+    result = await fetchGoogleEvents(
+      accessToken,
+      windowStart,
+      windowEnd,
+      syncToken,
+    );
   } catch (err) {
     if (err instanceof GoogleSyncExpiredError) {
       log("google sync token expired, full refetch", { accountId });
@@ -174,7 +214,12 @@ async function importMicrosoft(
   let result;
 
   try {
-    result = await fetchMicrosoftEvents(accessToken, windowStart, windowEnd, deltaLink);
+    result = await fetchMicrosoftEvents(
+      accessToken,
+      windowStart,
+      windowEnd,
+      deltaLink,
+    );
   } catch (err) {
     if (err instanceof MicrosoftSyncExpiredError) {
       log("microsoft delta expired, full refetch", { accountId });

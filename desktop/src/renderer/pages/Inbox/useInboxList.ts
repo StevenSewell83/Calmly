@@ -9,14 +9,11 @@ export interface InboxListData {
 // thunk so per-row mutations (snooze / skip / capture) can drop an
 // item without round-tripping through the parent page.
 export function useInboxList(): UseResourceReturn<InboxListData> {
-  return useResource<InboxListData>(
-    async () => {
-      const r = await window.calmly.inbox.list();
-      if (!r.ok) return { kind: "signed-out" };
-      return { kind: "ok", data: { items: r.items } };
-    },
-    [],
-  );
+  return useResource<InboxListData>(async () => {
+    const r = await window.calmly.inbox.list();
+    if (!r.ok) return { kind: "signed-out" };
+    return { kind: "ok", data: { items: r.items } };
+  }, []);
 }
 
 export type InboxSortMode = "newest" | "oldest" | "source";

@@ -98,8 +98,7 @@ describe("generateLinkingCode", () => {
   it("rejects with rate_limited when the user already has 5 active codes", async () => {
     const { pool } = makeMockPool({
       query: (sql) => {
-        if (/SELECT count/i.test(sql))
-          return { rows: [{ count: "5" }] };
+        if (/SELECT count/i.test(sql)) return { rows: [{ count: "5" }] };
         throw new Error(`unexpected sql: ${sql}`);
       },
     });

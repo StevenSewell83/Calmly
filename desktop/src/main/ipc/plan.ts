@@ -63,7 +63,14 @@ export function registerPlanIpc(): void {
     ) {
       return { ok: false, error: "InvalidArgs" };
     }
-    return scheduleTask(ctx.db, ctx.userId, raw.taskId, raw.startAt as number, raw.endAt as number, ctx.now);
+    return scheduleTask(
+      ctx.db,
+      ctx.userId,
+      raw.taskId,
+      raw.startAt as number,
+      raw.endAt as number,
+      ctx.now,
+    );
   });
 
   authedHandler<PlanUnscheduleResult>("plan:unschedule", (ctx, raw) => {
@@ -77,40 +84,65 @@ export function registerPlanIpc(): void {
     }
     const args: UpdateTaskArgs = {};
     if (raw.title !== undefined) {
-      if (typeof raw.title !== "string") return { ok: false, error: "InvalidArgs" };
+      if (typeof raw.title !== "string")
+        return { ok: false, error: "InvalidArgs" };
       args.title = raw.title;
     }
     if (raw.notes !== undefined) {
-      if (raw.notes !== null && typeof raw.notes !== "string") return { ok: false, error: "InvalidArgs" };
+      if (raw.notes !== null && typeof raw.notes !== "string")
+        return { ok: false, error: "InvalidArgs" };
       args.notes = raw.notes as string | null;
     }
     if (raw.dueAt !== undefined) {
-      if (raw.dueAt !== null && typeof raw.dueAt !== "number") return { ok: false, error: "InvalidArgs" };
+      if (raw.dueAt !== null && typeof raw.dueAt !== "number")
+        return { ok: false, error: "InvalidArgs" };
       args.dueAt = raw.dueAt as number | null;
     }
     if (raw.scheduledStart !== undefined) {
-      if (raw.scheduledStart !== null && typeof raw.scheduledStart !== "number") return { ok: false, error: "InvalidArgs" };
+      if (raw.scheduledStart !== null && typeof raw.scheduledStart !== "number")
+        return { ok: false, error: "InvalidArgs" };
       args.scheduledStart = raw.scheduledStart as number | null;
     }
     if (raw.scheduledEnd !== undefined) {
-      if (raw.scheduledEnd !== null && typeof raw.scheduledEnd !== "number") return { ok: false, error: "InvalidArgs" };
+      if (raw.scheduledEnd !== null && typeof raw.scheduledEnd !== "number")
+        return { ok: false, error: "InvalidArgs" };
       args.scheduledEnd = raw.scheduledEnd as number | null;
     }
     return updateTask(ctx.db, ctx.userId, raw.taskId, args, ctx.now);
   });
 
   authedHandler<PlanMoveToDateResult>("plan:moveToDate", (ctx, raw) => {
-    if (!isObject(raw) || !isStringId(raw.taskId) || typeof raw.targetDayMs !== "number") {
+    if (
+      !isObject(raw) ||
+      !isStringId(raw.taskId) ||
+      typeof raw.targetDayMs !== "number"
+    ) {
       return { ok: false, error: "InvalidArgs" };
     }
-    return moveToDate(ctx.db, ctx.userId, raw.taskId, raw.targetDayMs as number, ctx.now);
+    return moveToDate(
+      ctx.db,
+      ctx.userId,
+      raw.taskId,
+      raw.targetDayMs as number,
+      ctx.now,
+    );
   });
 
   authedHandler<PlanPushByResult>("plan:pushBy", (ctx, raw) => {
-    if (!isObject(raw) || !isStringId(raw.taskId) || typeof raw.offsetMs !== "number") {
+    if (
+      !isObject(raw) ||
+      !isStringId(raw.taskId) ||
+      typeof raw.offsetMs !== "number"
+    ) {
       return { ok: false, error: "InvalidArgs" };
     }
-    return pushBy(ctx.db, ctx.userId, raw.taskId, raw.offsetMs as number, ctx.now);
+    return pushBy(
+      ctx.db,
+      ctx.userId,
+      raw.taskId,
+      raw.offsetMs as number,
+      ctx.now,
+    );
   });
 
   authedHandler<PlanUnscheduleResult>("plan:toBacklog", (ctx, raw) => {

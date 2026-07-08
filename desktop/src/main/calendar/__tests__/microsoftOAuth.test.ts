@@ -90,7 +90,10 @@ describe("createConnectMicrosoft", () => {
       "https://api.example.com/oauth/microsoft/start",
     );
     expect(secretCalls).toEqual([
-      { key: "calendar.microsoft.refresh_token:ms-acct-uuid-1", value: "rt-ms" },
+      {
+        key: "calendar.microsoft.refresh_token:ms-acct-uuid-1",
+        value: "rt-ms",
+      },
     ]);
   });
 

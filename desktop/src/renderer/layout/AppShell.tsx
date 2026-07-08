@@ -69,7 +69,8 @@ function SidebarItem({ spec, active }: SidebarItemProps) {
             : "border-stone-200 text-stone-400 bg-white/40",
         ].join(" ")}
       >
-        {META_SYMBOL}{spec.hint}
+        {META_SYMBOL}
+        {spec.hint}
       </span>
     </NavLink>
   );

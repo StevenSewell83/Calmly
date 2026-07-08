@@ -21,7 +21,9 @@ export function TodayList({ items }: Props) {
   return (
     <ul className="flex flex-col gap-2">
       {items.map((item) => (
-        <li key={`${item.kind}:${item.kind === "task" ? item.task.id : item.event.id}`}>
+        <li
+          key={`${item.kind}:${item.kind === "task" ? item.task.id : item.event.id}`}
+        >
           <Row item={item} />
         </li>
       ))}

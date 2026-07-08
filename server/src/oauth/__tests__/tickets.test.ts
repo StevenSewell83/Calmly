@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type pg from "pg";
-import {
-  issueOauthTicket,
-  redeemOauthTicket,
-} from "../tickets";
+import { issueOauthTicket, redeemOauthTicket } from "../tickets";
 
 // Tiny in-memory pool stub. Only the calls our helpers actually make are
 // modelled — INSERT INTO oauth_tickets and DELETE … RETURNING.

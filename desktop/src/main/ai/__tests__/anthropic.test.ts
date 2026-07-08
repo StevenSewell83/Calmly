@@ -5,13 +5,20 @@ const mockCreate = vi.fn();
 vi.mock("@anthropic-ai/sdk", () => {
   class APIError extends Error {
     status: number;
-    constructor(status: number, msg: string) { super(msg); this.status = status; }
+    constructor(status: number, msg: string) {
+      super(msg);
+      this.status = status;
+    }
   }
   class APIConnectionTimeoutError extends Error {
-    constructor() { super("Timeout"); }
+    constructor() {
+      super("Timeout");
+    }
   }
   class APIConnectionError extends Error {
-    constructor() { super("Connection error"); }
+    constructor() {
+      super("Connection error");
+    }
   }
   return {
     default: class Anthropic {
@@ -38,7 +45,9 @@ describe("AnthropicProvider.complete", () => {
   });
 
   it("returns ok:true with text on success", async () => {
-    mockCreate.mockResolvedValue({ content: [{ type: "text", text: '{"title":"Buy milk"}' }] });
+    mockCreate.mockResolvedValue({
+      content: [{ type: "text", text: '{"title":"Buy milk"}' }],
+    });
     const r = await provider.complete("system", "user");
     expect(r).toEqual({ ok: true, value: '{"title":"Buy milk"}' });
   });
@@ -51,20 +60,26 @@ describe("AnthropicProvider.complete", () => {
 
   it("categorizes 401 as auth error", async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    mockCreate.mockRejectedValue(new (Anthropic.APIError as any)(401, "Unauthorized"));
+    mockCreate.mockRejectedValue(
+      new (Anthropic.APIError as any)(401, "Unauthorized"),
+    );
     const r = await provider.complete("system", "user");
     expect(r).toMatchObject({ ok: false, error: { kind: "auth" } });
   });
 
   it("categorizes 429 as quota error", async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    mockCreate.mockRejectedValue(new (Anthropic.APIError as any)(429, "Rate limit"));
+    mockCreate.mockRejectedValue(
+      new (Anthropic.APIError as any)(429, "Rate limit"),
+    );
     const r = await provider.complete("system", "user");
     expect(r).toMatchObject({ ok: false, error: { kind: "quota" } });
   });
 
   it("categorizes timeout error", async () => {
-    mockCreate.mockRejectedValue(new Anthropic.APIConnectionTimeoutError({ message: "Timeout" }));
+    mockCreate.mockRejectedValue(
+      new Anthropic.APIConnectionTimeoutError({ message: "Timeout" }),
+    );
     const r = await provider.complete("system", "user");
     expect(r).toMatchObject({ ok: false, error: { kind: "timeout" } });
   });

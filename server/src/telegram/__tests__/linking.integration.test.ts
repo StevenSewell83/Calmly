@@ -102,17 +102,26 @@ describe.skipIf(!dockerAvailable)(
     }
 
     it("unauthenticated /code → 401", async () => {
-      const res = await app.inject({ method: "POST", url: "/telegram/linking/code" });
+      const res = await app.inject({
+        method: "POST",
+        url: "/telegram/linking/code",
+      });
       expect(res.statusCode).toBe(401);
     });
 
     it("unauthenticated /status → 401", async () => {
-      const res = await app.inject({ method: "GET", url: "/telegram/linking/status" });
+      const res = await app.inject({
+        method: "GET",
+        url: "/telegram/linking/status",
+      });
       expect(res.statusCode).toBe(401);
     });
 
     it("unauthenticated /unlink → 401", async () => {
-      const res = await app.inject({ method: "POST", url: "/telegram/linking/unlink" });
+      const res = await app.inject({
+        method: "POST",
+        url: "/telegram/linking/unlink",
+      });
       expect(res.statusCode).toBe(401);
     });
 
@@ -129,7 +138,10 @@ describe.skipIf(!dockerAvailable)(
         headers: { cookie: cookieHeader },
       });
       expect(codeRes.statusCode).toBe(200);
-      const { code, expiresAt } = codeRes.json<{ code: string; expiresAt: number }>();
+      const { code, expiresAt } = codeRes.json<{
+        code: string;
+        expiresAt: number;
+      }>();
       expect(code).toMatch(/^[A-Z0-9]{8}$/);
       expect(expiresAt).toBeGreaterThan(Date.now());
 
@@ -144,7 +156,13 @@ describe.skipIf(!dockerAvailable)(
 
       // 3. Redeem code directly via the linking service (simulates /start handler).
       const { redeemLinkingCode } = await import("../linking");
-      const redeemResult = await redeemLinkingCode(pool, code, "123456789", "testuser", Date.now());
+      const redeemResult = await redeemLinkingCode(
+        pool,
+        code,
+        "123456789",
+        "testuser",
+        Date.now(),
+      );
       expect(redeemResult.ok).toBe(true);
 
       // 4. Status is now linked.
@@ -154,7 +172,10 @@ describe.skipIf(!dockerAvailable)(
         headers: { cookie: cookieHeader },
       });
       expect(statusAfter.statusCode).toBe(200);
-      expect(statusAfter.json()).toMatchObject({ linked: true, chatId: "123456789" });
+      expect(statusAfter.json()).toMatchObject({
+        linked: true,
+        chatId: "123456789",
+      });
 
       // 5. Unlink.
       const unlinkRes = await app.inject({

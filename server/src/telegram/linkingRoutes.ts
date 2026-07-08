@@ -11,7 +11,9 @@ import {
   unlinkTelegram,
 } from "./linking";
 
-export async function telegramLinkingRoutes(app: FastifyInstance): Promise<void> {
+export async function telegramLinkingRoutes(
+  app: FastifyInstance,
+): Promise<void> {
   app.post(
     "/telegram/linking/code",
     { preHandler: requireSession },
@@ -21,7 +23,9 @@ export async function telegramLinkingRoutes(app: FastifyInstance): Promise<void>
       if (!result.ok) {
         return reply.code(429).send({ error: result.error });
       }
-      return reply.code(200).send({ code: result.code, expiresAt: result.expiresAt });
+      return reply
+        .code(200)
+        .send({ code: result.code, expiresAt: result.expiresAt });
     },
   );
 

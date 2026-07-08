@@ -119,13 +119,7 @@ describe("currentFocus", () => {
 describe("startFocus", () => {
   it("rejects an unknown source", () => {
     const fake = makeFakeDb();
-    const r = startFocus(
-      fake.db,
-      USER,
-      TASK,
-      "bogus" as never,
-      1_000,
-    );
+    const r = startFocus(fake.db, USER, TASK, "bogus" as never, 1_000);
     expect(r).toEqual({ ok: false, error: "InvalidArgs" });
   });
 
@@ -151,7 +145,8 @@ describe("startFocus", () => {
 
     const sqls = fake.prepared.map((p) => p.sql);
     const closeIdx = sqls.findIndex(
-      (s) => s.startsWith("update focus_sessions") && s.includes("ended_at = ?"),
+      (s) =>
+        s.startsWith("update focus_sessions") && s.includes("ended_at = ?"),
     );
     const insertIdx = sqls.findIndex((s) =>
       s.startsWith("insert into focus_sessions"),
@@ -211,8 +206,9 @@ describe("markDoneFromFocus", () => {
     const r = markDoneFromFocus(fake.db, USER, 1_000);
     expect(r).toEqual({ ok: true, taskId: TASK });
 
-    const update = fake.prepared.find((p) =>
-      p.sql.startsWith("update tasks") && p.sql.includes("status = 'done'"),
+    const update = fake.prepared.find(
+      (p) =>
+        p.sql.startsWith("update tasks") && p.sql.includes("status = 'done'"),
     );
     expect(update?.args).toEqual([1_000, 1, TASK, USER]);
 
@@ -236,13 +232,7 @@ describe("markDoneFromFocus", () => {
 describe("switchFocus", () => {
   it("rejects an unknown source", () => {
     const fake = makeFakeDb();
-    const r = switchFocus(
-      fake.db,
-      USER,
-      TASK2,
-      "bogus" as never,
-      1_000,
-    );
+    const r = switchFocus(fake.db, USER, TASK2, "bogus" as never, 1_000);
     expect(r).toEqual({ ok: false, error: "InvalidArgs" });
   });
 
@@ -261,7 +251,8 @@ describe("switchFocus", () => {
 
     const sqls = fake.prepared.map((p) => p.sql);
     const closeIdx = sqls.findIndex(
-      (s) => s.startsWith("update focus_sessions") && s.includes("ended_at = ?"),
+      (s) =>
+        s.startsWith("update focus_sessions") && s.includes("ended_at = ?"),
     );
     const insertIdx = sqls.findIndex((s) =>
       s.startsWith("insert into focus_sessions"),

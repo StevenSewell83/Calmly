@@ -30,11 +30,13 @@ export function dispatchUpdate(
 
   const text = msg.text?.trim() ?? "";
   if (text === "/start" || text.startsWith("/start ")) {
-    void handleStart(msg, pool, log).then((reply) => {
-      const bot = getBot();
-      return bot.api.sendMessage(msg.chat.id, reply);
-    }).catch((err: unknown) => {
-      log.error({ err }, "[telegram] failed to reply to /start");
-    });
+    void handleStart(msg, pool, log)
+      .then((reply) => {
+        const bot = getBot();
+        return bot.api.sendMessage(msg.chat.id, reply);
+      })
+      .catch((err: unknown) => {
+        log.error({ err }, "[telegram] failed to reply to /start");
+      });
   }
 }

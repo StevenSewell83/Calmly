@@ -2,7 +2,14 @@ export const DEFAULT_SERVER_URL = "https://sync.calmly.app";
 
 export type ServerUrlValidation =
   | { ok: true; url: string }
-  | { ok: false; error: "empty" | "invalid_url" | "http_not_localhost" | "unsupported_protocol" };
+  | {
+      ok: false;
+      error:
+        | "empty"
+        | "invalid_url"
+        | "http_not_localhost"
+        | "unsupported_protocol";
+    };
 
 /** Validates and normalises a candidate sync server URL. */
 export function validateServerUrl(raw: string): ServerUrlValidation {

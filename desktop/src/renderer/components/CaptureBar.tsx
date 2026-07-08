@@ -44,7 +44,10 @@ export function CaptureBar() {
   const confirmationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    void window.calmly.ai.getSettings().then((s) => setAiEnabled(s.enabled)).catch(() => {});
+    void window.calmly.ai
+      .getSettings()
+      .then((s) => setAiEnabled(s.enabled))
+      .catch(() => {});
   }, []);
 
   // Wire the main-process focus event to the input. Each callback returns
@@ -108,91 +111,101 @@ export function CaptureBar() {
     if (!trimmed) return;
     setSplitModal({ kind: "loading" });
     try {
-      const r = await window.calmly.ai.run("brain_dump_split", { text: trimmed });
+      const r = await window.calmly.ai.run("brain_dump_split", {
+        text: trimmed,
+      });
       if (!r.ok) {
         setSplitModal({ kind: "error", error: r.error });
         return;
       }
       const result = r.value.result as { tasks: SplitItem[] };
-      setSplitModal({ kind: "done", suggestionId: r.value.suggestionId, items: result.tasks });
+      setSplitModal({
+        kind: "done",
+        suggestionId: r.value.suggestionId,
+        items: result.tasks,
+      });
     } catch {
       setSplitModal({ kind: "error", error: { kind: "unknown" } });
     }
   }, [text]);
 
-  const handleSplitConfirm = useCallback(async (items: SplitItem[], suggestionId: string) => {
-    const texts = items.map((i) => i.title);
-    await window.calmly.inbox.bulkAdd(texts);
-    await window.calmly.ai.recordOutcome(suggestionId, "accepted");
-    setText("");
-    setSplitModal(null);
-    flashCaptured(false);
-  }, [flashCaptured]);
+  const handleSplitConfirm = useCallback(
+    async (items: SplitItem[], suggestionId: string) => {
+      const texts = items.map((i) => i.title);
+      await window.calmly.inbox.bulkAdd(texts);
+      await window.calmly.ai.recordOutcome(suggestionId, "accepted");
+      setText("");
+      setSplitModal(null);
+      flashCaptured(false);
+    },
+    [flashCaptured],
+  );
 
-  const showSplitButton = aiEnabled && text.trim().length >= SPLIT_CHAR_THRESHOLD;
+  const showSplitButton =
+    aiEnabled && text.trim().length >= SPLIT_CHAR_THRESHOLD;
   const disabled = status.kind === "submitting" || text.trim().length === 0;
 
   return (
     <>
-    <form
-      onSubmit={onSubmit}
-      className="w-full bg-white/40 backdrop-blur-md border-b border-stone-200/60 px-8 py-5 flex items-center gap-4 z-30"
-      aria-label="Quick capture"
-    >
-      <Plus
-        className={`w-5 h-5 transition-colors ${
-          text.length > 0 ? "text-emerald-500" : "text-stone-300"
-        }`}
-        aria-hidden="true"
-      />
-      <input
-        ref={inputRef}
-        type="text"
-        value={text}
-        onChange={(e) => {
-          setText(e.target.value);
-          if (status.kind === "error") setStatus({ kind: "idle" });
-        }}
-        placeholder="Capture a thought…"
-        aria-label="Capture a thought"
-        maxLength={MAX_RAW_TEXT_CHARS}
-        className="flex-1 bg-transparent text-base font-light text-stone-800 placeholder:text-stone-400 focus:outline-none"
-        // Renderer never needs the cursor in here on initial mount —
-        // hotkey + click are the only intentional focus paths.
-      />
-      <ConfirmationSlot status={status} />
-      {showSplitButton && (
-        <button
-          type="button"
-          onClick={() => void handleSplit()}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-medium tracking-wide text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors shrink-0"
-          title="Split into multiple inbox items with AI"
-        >
-          <Sparkles size={12} />
-          Split with AI
-        </button>
-      )}
-      <button
-        type="submit"
-        disabled={disabled}
-        className={[
-          "px-4 py-2 rounded-2xl text-xs font-medium tracking-wide transition-colors",
-          disabled
-            ? "bg-stone-100 text-stone-400 cursor-not-allowed"
-            : "bg-emerald-500 text-white hover:bg-emerald-600",
-        ].join(" ")}
+      <form
+        onSubmit={onSubmit}
+        className="w-full bg-white/40 backdrop-blur-md border-b border-stone-200/60 px-8 py-5 flex items-center gap-4 z-30"
+        aria-label="Quick capture"
       >
-        {status.kind === "submitting" ? "Adding…" : "Add"}
-      </button>
-    </form>
+        <Plus
+          className={`w-5 h-5 transition-colors ${
+            text.length > 0 ? "text-emerald-500" : "text-stone-300"
+          }`}
+          aria-hidden="true"
+        />
+        <input
+          ref={inputRef}
+          type="text"
+          value={text}
+          onChange={(e) => {
+            setText(e.target.value);
+            if (status.kind === "error") setStatus({ kind: "idle" });
+          }}
+          placeholder="Capture a thought…"
+          aria-label="Capture a thought"
+          maxLength={MAX_RAW_TEXT_CHARS}
+          className="flex-1 bg-transparent text-base font-light text-stone-800 placeholder:text-stone-400 focus:outline-none"
+          // Renderer never needs the cursor in here on initial mount —
+          // hotkey + click are the only intentional focus paths.
+        />
+        <ConfirmationSlot status={status} />
+        {showSplitButton && (
+          <button
+            type="button"
+            onClick={() => void handleSplit()}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-medium tracking-wide text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors shrink-0"
+            title="Split into multiple inbox items with AI"
+          >
+            <Sparkles size={12} />
+            Split with AI
+          </button>
+        )}
+        <button
+          type="submit"
+          disabled={disabled}
+          className={[
+            "px-4 py-2 rounded-2xl text-xs font-medium tracking-wide transition-colors",
+            disabled
+              ? "bg-stone-100 text-stone-400 cursor-not-allowed"
+              : "bg-emerald-500 text-white hover:bg-emerald-600",
+          ].join(" ")}
+        >
+          {status.kind === "submitting" ? "Adding…" : "Add"}
+        </button>
+      </form>
 
-    {splitModal && (
-      <BrainDumpSplitModal
-        state={splitModal}
-        onClose={() => setSplitModal(null)}
-        onConfirm={handleSplitConfirm}
-      />
-    )}
+      {splitModal && (
+        <BrainDumpSplitModal
+          state={splitModal}
+          onClose={() => setSplitModal(null)}
+          onConfirm={handleSplitConfirm}
+        />
+      )}
     </>
   );
 }

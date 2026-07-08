@@ -37,7 +37,9 @@ const call = (ch: string, raw?: unknown) => reg.get(ch)!(CTX, raw);
 describe("focus:current", () => {
   it("returns current session from store", () => {
     const session = { id: "s1" };
-    vi.mocked(store.currentFocus).mockReturnValue(session as ReturnType<typeof store.currentFocus>);
+    vi.mocked(store.currentFocus).mockReturnValue(
+      session as ReturnType<typeof store.currentFocus>,
+    );
     const r = call("focus:current");
     expect(store.currentFocus).toHaveBeenCalledWith(CTX.db, CTX.userId);
     expect(r).toEqual({ ok: true, session });
@@ -137,9 +139,10 @@ describe("focus:markDone", () => {
 
 describe("focus:switch", () => {
   it("rejects invalid source with InvalidArgs", () => {
-    expect(
-      call("focus:switch", { taskId: "t1", source: "bad" }),
-    ).toEqual({ ok: false, error: "InvalidArgs" });
+    expect(call("focus:switch", { taskId: "t1", source: "bad" })).toEqual({
+      ok: false,
+      error: "InvalidArgs",
+    });
   });
 
   it("happy path: delegates to switchFocus", () => {

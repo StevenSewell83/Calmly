@@ -1,5 +1,13 @@
 import { useState, useEffect } from "react";
-import { Brain, Eye, EyeOff, CheckCircle, XCircle, Loader2, Info } from "lucide-react";
+import {
+  Brain,
+  Eye,
+  EyeOff,
+  CheckCircle,
+  XCircle,
+  Loader2,
+  Info,
+} from "lucide-react";
 import type { AiSettings, AiTestResult } from "../../../preload/api-types";
 import { AIUsagePanel } from "./AIUsagePanel";
 
@@ -18,7 +26,10 @@ type TestState =
 type SaveState = "idle" | "saving" | "saved" | "error";
 
 export function SettingsAi() {
-  const [settings, setSettings] = useState<AiSettings>({ enabled: false, mode: "off" });
+  const [settings, setSettings] = useState<AiSettings>({
+    enabled: false,
+    mode: "off",
+  });
   const [keyState, setKeyState] = useState<KeyState>({ kind: "unknown" });
   const [keyInput, setKeyInput] = useState("");
   const [showKey, setShowKey] = useState(false);
@@ -103,10 +114,13 @@ export function SettingsAi() {
       setTest({ kind: "ok" });
     } else {
       const msg =
-        result.error === "NoKey" ? "No API key saved yet."
-        : result.error === "InvalidKey" ? "API key is invalid or revoked."
-        : result.error === "NetworkError" ? `Network error: ${result.message ?? ""}`
-        : result.message ?? "Unknown error";
+        result.error === "NoKey"
+          ? "No API key saved yet."
+          : result.error === "InvalidKey"
+            ? "API key is invalid or revoked."
+            : result.error === "NetworkError"
+              ? `Network error: ${result.message ?? ""}`
+              : (result.message ?? "Unknown error");
       setTest({ kind: "fail", message: msg });
     }
   }
@@ -129,7 +143,9 @@ export function SettingsAi() {
           <Brain size={18} className="text-emerald-600" />
         </div>
         <div>
-          <h1 className="font-serif italic text-2xl text-stone-800 leading-tight">AI</h1>
+          <h1 className="font-serif italic text-2xl text-stone-800 leading-tight">
+            AI
+          </h1>
           <p className="text-xs text-stone-400 mt-0.5">
             Bring your own Anthropic key — your data stays on-device.
           </p>
@@ -146,7 +162,9 @@ export function SettingsAi() {
             <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-stone-400 block mb-1">
               AI features
             </span>
-            <span className="text-sm text-stone-700 font-medium">Enable AI assistance</span>
+            <span className="text-sm text-stone-700 font-medium">
+              Enable AI assistance
+            </span>
             <p className="text-xs text-stone-400 mt-0.5">
               Triage suggestions, brain-dump splitting, task refinement
             </p>
@@ -185,7 +203,10 @@ export function SettingsAi() {
         </span>
         <div className="flex flex-col gap-2">
           {(["off", "cloud"] as const).map((mode) => (
-            <label key={mode} className="flex items-center gap-3 cursor-pointer">
+            <label
+              key={mode}
+              className="flex items-center gap-3 cursor-pointer"
+            >
               <input
                 type="radio"
                 name="ai-mode"
@@ -205,7 +226,12 @@ export function SettingsAi() {
               className="flex items-center gap-3 cursor-not-allowed opacity-40"
               title="Available in v1.1"
             >
-              <input type="radio" name="ai-mode" disabled className="accent-stone-300" />
+              <input
+                type="radio"
+                name="ai-mode"
+                disabled
+                className="accent-stone-300"
+              />
               <span className="text-sm text-stone-500">{label}</span>
               <span className="text-[10px] bg-stone-100 text-stone-400 rounded-full px-2 py-0.5 font-medium">
                 v1.1
@@ -225,8 +251,12 @@ export function SettingsAi() {
             <span className="text-xs font-bold text-stone-600">A</span>
           </div>
           <div>
-            <span className="text-sm text-stone-700 font-medium">Anthropic</span>
-            <p className="text-xs text-stone-400">OpenAI and others available in v1.1</p>
+            <span className="text-sm text-stone-700 font-medium">
+              Anthropic
+            </span>
+            <p className="text-xs text-stone-400">
+              OpenAI and others available in v1.1
+            </p>
           </div>
         </div>
       </div>
@@ -265,7 +295,9 @@ export function SettingsAi() {
                 disabled={test.kind === "testing"}
                 className="px-4 py-2 rounded-2xl bg-stone-100 text-stone-700 text-sm font-medium hover:bg-stone-200 disabled:opacity-40 transition-colors flex items-center gap-2"
               >
-                {test.kind === "testing" && <Loader2 size={13} className="animate-spin" />}
+                {test.kind === "testing" && (
+                  <Loader2 size={13} className="animate-spin" />
+                )}
                 {test.kind === "testing" ? "Testing…" : "Test connection"}
               </button>
               <button
@@ -312,7 +344,9 @@ export function SettingsAi() {
                   setKeyInput(e.target.value);
                   setSavingKey("idle");
                 }}
-                onKeyDown={(e) => { if (e.key === "Enter") void handleSaveKey(); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void handleSaveKey();
+                }}
                 placeholder="sk-ant-api03-…"
                 autoComplete="off"
                 spellCheck={false}
@@ -335,13 +369,18 @@ export function SettingsAi() {
                 disabled={!keyInput.trim() || savingKey === "saving"}
                 className="px-4 py-2 rounded-2xl bg-emerald-700 text-white text-sm font-medium hover:bg-emerald-600 disabled:opacity-40 transition-colors flex items-center gap-2"
               >
-                {savingKey === "saving" && <Loader2 size={13} className="animate-spin" />}
+                {savingKey === "saving" && (
+                  <Loader2 size={13} className="animate-spin" />
+                )}
                 {savingKey === "saving" ? "Saving…" : "Save key"}
               </button>
               {keyState.kind === "editing" && (
                 <button
                   type="button"
-                  onClick={() => { setKeyState({ kind: "set", last4: "••••" }); setKeyInput(""); }}
+                  onClick={() => {
+                    setKeyState({ kind: "set", last4: "••••" });
+                    setKeyInput("");
+                  }}
                   className="px-4 py-2 rounded-2xl text-sm font-medium text-stone-500 hover:bg-stone-100 transition-colors"
                 >
                   Cancel

@@ -29,9 +29,17 @@ export async function redeemMagicLink(
     userAgent: string | null;
   },
 ): Promise<RedeemOutcome> {
-  const limit = await checkMagicLinkRateLimit(pool, { userId: null, ip: opts.ip });
+  const limit = await checkMagicLinkRateLimit(pool, {
+    userId: null,
+    ip: opts.ip,
+  });
   if (!limit.allowed) {
-    return { ok: false, status: 429, error: "rate_limited", reason: limit.reason };
+    return {
+      ok: false,
+      status: 429,
+      error: "rate_limited",
+      reason: limit.reason,
+    };
   }
 
   const tokenHash = hashToken(opts.rawToken);

@@ -1,5 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
-import { Sparkles, X, Check, Pencil, CheckCircle2, Loader2 } from "lucide-react";
+import {
+  Sparkles,
+  X,
+  Check,
+  Pencil,
+  CheckCircle2,
+  Loader2,
+} from "lucide-react";
 import { AIFailureBanner } from "./AIFailureBanner";
 import type { AIError } from "../../../preload/api-types";
 
@@ -19,7 +26,11 @@ interface MakeStartableModalProps {
   taskNotes?: string | null;
   state: ModalState;
   onClose: () => void;
-  onApply: (result: MakeStartableResult, suggestionId: string, edited: boolean) => Promise<void>;
+  onApply: (
+    result: MakeStartableResult,
+    suggestionId: string,
+    edited: boolean,
+  ) => Promise<void>;
   onReject: (suggestionId: string) => Promise<void>;
 }
 
@@ -60,9 +71,14 @@ export function MakeStartableModal({
     const onKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
-      if (e.key === "Enter") { e.preventDefault(); void handleApply(); }
-      else if (e.key === "Escape") onClose();
-      else if (e.key === "r" || e.key === "R") { e.preventDefault(); void handleReject(); }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        void handleApply();
+      } else if (e.key === "Escape") onClose();
+      else if (e.key === "r" || e.key === "R") {
+        e.preventDefault();
+        void handleReject();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -92,7 +108,9 @@ export function MakeStartableModal({
             <span className="text-[9px] font-bold tracking-[0.2em] uppercase text-emerald-600 block">
               Make Startable
             </span>
-            <p className="text-sm font-medium text-stone-700 truncate">{taskTitle}</p>
+            <p className="text-sm font-medium text-stone-700 truncate">
+              {taskTitle}
+            </p>
           </div>
           <button
             type="button"
@@ -107,16 +125,15 @@ export function MakeStartableModal({
         {state.kind === "loading" && (
           <div className="flex items-center gap-3 py-4">
             <Loader2 size={15} className="text-emerald-500 animate-spin" />
-            <span className="text-sm text-stone-500">Finding the first step…</span>
+            <span className="text-sm text-stone-500">
+              Finding the first step…
+            </span>
           </div>
         )}
 
         {/* Error */}
         {state.kind === "error" && (
-          <AIFailureBanner
-            error={state.error}
-            onDismiss={onClose}
-          />
+          <AIFailureBanner error={state.error} onDismiss={onClose} />
         )}
 
         {/* Result */}
@@ -143,7 +160,9 @@ export function MakeStartableModal({
                 <ul className="flex flex-col gap-1.5">
                   {steps.map((step, i) => (
                     <li key={i} className="flex items-center gap-2">
-                      <span className="text-[9px] text-stone-300 font-bold tabular-nums">{i + 2}</span>
+                      <span className="text-[9px] text-stone-300 font-bold tabular-nums">
+                        {i + 2}
+                      </span>
                       <InlineEdit
                         value={(editedSteps ?? steps)[i] ?? step}
                         onChange={(v) => {
@@ -167,7 +186,11 @@ export function MakeStartableModal({
                 disabled={applying || !firstStep.trim()}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-500 disabled:opacity-40 transition-colors"
               >
-                {applying ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
+                {applying ? (
+                  <Loader2 size={13} className="animate-spin" />
+                ) : (
+                  <CheckCircle2 size={13} />
+                )}
                 Apply
               </button>
               <button
@@ -212,7 +235,12 @@ function InlineEdit({ value, onChange, placeholder }: InlineEditProps) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onBlur={() => setEditing(false)}
-        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); setEditing(false); } }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            setEditing(false);
+          }
+        }}
         placeholder={placeholder}
         className="w-full text-sm text-stone-800 bg-transparent outline-none border-b border-emerald-300 pb-0.5"
       />
@@ -228,7 +256,10 @@ function InlineEdit({ value, onChange, placeholder }: InlineEditProps) {
       <span className="text-sm text-stone-800 flex-1">
         {value || <span className="text-stone-400 italic">{placeholder}</span>}
       </span>
-      <Pencil size={11} className="text-stone-300 group-hover:text-stone-500 shrink-0 transition-colors" />
+      <Pencil
+        size={11}
+        className="text-stone-300 group-hover:text-stone-500 shrink-0 transition-colors"
+      />
     </button>
   );
 }

@@ -42,23 +42,33 @@ export function TaskSearchPicker({ onPick, onClose }: Props) {
             placeholder="Search tasks…"
             className="flex-1 text-sm bg-transparent focus:outline-none text-stone-800 placeholder-stone-400"
           />
-          <button onClick={onClose} aria-label="Close" className="p-1 rounded-lg text-stone-400 hover:text-stone-700">
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="p-1 rounded-lg text-stone-400 hover:text-stone-700"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
         <ul className="flex-1 overflow-y-auto p-2 space-y-1">
           {tasks.length === 0 ? (
-            <li className="py-8 text-center text-sm text-stone-400">No tasks found.</li>
-          ) : tasks.map((t) => (
-            <li key={t.id}>
-              <button
-                onClick={() => onPick(t.id)}
-                className="w-full text-left px-4 py-2.5 rounded-2xl hover:bg-stone-50 transition-colors"
-              >
-                <p className="text-sm font-medium text-stone-800 truncate">{t.title}</p>
-              </button>
+            <li className="py-8 text-center text-sm text-stone-400">
+              No tasks found.
             </li>
-          ))}
+          ) : (
+            tasks.map((t) => (
+              <li key={t.id}>
+                <button
+                  onClick={() => onPick(t.id)}
+                  className="w-full text-left px-4 py-2.5 rounded-2xl hover:bg-stone-50 transition-colors"
+                >
+                  <p className="text-sm font-medium text-stone-800 truncate">
+                    {t.title}
+                  </p>
+                </button>
+              </li>
+            ))
+          )}
         </ul>
       </aside>
     </>

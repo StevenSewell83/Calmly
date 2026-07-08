@@ -25,9 +25,7 @@ export function useResource<T>(
   fetcherRef.current = fetcher;
 
   const refresh = useCallback(async () => {
-    setState((prev) =>
-      prev.kind === "ready" ? prev : { kind: "loading" },
-    );
+    setState((prev) => (prev.kind === "ready" ? prev : { kind: "loading" }));
     let result: FetcherResult<T>;
     try {
       result = await fetcherRef.current();
@@ -46,9 +44,7 @@ export function useResource<T>(
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      setState((prev) =>
-        prev.kind === "ready" ? prev : { kind: "loading" },
-      );
+      setState((prev) => (prev.kind === "ready" ? prev : { kind: "loading" }));
       let result: FetcherResult<T>;
       try {
         result = await fetcherRef.current();

@@ -24,9 +24,8 @@ vi.mock("../tokens", () => ({
       (provider: string, accountId: string) =>
         tokenStore.get(`${provider}:${accountId}`) ?? null,
     ),
-    has: vi.fn(
-      (provider: string, accountId: string) =>
-        tokenStore.has(`${provider}:${accountId}`),
+    has: vi.fn((provider: string, accountId: string) =>
+      tokenStore.has(`${provider}:${accountId}`),
     ),
     delete: vi.fn((provider: string, accountId: string) =>
       tokenStore.delete(`${provider}:${accountId}`),
@@ -93,7 +92,10 @@ describe("createCalendarRefresh", () => {
       return { ok: true, access_token: "at-1", expires_in: 3600 };
     });
 
-    const refresh = createCalendarRefresh({ apiClient: client, now: () => now });
+    const refresh = createCalendarRefresh({
+      apiClient: client,
+      now: () => now,
+    });
     const r = await refresh.getAccessToken("google", ACCT);
     expect(r).toEqual({
       ok: true,
@@ -111,7 +113,10 @@ describe("createCalendarRefresh", () => {
       expires_in: 3600,
     }));
 
-    const refresh = createCalendarRefresh({ apiClient: client, now: () => now });
+    const refresh = createCalendarRefresh({
+      apiClient: client,
+      now: () => now,
+    });
     await refresh.getAccessToken("google", ACCT);
     // Advance well within the safety margin.
     now += 60_000;
@@ -130,7 +135,10 @@ describe("createCalendarRefresh", () => {
       return { ok: true, access_token: `at-${issued}`, expires_in: 3600 };
     });
 
-    const refresh = createCalendarRefresh({ apiClient: client, now: () => now });
+    const refresh = createCalendarRefresh({
+      apiClient: client,
+      now: () => now,
+    });
     const a = await refresh.getAccessToken("google", ACCT);
     expect(a.ok && a.accessToken).toBe("at-1");
     // Jump near expiry — still inside the 30s margin so we should refresh.
@@ -172,7 +180,9 @@ describe("createCalendarRefresh", () => {
 
     const client: ApiClient = {
       request: vi.fn(async () => {
-        throw new ApiHttpError("invalid_grant", 410, { error: "invalid_grant" });
+        throw new ApiHttpError("invalid_grant", 410, {
+          error: "invalid_grant",
+        });
       }) as unknown as ApiClient["request"],
     };
 
@@ -195,7 +205,10 @@ describe("createCalendarRefresh", () => {
       }) as unknown as ApiClient["request"],
     };
 
-    const refresh = createCalendarRefresh({ apiClient: client, now: () => now });
+    const refresh = createCalendarRefresh({
+      apiClient: client,
+      now: () => now,
+    });
     const r1 = await refresh.getAccessToken("google", ACCT);
     expect(r1).toEqual({ ok: false, error: "transient_failure" });
     expect(client.request).toHaveBeenCalledTimes(1);
@@ -221,7 +234,10 @@ describe("createCalendarRefresh", () => {
       }) as unknown as ApiClient["request"],
     };
 
-    const refresh = createCalendarRefresh({ apiClient: client, now: () => now });
+    const refresh = createCalendarRefresh({
+      apiClient: client,
+      now: () => now,
+    });
 
     // Fire the first 4 attempts past their backoffs.
     for (let i = 0; i < 4; i++) {
@@ -255,7 +271,10 @@ describe("createCalendarRefresh", () => {
     if (account) account.status = "reauth_required";
 
     const client: ApiClient = {
-      request: vi.fn(async () => ({ status: 200, body: {} })) as unknown as ApiClient["request"],
+      request: vi.fn(async () => ({
+        status: 200,
+        body: {},
+      })) as unknown as ApiClient["request"],
     };
     const refresh = createCalendarRefresh({
       apiClient: client,

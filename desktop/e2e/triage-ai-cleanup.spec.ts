@@ -17,7 +17,9 @@ test.describe("Triage AI cleanup panel", () => {
 
   test("AI cleanup button visible when AI enabled", async ({ page }) => {
     await page.goto("/inbox/triage");
-    await expect(page.getByRole("button", { name: /ai cleanup/i })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /ai cleanup/i }),
+    ).toBeVisible();
   });
 
   test("panel opens and shows loading then suggestion", async ({ page }) => {
@@ -30,7 +32,9 @@ test.describe("Triage AI cleanup panel", () => {
     await expect(page.getByText(/type/i)).toBeVisible({ timeout: 15_000 });
   });
 
-  test("discard records rejected outcome and closes panel", async ({ page }) => {
+  test("discard records rejected outcome and closes panel", async ({
+    page,
+  }) => {
     await page.goto("/inbox/triage");
     await page.getByRole("button", { name: /ai cleanup/i }).click();
     await page.getByRole("button", { name: /get suggestion/i }).click();

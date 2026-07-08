@@ -7,9 +7,7 @@ const ENV_OVERRIDE = process.env["CALMLY_SYNC_URL"];
 function readStoredUrl(db: Database.Database): string | null {
   try {
     const row = db
-      .prepare(
-        "SELECT settings_json FROM user_settings LIMIT 1",
-      )
+      .prepare("SELECT settings_json FROM user_settings LIMIT 1")
       .get() as { settings_json: string } | undefined;
     if (!row) return null;
     const settings = JSON.parse(row.settings_json) as Record<string, unknown>;
@@ -32,7 +30,10 @@ export function saveServerUrl(db: Database.Database, url: string): void {
     .get() as { settings_json: string } | undefined;
 
   if (existing) {
-    const settings = JSON.parse(existing.settings_json) as Record<string, unknown>;
+    const settings = JSON.parse(existing.settings_json) as Record<
+      string,
+      unknown
+    >;
     settings["syncServerUrl"] = v.url;
     db.prepare("UPDATE user_settings SET settings_json = ?").run(
       JSON.stringify(settings),
@@ -50,7 +51,10 @@ export function clearServerUrl(db: Database.Database): void {
     .prepare("SELECT settings_json FROM user_settings LIMIT 1")
     .get() as { settings_json: string } | undefined;
   if (!existing) return;
-  const settings = JSON.parse(existing.settings_json) as Record<string, unknown>;
+  const settings = JSON.parse(existing.settings_json) as Record<
+    string,
+    unknown
+  >;
   delete settings["syncServerUrl"];
   db.prepare("UPDATE user_settings SET settings_json = ?").run(
     JSON.stringify(settings),

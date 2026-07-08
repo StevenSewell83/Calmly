@@ -76,10 +76,7 @@ export function msToGridMinutes(ms: number, dayAnchor: number): number {
   return (ms - gridStartMs(dayAnchor)) / MS_PER_MINUTE;
 }
 
-export function gridMinutesToMs(
-  minutes: number,
-  dayAnchor: number,
-): number {
+export function gridMinutesToMs(minutes: number, dayAnchor: number): number {
   return gridStartMs(dayAnchor) + minutes * MS_PER_MINUTE;
 }
 
@@ -148,7 +145,10 @@ export function snapAndClampEndForStart(
   const snapped = snapMinutes(rawEndMinutes);
   return Math.max(
     startMinutes + MIN_BLOCK_MINUTES,
-    Math.min(GRID_HOURS * 60, Math.min(startMinutes + MAX_BLOCK_MINUTES, snapped)),
+    Math.min(
+      GRID_HOURS * 60,
+      Math.min(startMinutes + MAX_BLOCK_MINUTES, snapped),
+    ),
   );
 }
 

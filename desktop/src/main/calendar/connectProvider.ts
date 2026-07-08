@@ -19,10 +19,7 @@ export const DEEPLINK_TIMEOUT_MS = 5 * 60 * 1000;
 export interface CalendarDeepLinkSubscription {
   // Returns an unsubscribe.
   (
-    handler: (payload: {
-      provider: CalendarProvider;
-      ticket: string;
-    }) => void,
+    handler: (payload: { provider: CalendarProvider; ticket: string }) => void,
   ): () => void;
 }
 
@@ -49,7 +46,9 @@ export type ConnectStarter = () => Promise<CalendarConnectResult>;
 //   3. POST /oauth/<provider>/redeem with the ticket
 //   4. persist the refresh_token in the F-12 secret store
 //   5. mirror the account into local calendar_accounts
-export function createConnectProvider(deps: ConnectProviderDeps): ConnectStarter {
+export function createConnectProvider(
+  deps: ConnectProviderDeps,
+): ConnectStarter {
   const provider = deps.provider;
   const log = deps.log ?? (() => {});
   const timeoutMs = deps.timeoutMs ?? DEEPLINK_TIMEOUT_MS;
@@ -132,7 +131,9 @@ export function createConnectProvider(deps: ConnectProviderDeps): ConnectStarter
         status: body.account.status,
       });
     } catch (e) {
-      log(`connect${cap(provider)} local mirror write failed`, { err: String(e) });
+      log(`connect${cap(provider)} local mirror write failed`, {
+        err: String(e),
+      });
       return { ok: false, error: "internal_error" };
     }
 

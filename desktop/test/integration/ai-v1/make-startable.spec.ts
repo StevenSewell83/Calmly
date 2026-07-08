@@ -6,7 +6,9 @@ import { vi, describe, it, expect, beforeEach } from "vitest";
 const mockComplete = vi.fn();
 vi.mock("../../../src/main/ai/providers/anthropic", () => ({
   AnthropicProvider: class {
-    complete(...args: unknown[]) { return mockComplete(...args); }
+    complete(...args: unknown[]) {
+      return mockComplete(...args);
+    }
   },
 }));
 
@@ -20,7 +22,11 @@ vi.mock("../../../src/main/security/secretStore", () => ({
 const mockDbRun = vi.fn();
 vi.mock("../../../src/main/db", () => ({
   getDb: vi.fn(() => ({
-    prepare: vi.fn(() => ({ run: mockDbRun, get: vi.fn(), all: vi.fn(() => []) })),
+    prepare: vi.fn(() => ({
+      run: mockDbRun,
+      get: vi.fn(),
+      all: vi.fn(() => []),
+    })),
   })),
 }));
 
@@ -37,14 +43,20 @@ describe("make_startable integration", () => {
   beforeEach(() => {
     mockComplete.mockReset();
     mockDbRun.mockReset();
-    mockComplete.mockResolvedValue({ ok: true, value: JSON.stringify(mockResult) });
+    mockComplete.mockResolvedValue({
+      ok: true,
+      value: JSON.stringify(mockResult),
+    });
   });
 
   it("returns firstStep and steps", async () => {
-    const r = await runAI({
-      action: "make_startable",
-      payload: { title: "Draft proposal", notes: "" },
-    }, { ownerType: "task", ownerId: "task-abc" });
+    const r = await runAI(
+      {
+        action: "make_startable",
+        payload: { title: "Draft proposal", notes: "" },
+      },
+      { ownerType: "task", ownerId: "task-abc" },
+    );
 
     expect(r.ok).toBe(true);
     if (!r.ok) return;
@@ -54,10 +66,13 @@ describe("make_startable integration", () => {
   });
 
   it("records suggestion with ownerType and ownerId", async () => {
-    await runAI({
-      action: "make_startable",
-      payload: { title: "Draft proposal" },
-    }, { ownerType: "task", ownerId: "task-abc" });
+    await runAI(
+      {
+        action: "make_startable",
+        payload: { title: "Draft proposal" },
+      },
+      { ownerType: "task", ownerId: "task-abc" },
+    );
 
     expect(mockDbRun).toHaveBeenCalledWith(
       "ms-suggestion-001",
@@ -77,7 +92,10 @@ describe("make_startable integration", () => {
         steps: ["a", "b", "c", "d", "e", "f", "g"], // 7 steps — exceeds max
       }),
     });
-    const r = await runAI({ action: "make_startable", payload: { title: "Task" } });
+    const r = await runAI({
+      action: "make_startable",
+      payload: { title: "Task" },
+    });
     // Zod's .max(5) should reject — returns invalid_response
     expect(r.ok).toBe(false);
     if (r.ok) return;

@@ -30,7 +30,10 @@ let _enabledAtBoot: boolean | null = null;
 let _restartRequired = false;
 
 function getCrashIngestUrl(): string {
-  return process.env[CRASH_INGEST_URL_ENV] ?? "https://crash-disabled.calmly.invalid/";
+  return (
+    process.env[CRASH_INGEST_URL_ENV] ??
+    "https://crash-disabled.calmly.invalid/"
+  );
 }
 
 function readEnabled(): boolean {

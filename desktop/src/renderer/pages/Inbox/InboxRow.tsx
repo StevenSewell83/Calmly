@@ -51,88 +51,87 @@ const SOURCE_ICON: Record<
 // Single inbox row. forwardRef so the parent can imperatively scroll
 // the keyboard-selected row into view when the user navigates with
 // arrow keys.
-export const InboxRow = forwardRef<HTMLLIElement, Props>(function InboxRow(
-  props,
-  ref,
-) {
-  const {
-    item,
-    selected,
-    snoozePopoverOpen,
-    onSelect,
-    onTriage,
-    onSnooze,
-    onSkip,
-    onSnoozePopoverChange,
-  } = props;
+export const InboxRow = forwardRef<HTMLLIElement, Props>(
+  function InboxRow(props, ref) {
+    const {
+      item,
+      selected,
+      snoozePopoverOpen,
+      onSelect,
+      onTriage,
+      onSnooze,
+      onSkip,
+      onSnoozePopoverChange,
+    } = props;
 
-  const Icon = SOURCE_ICON[item.source];
+    const Icon = SOURCE_ICON[item.source];
 
-  return (
-    <li
-      ref={ref}
-      onClick={onSelect}
-      role="option"
-      aria-selected={selected}
-      className={[
-        "group rounded-[1.8rem] bg-white px-6 py-5 border transition-colors cursor-default",
-        selected
-          ? "border-emerald-300 ring-2 ring-emerald-100 shadow-sm"
-          : "border-stone-200/60 hover:border-stone-300",
-      ].join(" ")}
-    >
-      <div className="flex items-start gap-4">
-        <div className="w-9 h-9 rounded-2xl bg-stone-100 text-stone-500 flex items-center justify-center shrink-0">
-          <Icon className="w-4 h-4" aria-hidden="true" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm text-stone-800 leading-relaxed line-clamp-2">
-            {item.raw_text}
-          </p>
-          <div className="mt-2 flex items-center gap-3 text-[10px] tracking-[0.18em] uppercase text-stone-400 font-bold">
-            <span>{SOURCE_LABEL[item.source]}</span>
-            <span aria-hidden="true">·</span>
-            <span className="normal-case tracking-wide font-medium">
-              {formatRelativePast(item.created_at, Date.now())}
-            </span>
+    return (
+      <li
+        ref={ref}
+        onClick={onSelect}
+        role="option"
+        aria-selected={selected}
+        className={[
+          "group rounded-[1.8rem] bg-white px-6 py-5 border transition-colors cursor-default",
+          selected
+            ? "border-emerald-300 ring-2 ring-emerald-100 shadow-sm"
+            : "border-stone-200/60 hover:border-stone-300",
+        ].join(" ")}
+      >
+        <div className="flex items-start gap-4">
+          <div className="w-9 h-9 rounded-2xl bg-stone-100 text-stone-500 flex items-center justify-center shrink-0">
+            <Icon className="w-4 h-4" aria-hidden="true" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-stone-800 leading-relaxed line-clamp-2">
+              {item.raw_text}
+            </p>
+            <div className="mt-2 flex items-center gap-3 text-[10px] tracking-[0.18em] uppercase text-stone-400 font-bold">
+              <span>{SOURCE_LABEL[item.source]}</span>
+              <span aria-hidden="true">·</span>
+              <span className="normal-case tracking-wide font-medium">
+                {formatRelativePast(item.created_at, Date.now())}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <SnoozeControl
+              open={snoozePopoverOpen}
+              onOpenChange={onSnoozePopoverChange}
+              onPick={onSnooze}
+            />
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSkip();
+              }}
+              aria-label="Skip"
+              title="Skip · X"
+              className="w-9 h-9 rounded-2xl text-stone-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onTriage();
+              }}
+              aria-label="Triage"
+              title="Triage · Enter"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-stone-900 text-white text-xs font-medium tracking-wide hover:bg-stone-700 transition-colors"
+            >
+              Triage
+              <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+            </button>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <SnoozeControl
-            open={snoozePopoverOpen}
-            onOpenChange={onSnoozePopoverChange}
-            onPick={onSnooze}
-          />
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onSkip();
-            }}
-            aria-label="Skip"
-            title="Skip · X"
-            className="w-9 h-9 rounded-2xl text-stone-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onTriage();
-            }}
-            aria-label="Triage"
-            title="Triage · Enter"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-stone-900 text-white text-xs font-medium tracking-wide hover:bg-stone-700 transition-colors"
-          >
-            Triage
-            <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-          </button>
-        </div>
-      </div>
-    </li>
-  );
-});
+      </li>
+    );
+  },
+);
 
 interface SnoozeControlProps {
   open: boolean;
