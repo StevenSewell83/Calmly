@@ -1,30 +1,5 @@
 {
   "$schema": "./baseline.schema.json",
   "_doc": "Snapshot of pre-existing typecheck errors that are silenced by the gated typecheck (calmly-d0s). Each entry: { workspace, file, code, count, reason? }. Goal: drive `errors` to []. Regenerate with: pnpm --filter @calmly/typecheck-baseline snapshot",
-  "errors": [
-    {
-      "workspace": "desktop",
-      "file": "src/main/ipc/__tests__/triage.test.ts",
-      "code": "TS2353",
-      "count": 3
-    },
-    {
-      "workspace": "desktop",
-      "file": "src/main/sync/client.ts",
-      "code": "TS2339",
-      "count": 1
-    },
-    {
-      "workspace": "desktop",
-      "file": "src/main/sync/loop.ts",
-      "code": "TS2322",
-      "count": 1
-    },
-    {
-      "workspace": "desktop",
-      "file": "src/main/sync/loop.ts",
-      "code": "TS2339",
-      "count": 1
-    }
-  ]
+  "errors": []
 }
