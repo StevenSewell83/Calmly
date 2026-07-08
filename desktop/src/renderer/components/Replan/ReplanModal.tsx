@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import { TaskStatusSchema } from "@calmly/shared";
 import type { PlanTaskItem, ReplanAction, ReplanReason } from "../../../preload/api-types";
 import { ReplanRow } from "./ReplanRow";
+
+const stillActionable = (t: PlanTaskItem) =>
+  t.status !== TaskStatusSchema.enum.done && t.status !== TaskStatusSchema.enum.dropped;
 
 const REASONS: { value: ReplanReason; label: string }[] = [
   { value: null, label: "No reason selected" },
@@ -30,10 +34,7 @@ export function ReplanModal({ open, onClose }: Props) {
     setReasonRecorded(false);
     void window.calmly.plan.listForDay().then((r) => {
       if (!r.ok) return;
-      const remaining = r.plan.scheduled.filter(
-        (t) => t.status !== "done" && t.status !== "dropped",
-      );
-      setTasks(remaining);
+      setTasks(r.plan.scheduled.filter(stillActionable));
     });
   }, [open]);
 
@@ -50,7 +51,7 @@ export function ReplanModal({ open, onClose }: Props) {
     await window.calmly.replan.applyBatch([action]);
     const r = await window.calmly.plan.listForDay();
     if (r.ok) {
-      setTasks(r.plan.scheduled.filter((t) => t.status !== "done" && t.status !== "dropped"));
+      setTasks(r.plan.scheduled.filter(stillActionable));
     }
     setBusy(false);
   }
@@ -65,7 +66,7 @@ export function ReplanModal({ open, onClose }: Props) {
     await window.calmly.replan.applyBatch(actions);
     const r = await window.calmly.plan.listForDay();
     if (r.ok) {
-      setTasks(r.plan.scheduled.filter((t) => t.status !== "done" && t.status !== "dropped"));
+      setTasks(r.plan.scheduled.filter(stillActionable));
     }
     setSelected(new Set());
     setBusy(false);

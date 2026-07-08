@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type Database from "better-sqlite3";
+import { TaskStatusSchema } from "@calmly/shared";
 import type { ReviewTaskRow } from "../wireTypes";
 import { localDayWindow } from "../today/store";
 import { loadTask, enqueueTaskUpsert } from "../tasks/repo";
@@ -145,7 +146,7 @@ export function dropTasks(
         `UPDATE tasks SET status = 'dropped', updated_at = ?, version = ?
           WHERE id = ? AND user_id = ?`,
       ).run(now, next, taskId, userId);
-      enqueueTaskUpsert(db, taskId, row, { status: "dropped" as const }, now, next);
+      enqueueTaskUpsert(db, taskId, row, { status: TaskStatusSchema.enum.dropped }, now, next);
       count++;
     }
     return count;
@@ -174,7 +175,7 @@ export function markDoneTasks(
         `UPDATE tasks SET status = 'done', updated_at = ?, version = ?
           WHERE id = ? AND user_id = ?`,
       ).run(now, next, taskId, userId);
-      enqueueTaskUpsert(db, taskId, row, { status: "done" as const }, now, next);
+      enqueueTaskUpsert(db, taskId, row, { status: TaskStatusSchema.enum.done }, now, next);
       count++;
     }
     return count;

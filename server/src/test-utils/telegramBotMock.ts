@@ -229,7 +229,7 @@ export class MockTelegramBotApi implements TelegramFileClient {
   }
 
   private async handleFetch(
-    input: RequestInfo | URL,
+    input: Parameters<typeof fetch>[0],
     _init?: RequestInit,
   ): Promise<Response> {
     const url =

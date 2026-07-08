@@ -73,13 +73,13 @@ export function makeBaseUpdate(opts: BaseUpdateOpts = {}): Pick<Update, "update_
 }
 
 export function makeTextUpdate(text: string, opts: BaseUpdateOpts = {}): Update {
-  const message = {
+  const message: Message.TextMessage & { chat: Chat.PrivateChat; from: User } = {
     ...messageBase(opts),
     text,
-  } as Message.TextMessage & { chat: Chat.PrivateChat; from: User };
+  };
   return {
     update_id: opts.update_id ?? nextUpdateId(),
-    message: message as NonNullable<Update["message"]>,
+    message,
   };
 }
 
