@@ -21,6 +21,26 @@ export interface MigrationResult {
   current: number;
 }
 
+/** Throws when two migrations declare the same version number. Without this
+ * guard the collision only surfaces on a user's machine as a cryptic
+ * `UNIQUE constraint failed: _meta_migrations.version` at boot (the calmly-wv9
+ * P0) — fail loudly at load time instead. Exported for tests. */
+export function assertUniqueVersions(
+  migrations: ReadonlyArray<{ version: number; name: string }>,
+): void {
+  const byVersion = new Map<number, string>();
+  for (const m of migrations) {
+    const existing = byVersion.get(m.version);
+    if (existing !== undefined) {
+      throw new Error(
+        `Duplicate migration version ${m.version}: declared by both ` +
+          `"${existing}" and "${m.name}". Renumber one of them.`,
+      );
+    }
+    byVersion.set(m.version, m.name);
+  }
+}
+
 function loadMigrations(): Migration[] {
   const out: Migration[] = [];
   for (const [path, sql] of Object.entries(migrationFiles)) {
@@ -34,6 +54,7 @@ function loadMigrations(): Migration[] {
     out.push({ version: parseInt(versionStr, 10), name, sql });
   }
   out.sort((a, b) => a.version - b.version);
+  assertUniqueVersions(out);
   return out;
 }
 
