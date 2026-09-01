@@ -60,3 +60,4 @@ Thumbs.db
 .ralph/merge-loop.log
 .ralph/docs/generated/
 .ralph/pids/
+.claude/scheduled_tasks.lock
